@@ -1,8 +1,6 @@
-# XIANZE Event Management System
-
 <div align="center">
 
-# 🎪 XIANZE
+# XIANZE 2026
 
 **A modern, production-ready event management system**
 
@@ -17,7 +15,11 @@
 
 ## 📖 What is XIANZE?
 
-XIANZE is an **admin-only event management system** designed for organizations that need to manage events, venues, and attendees. This repository contains the complete boilerplate for both the backend API and frontend application.
+Xianze is an annual technical fest that brings together students from colleges across the region to showcase their creativity, innovation, and technical expertise. Organized by the Mind bender's Association from Department of Software Systems and Computer Science (PG) Since 2011, Xianze features an exciting mix of technical and non-technical events aimed at encouraging participants to think critically and collaborate effectively. The event provides a platform for undergraduate and postgraduate students to present innovative ideas, compete in challenging events, and explore the latest trends in technology.
+
+## 📖 What is XIANZE EMS?
+
+XIANZE EMS is an **admin-only event management system** designed for organizations that need to manage events, venues, and attendees. This repository contains the complete boilerplate for both the backend API and frontend application.
 
 ### Key Features
 

@@ -237,30 +237,124 @@ test(events): add unit tests for service
 
 ---
 
-## 🔀 Pull Request Process
+## 🚀 Runtime: Bun.js
 
-1. **Create a branch** from `main`:
+This project uses **Bun** as its runtime. See [RUNTIME.md](/RUNTIME.md) for details.
+
+### Quick Commands
+
+```bash
+# Install dependencies (NOT npm install)
+bun install
+
+# Run development server
+bun run start:dev
+
+# Build for production
+bun run build
+
+# Run production
+bun run start:prod
+```
+
+> [!CAUTION]
+> **Do NOT use npm, yarn, or pnpm.** Always use `bun` commands.
+
+---
+
+## 🔀 Branch Workflow (MANDATORY)
+
+> [!IMPORTANT]
+> **All features MUST be developed on a separate branch.**
+> Direct commits to `main` are NOT allowed.
+
+### Step-by-Step Process
+
+1. **Create a feature branch** from `main`:
 
    ```bash
+   git checkout main
+   git pull origin main
    git checkout -b feature/your-feature-name
    ```
 
-2. **Make your changes** following the patterns above
+2. **Make your changes** following the patterns in this guide
 
-3. **Commit and push**:
+3. **Commit frequently** with clear messages:
 
    ```bash
    git add .
    git commit -m "feat(scope): description"
+   ```
+
+4. **Push your branch**:
+
+   ```bash
    git push origin feature/your-feature-name
    ```
 
-4. **Open a Pull Request** with:
-   - Clear title describing the change
+5. **Open a Pull Request (PR) / Merge Request (MR)**:
+   - Use a clear title describing the change
    - Link to related issue (if any)
-   - Description of what and why
+   - Describe what and why
+   - Request review from maintainers
 
-5. **Wait for review** - Address any feedback
+6. **Address review feedback** and update your PR
+
+7. **Merge after approval** - Maintainers will merge after review
+
+### Branch Naming Conventions
+
+| Type          | Pattern                     | Example                           |
+| ------------- | --------------------------- | --------------------------------- |
+| Feature       | `feature/short-description` | `feature/buildathon-registration` |
+| Bug Fix       | `fix/issue-description`     | `fix/quiz-timer-bug`              |
+| Documentation | `docs/what-changed`         | `docs/update-events-readme`       |
+| Refactor      | `refactor/what-changed`     | `refactor/cache-service`          |
+
+---
+
+## 🎯 Event Module Implementation
+
+When implementing event modules, follow these guidelines:
+
+### 1. Check the Event Requirements
+
+Review [EVENTS.md](/EVENTS.md) for:
+
+- Backend requirements (Required / Minimal / None)
+- Redis usage requirements
+- Registration requirements
+
+### 2. Read the Event README
+
+Each event has a README with implementation details:
+
+```
+src/modules/events/{event-name}/README.md
+```
+
+### 3. Follow the Module Pattern
+
+Create the standard NestJS module structure:
+
+```
+src/modules/events/{event-name}/
+├── entities/
+├── dto/
+├── {event-name}.controller.ts
+├── {event-name}.service.ts
+├── {event-name}.module.ts
+└── README.md
+```
+
+### 4. Use Redis Appropriately
+
+If the event requires Redis, see [CACHE_STRATEGY.md](/CACHE_STRATEGY.md) for:
+
+- Key naming conventions
+- TTL requirements
+- Data structures
 
 ---
 
@@ -268,6 +362,8 @@ test(events): add unit tests for service
 
 | ❌ Don't                          | ✅ Do                                |
 | --------------------------------- | ------------------------------------ |
+| Commit directly to main           | Use feature branches + PRs           |
+| Use npm/yarn/pnpm                 | Use `bun` commands only              |
 | Put business logic in controllers | Keep controllers thin, use services  |
 | Use `any` type                    | Define proper TypeScript types       |
 | Skip validation                   | Always use DTOs with class-validator |
@@ -281,6 +377,8 @@ test(events): add unit tests for service
 
 - Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues
 - Review [ARCHITECTURE.md](./ARCHITECTURE.md) for design patterns
+- Read [EVENTS.md](/EVENTS.md) for event-specific guidance
+- Read [RUNTIME.md](/RUNTIME.md) for Bun.js help
 - Open an issue for questions
 
 Welcome to the team! 🎉

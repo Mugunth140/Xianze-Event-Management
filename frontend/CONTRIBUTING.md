@@ -19,7 +19,7 @@ Thank you for contributing to the XIANZE frontend! This guide will help you get 
 ```bash
 git clone <repository-url>
 cd xianze/frontend
-npm install
+bun install    # NOT npm install
 ```
 
 ### 2. Configure Environment
@@ -32,10 +32,94 @@ cp .env.local.example .env.local
 ### 3. Start Development Server
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 The application will be available at `http://localhost:3000`.
+
+---
+
+## 🚀 Runtime: Bun.js
+
+This project uses **Bun** as its runtime. See [RUNTIME.md](/RUNTIME.md) for details.
+
+### Quick Commands
+
+```bash
+# Install dependencies (NOT npm install)
+bun install
+
+# Run development server
+bun run dev
+
+# Build for production
+bun run build
+
+# Run linting
+bun run lint
+```
+
+> [!CAUTION]
+> **Do NOT use npm, yarn, or pnpm.** Always use `bun` commands.
+
+---
+
+## 🔀 Branch Workflow (MANDATORY)
+
+> [!IMPORTANT]
+> **All features MUST be developed on a separate branch.**
+> Direct commits to `main` are NOT allowed.
+
+### Step-by-Step Process
+
+1. **Create a feature branch** from `main`:
+
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** following the patterns in this guide
+
+3. **Test your changes**:
+
+   ```bash
+   bun run lint
+   bun run build
+   ```
+
+4. **Commit frequently** with clear messages:
+
+   ```bash
+   git add .
+   git commit -m "feat(scope): description"
+   ```
+
+5. **Push your branch**:
+
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+6. **Open a Pull Request (PR) / Merge Request (MR)**:
+   - Use a clear title describing the change
+   - Include screenshots for UI changes
+   - Link to related issue (if any)
+   - Request review from maintainers
+
+7. **Address review feedback** and update your PR
+
+8. **Merge after approval** - Maintainers will merge after review
+
+### Branch Naming Conventions
+
+| Type          | Pattern                     | Example                   |
+| ------------- | --------------------------- | ------------------------- |
+| Feature       | `feature/short-description` | `feature/buildathon-page` |
+| Bug Fix       | `fix/issue-description`     | `fix/event-card-styling`  |
+| Documentation | `docs/what-changed`         | `docs/update-readme`      |
+| Style         | `style/what-changed`        | `style/dark-mode-support` |
 
 ---
 
@@ -46,41 +130,32 @@ This is the most common contribution. Follow these steps:
 ### Step 1: Create the Page Directory
 
 ```bash
-# Create a new route at /events
-mkdir app/events
+# Create a new route at /your-page
+mkdir app/your-page
 ```
 
 ### Step 2: Create the Page Component
 
-Create `app/events/page.tsx`:
+Create `app/your-page/page.tsx`:
 
 ```typescript
 import { api } from '@/lib/api';
 
 // Define the data type
-interface Event {
+interface YourData {
   id: string;
   name: string;
-  date: string;
 }
 
 // Server Component - fetches data on the server
-export default async function EventsPage() {
+export default async function YourPage() {
   // Fetch data from the API
-  const events = await api.get<Event[]>('/events');
+  const data = await api.get<YourData[]>('/your-endpoint');
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Events</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {events.map((event) => (
-          <div key={event.id} className="card">
-            <h2 className="font-medium">{event.name}</h2>
-            <p className="text-gray-500">{event.date}</p>
-          </div>
-        ))}
-      </div>
+      <h1 className="text-2xl font-bold mb-6">Your Page</h1>
+      {/* Your content here */}
     </div>
   );
 }
@@ -88,7 +163,7 @@ export default async function EventsPage() {
 
 ### Step 3: Add Loading State (Optional)
 
-Create `app/events/loading.tsx`:
+Create `app/your-page/loading.tsx`:
 
 ```typescript
 export default function Loading() {
@@ -102,7 +177,7 @@ export default function Loading() {
 
 ### Step 4: Add Error Handling (Optional)
 
-Create `app/events/error.tsx`:
+Create `app/your-page/error.tsx`:
 
 ```typescript
 'use client';
@@ -128,28 +203,60 @@ export default function Error({
 
 ---
 
+## 🎯 Event Route Implementation
+
+When implementing event routes, follow these guidelines:
+
+### 1. Check the Event Requirements
+
+Review [EVENTS.md](/EVENTS.md) for:
+
+- Frontend requirements (Required / Minimal)
+- Backend dependencies
+- Special cases (like Fun Games - no registration)
+
+### 2. Use the Existing Placeholder
+
+Each event has a placeholder page:
+
+```text
+app/events/{event-name}/page.tsx
+```
+
+### 3. Follow the Events Layout
+
+The events layout is at `app/events/layout.tsx`. Use it for consistent navigation.
+
+### 4. Event Route Examples
+
+| Event      | Route                | Complexity                |
+| ---------- | -------------------- | ------------------------- |
+| Buildathon | `/events/buildathon` | High (forms, submissions) |
+| Bug Smash  | `/events/bug-smash`  | High (quiz interface)     |
+| Fun Games  | `/events/fun-games`  | Low (display only)        |
+
+---
+
 ## 🧩 Adding a New Component
 
 ### Step 1: Create the Component File
 
-Create `components/EventCard.tsx`:
+Create `components/YourComponent.tsx`:
 
 ```typescript
-interface EventCardProps {
+interface YourComponentProps {
   id: string;
   name: string;
-  date: string;
-  onSelect?: (id: string) => void;
+  onClick?: (id: string) => void;
 }
 
-export function EventCard({ id, name, date, onSelect }: EventCardProps) {
+export function YourComponent({ id, name, onClick }: YourComponentProps) {
   return (
     <div
       className="card hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => onSelect?.(id)}
+      onClick={() => onClick?.(id)}
     >
       <h3 className="font-medium text-gray-900">{name}</h3>
-      <p className="text-sm text-gray-500">{date}</p>
     </div>
   );
 }
@@ -160,16 +267,7 @@ export function EventCard({ id, name, date, onSelect }: EventCardProps) {
 Create `components/index.ts`:
 
 ```typescript
-export * from './EventCard';
-// Add more exports as components are added
-```
-
-### Step 3: Use in Pages
-
-```typescript
-import { EventCard } from '@/components/EventCard';
-// or
-import { EventCard } from '@/components';
+export * from './YourComponent';
 ```
 
 ---
@@ -183,34 +281,16 @@ When you need interactivity, use client components:
 
 import { useState } from 'react';
 
-export function EventForm() {
-  const [name, setName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    // Submit logic
-    setIsSubmitting(false);
-  };
+export function InteractiveComponent() {
+  const [value, setValue] = useState('');
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="border rounded px-3 py-2"
-        placeholder="Event name"
-      />
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="btn-primary ml-2"
-      >
-        {isSubmitting ? 'Creating...' : 'Create Event'}
-      </button>
-    </form>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      className="border rounded px-3 py-2"
+    />
   );
 }
 ```
@@ -221,8 +301,8 @@ export function EventForm() {
 
 Before submitting your code, ensure:
 
-- [ ] `npm run lint` passes with no errors
-- [ ] `npm run build` completes successfully
+- [ ] `bun run lint` passes with no errors
+- [ ] `bun run build` completes successfully
 - [ ] Components are properly typed with TypeScript
 - [ ] Styling uses Tailwind CSS classes
 - [ ] No hardcoded API URLs (use environment variables)
@@ -234,13 +314,12 @@ Before submitting your code, ensure:
 
 Use conventional commit format:
 
-```
+```text
 type(scope): description
 
-feat(events): add events listing page
-fix(admin): resolve sidebar navigation issue
+feat(events): add buildathon registration form
+fix(quiz): resolve timer display issue
 style(home): improve mobile responsiveness
-refactor(api): extract common fetch logic
 ```
 
 **Types:**
@@ -254,48 +333,18 @@ refactor(api): extract common fetch logic
 
 ---
 
-## 🔀 Pull Request Process
-
-1. **Create a branch** from `main`:
-
-   ```bash
-   git checkout -b feature/events-page
-   ```
-
-2. **Make your changes** following the patterns above
-
-3. **Test your changes**:
-
-   ```bash
-   npm run lint
-   npm run build
-   ```
-
-4. **Commit and push**:
-
-   ```bash
-   git add .
-   git commit -m "feat(events): add events listing page"
-   git push origin feature/events-page
-   ```
-
-5. **Open a Pull Request** with:
-   - Clear title describing the change
-   - Screenshots for UI changes
-   - Link to related issue (if any)
-
----
-
 ## ⚠️ Common Mistakes to Avoid
 
-| ❌ Don't              | ✅ Do                                     |
-| --------------------- | ----------------------------------------- |
-| Use `any` type        | Define proper TypeScript interfaces       |
-| Hardcode API URLs     | Use `process.env.NEXT_PUBLIC_API_URL`     |
-| Forget `'use client'` | Add directive for interactive components  |
-| Inline all styles     | Use Tailwind classes or component styles  |
-| Skip loading states   | Add `loading.tsx` for data-fetching pages |
-| Commit `.env.local`   | Use `.env.local.example` for templates    |
+| ❌ Don't                | ✅ Do                                     |
+| ----------------------- | ----------------------------------------- |
+| Commit directly to main | Use feature branches + PRs                |
+| Use npm/yarn/pnpm       | Use `bun` commands only                   |
+| Use `any` type          | Define proper TypeScript interfaces       |
+| Hardcode API URLs       | Use `process.env.NEXT_PUBLIC_API_URL`     |
+| Forget `'use client'`   | Add directive for interactive components  |
+| Inline all styles       | Use Tailwind classes or component styles  |
+| Skip loading states     | Add `loading.tsx` for data-fetching pages |
+| Commit `.env.local`     | Use `.env.local.example` for templates    |
 
 ---
 
@@ -303,6 +352,8 @@ refactor(api): extract common fetch logic
 
 - Check [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues
 - Review [ARCHITECTURE.md](./ARCHITECTURE.md) for design patterns
+- Read [EVENTS.md](/EVENTS.md) for event-specific guidance
+- Read [RUNTIME.md](/RUNTIME.md) for Bun.js help
 - Open an issue for questions
 
 Welcome to the team! 🎉

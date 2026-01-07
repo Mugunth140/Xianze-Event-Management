@@ -5,7 +5,7 @@
   "description": "XIANZE Event Management System - Root workspace",
   "scripts": {
     "prepare": "husky install",
-    "lint": "npm run lint --workspaces --if-present",
+    "lint": "bun run lint --filter=./backend --filter=./frontend",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
@@ -26,6 +26,6 @@
     ]
   },
   "engines": {
-    "node": ">=20.0.0"
+    "bun": ">=1.0.0"
   }
 }

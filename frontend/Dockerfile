@@ -1,28 +1,32 @@
 # =============================================================================
-# XIANZE Frontend - Production Dockerfile
+# XIANZE Frontend - Production Dockerfile (Bun Runtime)
 # =============================================================================
 # Multi-stage build optimized for Next.js standalone output
+# Uses Bun.js for faster builds and runtime performance
 
 # -----------------------------------------------------------------------------
 # Stage 1: Dependencies
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS deps
+FROM oven/bun:1-alpine AS deps
 
-# Install libc6-compat for Alpine compatibility
+# Install libc6-compat for Alpine compatibility with some npm packages
 RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json bun.lockb* ./
 
 # Install dependencies
-RUN npm ci && npm cache clean --force
+RUN bun install --frozen-lockfile
 
 # -----------------------------------------------------------------------------
 # Stage 2: Builder
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine AS builder
+
+# Install libc6-compat for build compatibility
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
@@ -40,16 +44,20 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the application
-RUN npm run build
+RUN bun run build
 
 # -----------------------------------------------------------------------------
 # Stage 3: Runner (Production)
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM oven/bun:1-alpine AS runner
+
+# Install curl for potential healthchecks
+RUN apk add --no-cache curl
 
 # Add labels for container identification
 LABEL maintainer="XIANZE Team"
 LABEL description="XIANZE Event Management Frontend"
+LABEL runtime="bun"
 
 WORKDIR /app
 
@@ -58,13 +66,13 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
+RUN addgroup --system --gid 1001 bunjs && \
     adduser --system --uid 1001 nextjs
 
 # Copy the standalone build
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:bunjs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:bunjs /app/.next/static ./.next/static
 
 # Switch to non-root user
 USER nextjs
@@ -76,5 +84,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the application with Bun
+CMD ["bun", "run", "server.js"]
