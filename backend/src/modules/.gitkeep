@@ -1,0 +1,17 @@
+# Placeholder for feature modules
+# This directory will contain NestJS feature modules such as:
+# - auth/       - Admin authentication
+# - events/     - Event management
+# - venues/     - Venue management
+# - attendees/  - Attendee management
+#
+# Each module should follow the NestJS module structure:
+# modules/
+# └── feature-name/
+#     ├── feature-name.module.ts
+#     ├── feature-name.controller.ts
+#     ├── feature-name.service.ts
+#     ├── dto/
+#     │   └── create-feature.dto.ts
+#     └── entities/
+#         └── feature.entity.ts

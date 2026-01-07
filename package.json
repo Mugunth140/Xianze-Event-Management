@@ -1,0 +1,33 @@
+{
+  "name": "xianze",
+  "version": "1.0.0",
+  "private": true,
+  "description": "XIANZE Event Management System - Root workspace",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "backend/**/*.{ts,js}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "frontend/**/*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "**/*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
