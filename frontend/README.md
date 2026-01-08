@@ -1,12 +1,13 @@
-# XIANZE Frontend
+# XIANZE 2026 Frontend
 
 <div align="center">
 
-**Next.js-powered web application for the XIANZE Event Management System**
+**Next.js-powered web application for the XIANZE Inter-College Technical Fest**
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.x-000000?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+[![Events](https://img.shields.io/badge/Events-7-orange?style=flat-square)](../EVENTS.md)
 
 </div>
 
@@ -14,7 +15,19 @@
 
 ## 📖 Overview
 
-This is the frontend application for XIANZE, built with Next.js 14 using the App Router. It provides an admin interface for managing events, venues, and attendees (features to be implemented).
+This is the frontend application for **XIANZE 2026**, the inter-college technical fest organized by Mind Bender's Association. It provides the public-facing event pages for participants to view event details and register, as well as an admin dashboard for event coordinators.
+
+### Supported Events (7 Total)
+
+| #   | Event              | Route                        |
+| --- | ------------------ | ---------------------------- |
+| 1   | Buildathon         | `/events/buildathon`         |
+| 2   | Bug Smash          | `/events/bug-smash`          |
+| 3   | Paper Presentation | `/events/paper-presentation` |
+| 4   | Gaming             | `/events/gaming`             |
+| 5   | Ctrl + Quiz        | `/events/ctrl-quiz`          |
+| 6   | Code Hunt          | `/events/code-hunt`          |
+| 7   | Think & Link       | `/events/think-link`         |
 
 ### Why These Technologies?
 
@@ -74,11 +87,20 @@ frontend/
 │   ├── layout.tsx            # Root layout
 │   ├── page.tsx              # Home page
 │   ├── globals.css           # Global styles
-│   └── admin/                # Admin section
-│       └── page.tsx          # Admin dashboard
+│   ├── admin/                # Admin section
+│   │   └── page.tsx          # Admin dashboard
+│   └── events/               # All 7 event pages
+│       ├── page.tsx          # Events listing
+│       ├── buildathon/
+│       ├── bug-smash/
+│       ├── paper-presentation/
+│       ├── gaming/
+│       ├── ctrl-quiz/
+│       ├── code-hunt/
+│       └── think-link/
 ├── lib/                      # Utilities
 │   └── api.ts                # API client
-├── components/               # React components (placeholder)
+├── components/               # React components
 ├── public/                   # Static assets
 ├── docs/                     # Additional documentation
 ├── Dockerfile                # Production container
@@ -89,8 +111,9 @@ frontend/
 ### Understanding the Structure
 
 - **`app/`** - Next.js App Router directory. Each folder with a `page.tsx` becomes a route.
+- **`app/events/`** - Contains all 7 event pages for XIANZE 2026.
 - **`lib/`** - Shared utilities like the API client.
-- **`components/`** - Reusable React components (create as needed).
+- **`components/`** - Reusable React components.
 - **`public/`** - Static files served at root URL.
 
 ---
