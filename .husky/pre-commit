@@ -1,1 +1,41 @@
-npx lint-staged
+#!/bin/sh
+
+# XIANZE Pre-commit Hook
+# Runs format, lint, and tests for backend before allowing commit
+
+echo "🚀 Running pre-commit checks for backend..."
+
+# Navigate to backend directory (handle being called from root or backend)
+if [ -d "backend" ]; then
+  cd backend
+fi
+
+echo "🎨 Step 1/4: Formatting files..."
+bun run format
+if [ $? -ne 0 ]; then
+  echo "❌ Formatting failed. Commit aborted."
+  exit 1
+fi
+
+echo "🔍 Step 2/4: Running ESLint..."
+bun run lint:check
+if [ $? -ne 0 ]; then
+  echo "❌ Lint check failed. Commit aborted."
+  exit 1
+fi
+
+echo "🧪 Step 3/4: Running tests..."
+if find src -name "*.spec.ts" -type f 2>/dev/null | head -1 | grep -q .; then
+  bun run test --passWithNoTests
+  if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Commit aborted."
+    exit 1
+  fi
+else
+  echo "⏭️  No test files found, skipping tests."
+fi
+
+echo "📦 Step 4/4: Staging formatted files..."
+git add -A
+
+echo "✅ All pre-commit checks passed!"
