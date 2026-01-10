@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
+import { RegistrationModule } from './modules/registration/registration.module';
 
 /**
  * Root Application Module
@@ -30,11 +31,8 @@ import { databaseConfig } from './config/database.config';
 
     // =================================================================
     // FEATURE MODULES
-    // Import your feature modules below. Example:
-    // AuthModule,
-    // EventsModule,
-    // UsersModule,
     // =================================================================
+    RegistrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
