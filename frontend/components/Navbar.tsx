@@ -88,21 +88,17 @@ const Navbar = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
-              className="md:hidden relative w-12 h-12 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+              className="md:hidden relative w-12 h-12 flex items-center justify-center rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
               aria-expanded={isMenuOpen}
               aria-label="Toggle menu"
             >
-              <div className="w-5 h-4 relative flex flex-col justify-between">
+              <div className="w-5 h-3 relative flex flex-col justify-between">
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
                     }`}
                 />
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? 'opacity-0 scale-x-0' : ''
-                    }`}
-                />
-                <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
                     }`}
                 />
               </div>
