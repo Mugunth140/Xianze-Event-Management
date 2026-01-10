@@ -54,6 +54,7 @@ const config: Config = {
         'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
         'spin-slow': 'spin 20s linear infinite',
         'bounce-soft': 'bounce-soft 2s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
       },
       keyframes: {
         float: {
@@ -67,6 +68,10 @@ const config: Config = {
         'bounce-soft': {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-10px)' },
+        },
+        'shimmer': {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
         },
       },
       backgroundImage: {

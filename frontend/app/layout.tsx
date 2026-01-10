@@ -1,3 +1,4 @@
+import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Outfit } from 'next/font/google';
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Navbar />
         <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );
