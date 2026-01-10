@@ -3,40 +3,58 @@
 @tailwind utilities;
 
 /* ================================
-   XIANZE Global Styles
+   XIANZE Modern Design System
    ================================ */
 
 :root {
-  /* Color variables for easy theming */
-  --color-primary: #0ea5e9;
-  --color-primary-dark: #0284c7;
-  --color-secondary: #a855f7;
-  --color-background: #f9fafb;
-  --color-surface: #ffffff;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
+  /* Primary violet palette */
+  --color-primary: #7c3aed;
+  --color-primary-light: #a78bfa;
+  --color-primary-dark: #5b21b6;
+  
+  /* Accent colors */
+  --color-accent-orange: #ff6b35;
+  --color-accent-yellow: #ffc233;
+  --color-accent-teal: #14b8a6;
+  
+  /* Neutrals */
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  
+  /* Hero gradient */
+  --hero-gradient-start: #7c3aed;
+  --hero-gradient-mid: #6366f1;
+  --hero-gradient-end: #8b5cf6;
 }
 
 /* ================================
    Base Styles
    ================================ */
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   color: var(--color-text-primary);
   background-color: var(--color-background);
+  overflow-x: hidden;
 }
 
 /* ================================
    Typography
    ================================ */
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @apply font-semibold tracking-tight;
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display font-bold tracking-tight;
+}
+
+/* Bold text within headings - used for emphasis */
+h1 strong, h2 strong, h3 strong {
+  @apply font-black;
 }
 
 /* ================================
@@ -47,23 +65,169 @@ h6 {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Gradient text utility */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, var(--hero-gradient-start), var(--hero-gradient-end));
+  }
+  
+  /* Hero section background */
+  .hero-gradient {
+    background: linear-gradient(
+      180deg,
+      #6366f1 0%,
+      #7c3aed 30%,
+      #8b5cf6 60%,
+      #a78bfa 100%
+    );
+  }
+  
+  /* Floating animation delays */
+  .animate-float-delay-1 { animation-delay: 0.5s; }
+  .animate-float-delay-2 { animation-delay: 1s; }
+  .animate-float-delay-3 { animation-delay: 1.5s; }
+  .animate-float-delay-4 { animation-delay: 2s; }
+  
+  /* Glassmorphism */
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl;
+  }
+  
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-xl;
+  }
 }
 
 /* ================================
-   Component Styles (Placeholder)
+   Component Styles
    ================================ */
 
 @layer components {
-  /* Add reusable component styles here */
+  /* Primary CTA button - pill style */
   .btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-6 py-3 rounded-full;
+    @apply bg-primary-600 text-white font-semibold;
+    @apply shadow-lg shadow-primary-500/25;
+    @apply hover:bg-primary-700 hover:shadow-xl hover:shadow-primary-500/30;
+    @apply hover:-translate-y-0.5;
+    @apply active:translate-y-0 active:shadow-md;
+    @apply transition-all duration-300 ease-out;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-6 py-3 rounded-full;
+    @apply bg-gray-100 text-gray-800 font-semibold;
+    @apply hover:bg-gray-200;
+    @apply hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply transition-all duration-300 ease-out;
   }
 
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-6 py-3 rounded-full;
+    @apply border-2 border-gray-200 text-gray-700 font-semibold;
+    @apply hover:border-primary-500 hover:text-primary-600;
+    @apply hover:-translate-y-0.5;
+    @apply transition-all duration-300 ease-out;
   }
+
+  /* Card component */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm;
+    @apply border border-gray-100;
+    @apply p-6;
+    @apply hover:shadow-md hover:-translate-y-1;
+    @apply transition-all duration-300;
+  }
+
+  /* Navigation link style */
+  .nav-link {
+    @apply relative px-4 py-2;
+    @apply text-gray-600 font-medium;
+    @apply hover:text-gray-900;
+    @apply transition-colors duration-200;
+  }
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 -translate-x-1/2;
+    @apply w-0 h-0.5 bg-primary-600 rounded-full;
+    @apply transition-all duration-300;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-1/2;
+  }
+
+  /* Circular badge/seal */
+  .badge-seal {
+    @apply w-20 h-20 rounded-full;
+    @apply bg-gray-900 text-white;
+    @apply flex items-center justify-center;
+    @apply font-display font-bold text-sm;
+    @apply shadow-2xl;
+    @apply animate-spin-slow;
+  }
+  
+  /* Floating decorative elements */
+  .float-element {
+    @apply absolute pointer-events-none;
+    @apply animate-float;
+  }
+}
+
+/* ================================
+   Hero Section Specific
+   ================================ */
+
+.hero-illustration {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    #7c3aed 0%,
+    #6366f1 40%,
+    #818cf8 80%,
+    #a78bfa 100%
+  );
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+.hero-illustration::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 199, 51, 0.3) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255, 107, 53, 0.2) 0%, transparent 35%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Lightning bolt decorations */
+.lightning-bolt {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  background: linear-gradient(135deg, #ffc233 0%, #ff6b35 100%);
+  clip-path: polygon(50% 0%, 100% 35%, 60% 35%, 80% 100%, 20% 55%, 55% 55%, 30% 0%);
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Wave decoration at bottom of hero */
+.hero-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(
+    to top,
+    rgba(99, 102, 241, 0.8) 0%,
+    transparent 100%
+  );
 }
