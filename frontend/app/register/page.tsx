@@ -1,7 +1,5 @@
 'use client';
 import { useState } from 'react';
-// import {motion} from "motion/react"
-// import "../../sass/pages/register.scss";
 
 interface FormData {
   name: string;
