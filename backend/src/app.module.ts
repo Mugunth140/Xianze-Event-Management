@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
+import { ContactModule } from './modules/contact/contact.module';
 import { RegistrationModule } from './modules/registration/registration.module';
 
 /**
@@ -32,6 +33,7 @@ import { RegistrationModule } from './modules/registration/registration.module';
     // =================================================================
     // FEATURE MODULES
     // =================================================================
+    ContactModule,
     RegistrationModule,
   ],
   controllers: [AppController],
