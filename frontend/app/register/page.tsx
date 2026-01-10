@@ -262,194 +262,451 @@ const Register = () => {
     }
 
     const submittedData = {
-      ...formData,
-      course: formData.course === 'Others' ? formData.otherCourse : formData.course,
-      branch: formData.branch === 'Others' ? formData.otherBranch : formData.branch,
+      name: formData.name,
+  email: formData.email,
+  course: formData.course === 'Others' ? formData.otherCourse : formData.course,
+  branch: formData.branch === 'Others' ? formData.otherBranch : formData.branch,
+  college: formData.college,
+  contact: formData.contact,
+  event: formData.event,
     };
 
-    // try {
-    //   const res = await fetch("/api/register", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(submittedData),
-    //   });
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submittedData),
+      });
 
-    //   const data = await res.json();
+      const data = await res.json();
 
-    //   if (res.ok) {
-    //     setButtonMessage("Registered Successfully");
-    //     setFormData({
-    //       name: "",
-    //       email: "",
-    //       course: "",
-    //       branch: "",
-    //       college: "",
-    //       contact: "",
-    //       event: "",
-    //       otherCourse: "",
-    //       otherBranch: "",
-    //     });
-    //   } else {
-    //     setButtonMessage(data.error);
-    //   }
-    // } catch (error) {
-    //   setButtonMessage("Failed to submit. Try again.");
-    // }
+      if (res.ok) {
+        setButtonMessage("Registered Successfully");
+        setFormData({
+          name: "",
+          email: "",
+          course: "",
+          branch: "",
+          college: "",
+          contact: "",
+          event: "",
+          otherCourse: "",
+          otherBranch: "",
+        });
+      } else {
+        setButtonMessage(data.error);
+      }
+    } catch (error) {
+      setButtonMessage("Failed to submit. Try again.");
+    }
 
     console.log('Submitted Data:', submittedData);
 
     setLoading(false);
   };
 
-  return (
-    <section
-      className="registerSection flex justify-center items-center 
-        min-h-screen "
+  // return (
+  //   <section
+  //     className="registerSection flex justify-center items-center 
+  //       min-h-screen "
+  //   >
+  //     <div
+  //       className="registerContainer  bg-transparent 
+  //     backdrop-blur-[15px] p-11 rounded-lg shadow-lg max-w-[500px] w-full"
+  //     >
+  //       <h2 className="text-[32px] font-semibold flex justify-center mb-[20px]  ">
+  //         Event Registration
+  //       </h2>
+  //       <form onSubmit={handleSubmit} className=" flex flex-col gap-[16px]">
+  //         <input
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           type="text"
+  //           name="name"
+  //           placeholder="Full Name"
+  //           value={formData.name}
+  //           onChange={handleChange}
+  //           required
+  //         />
+  //         <input
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           type="email"
+  //           name="email"
+  //           placeholder="Email ID"
+  //           value={formData.email}
+  //           onChange={handleChange}
+  //           required
+  //         />
+
+  //         <select
+  //           className=" p-2  border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear relative scrollbar-hide"
+  //           name="course"
+  //           value={formData.course}
+  //           onChange={handleChange}
+  //           required
+  //         >
+  //           <option value="" className="absolute scrollbar-hide ">
+  //             Select Course
+  //           </option>
+  //           {Object.keys(courses).map((course, index) => (
+  //             <option key={index} value={course}>
+  //               {course}
+  //             </option>
+  //           ))}
+  //         </select>
+
+  //         {formData.course === 'Others' && (
+  //           <input
+  //             className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //             type="text"
+  //             name="otherCourse"
+  //             placeholder="Enter Course"
+  //             value={formData.otherCourse}
+  //             onChange={handleChange}
+  //             required
+  //           />
+  //         )}
+
+  //         <select
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           name="branch"
+  //           value={formData.branch}
+  //           onChange={handleChange}
+  //           required
+  //         >
+  //           <option value="">Select Branch</option>
+  //           {formData.course &&
+  //             (courses as Record<string, string[]>)[formData.course]?.map(
+  //               (branch: string, index: number) => (
+  //                 <option key={index} value={branch}>
+  //                   {branch}
+  //                 </option>
+  //               ),
+  //             )}
+  //         </select>
+
+  //         {formData.branch === 'Others' && (
+  //           <input
+  //             className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //             type="text"
+  //             name="otherBranch"
+  //             placeholder="Enter Branch"
+  //             value={formData.otherBranch}
+  //             onChange={handleChange}
+  //             required
+  //           />
+  //         )}
+
+  //         <input
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           type="text"
+  //           name="college"
+  //           placeholder="College Name"
+  //           value={formData.college}
+  //           onChange={handleChange}
+  //           required
+  //         />
+  //         <input
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           type="tel"
+  //           name="contact"
+  //           placeholder="Contact Number"
+  //           value={formData.contact}
+  //           onChange={handleChange}
+  //           required
+  //         />
+
+  //         <select
+  //           className=" p-2 border-2 rounded-lg text-[16px]
+  //          text-neutral-800 transition duration-300 ease-linear"
+  //           name="event"
+  //           value={formData.event}
+  //           onChange={handleChange}
+  //           required
+  //         >
+  //           <option value="">Select an Event</option>
+  //           {eventsList.map((event, index) => (
+  //             <option key={index} value={event}>
+  //               {event}
+  //             </option>
+  //           ))}
+  //         </select>
+
+  //         <button
+  //           type="submit"
+  //           disabled={loading}
+  //           className="registerButton px-4 py-3 bg-neutral-800 text-white 
+  //           rounded-lg text-base font-semibold font-sans cursor-pointer
+  //           transition-colors duration-500 ease-in-out
+  //           hover:bg-blue-800 hover:text-secondary
+  //           disabled:bg-base disabled:cursor-not-allowed"
+  //         >
+  //           {buttonMessage}
+  //         </button>
+  //       </form>
+  //     </div>
+  //   </section>
+  // );
+
+
+return (
+  <section
+    className=" mt-10
+      flex justify-center items-center min-h-screen px-4
+      bg-white
+      bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.08),transparent_40%)]
+    "
+  >
+    <div
+      className="
+        bg-white/70 backdrop-blur-xl
+        p-11 rounded-2xl
+        border border-violet-200/40
+        shadow-[0_20px_40px_rgba(124,58,237,0.25)]
+        max-w-[500px] w-full
+        animate-[fadeUp_0.8s_ease-out]
+      "
     >
-      <div
-        className="registerContainer  bg-transparent 
-      backdrop-blur-[15px] p-11 rounded-lg shadow-lg max-w-[500px] w-full"
+      <h2
+        className="
+          text-[32px] font-bold text-neutral-900
+          flex justify-center mb-[20px]
+          tracking-tight
+        "
       >
-        <h2 className="text-[32px] font-semibold flex justify-center mb-[20px]  ">
-          Event Registration
-        </h2>
-        <form onSubmit={handleSubmit} className=" flex flex-col gap-[16px]">
-          <input
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-          <input
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-            type="email"
-            name="email"
-            placeholder="Email ID"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+        Event Registration
+      </h2>
 
-          <select
-            className=" p-2  border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear relative scrollbar-hide"
-            name="course"
-            value={formData.course}
-            onChange={handleChange}
-            required
-          >
-            <option value="" className="absolute scrollbar-hide ">
-              Select Course
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[16px]">
+        <input
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            placeholder:text-neutral-400
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            placeholder:text-neutral-400
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          type="email"
+          name="email"
+          placeholder="Email ID"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+
+        <select
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          name="course"
+          value={formData.course}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Select Course</option>
+          {Object.keys(courses).map((course, index) => (
+            <option key={index} value={course}>
+              {course}
             </option>
-            {Object.keys(courses).map((course, index) => (
-              <option key={index} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
+          ))}
+        </select>
 
-          {formData.course === 'Others' && (
-            <input
-              className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-              type="text"
-              name="otherCourse"
-              placeholder="Enter Course"
-              value={formData.otherCourse}
-              onChange={handleChange}
-              required
-            />
-          )}
-
-          <select
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-            name="branch"
-            value={formData.branch}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Branch</option>
-            {formData.course &&
-              (courses as Record<string, string[]>)[formData.course]?.map(
-                (branch: string, index: number) => (
-                  <option key={index} value={branch}>
-                    {branch}
-                  </option>
-                ),
-              )}
-          </select>
-
-          {formData.branch === 'Others' && (
-            <input
-              className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-              type="text"
-              name="otherBranch"
-              placeholder="Enter Branch"
-              value={formData.otherBranch}
-              onChange={handleChange}
-              required
-            />
-          )}
-
+        {formData.course === "Others" && (
           <input
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
+            className="
+              p-2.5 border rounded-lg text-[15px]
+              text-neutral-800 bg-white
+              border-neutral-300
+              transition-all duration-300
+              placeholder:text-neutral-400
+              hover:border-violet-400
+              focus:border-violet-600
+              focus:ring-4 focus:ring-violet-200/50
+              focus:outline-none
+            "
             type="text"
-            name="college"
-            placeholder="College Name"
-            value={formData.college}
+            name="otherCourse"
+            placeholder="Enter Course"
+            value={formData.otherCourse}
             onChange={handleChange}
             required
           />
+        )}
+        { formData.course !== "Others"&&
+        <select
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          name="branch"
+          value={formData.branch}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Select Branch</option>
+          {formData.course &&
+            (courses as Record<string, string[]>)[formData.course]?.map(
+              (branch: string, index: number) => (
+                <option key={index} value={branch}>
+                  {branch}
+                </option>
+              )
+            )}
+        </select>
+          }
+        {(formData.course=== "Others" || formData.branch=== "Others")  && (
           <input
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-            type="tel"
-            name="contact"
-            placeholder="Contact Number"
-            value={formData.contact}
+            className="
+              p-2.5 border rounded-lg text-[15px]
+              text-neutral-800 bg-white
+              border-neutral-300
+              transition-all duration-300
+              placeholder:text-neutral-400
+              hover:border-violet-400
+              focus:border-violet-600
+              focus:ring-4 focus:ring-violet-200/50
+              focus:outline-none
+            "
+            type="text"
+            name="otherBranch"
+            placeholder="Enter Branch"
+            value={formData.otherBranch}
             onChange={handleChange}
             required
           />
+        )}
 
-          <select
-            className=" p-2 border-2 rounded-lg text-[16px]
-           text-neutral-800 transition duration-300 ease-linear"
-            name="event"
-            value={formData.event}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select an Event</option>
-            {eventsList.map((event, index) => (
-              <option key={index} value={event}>
-                {event}
-              </option>
-            ))}
-          </select>
+        <input
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            placeholder:text-neutral-400
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          type="text"
+          name="college"
+          placeholder="College Name"
+          value={formData.college}
+          onChange={handleChange}
+          required
+        />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="registerButton px-4 py-3 bg-neutral-800 text-white 
-            rounded-lg text-base font-semibold font-sans cursor-pointer
-            transition-colors duration-500 ease-in-out
-            hover:bg-blue-800 hover:text-secondary
-            disabled:bg-base disabled:cursor-not-allowed"
-          >
-            {buttonMessage}
-          </button>
-        </form>
-      </div>
-    </section>
-  );
+        <input
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            placeholder:text-neutral-400
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          type="tel"
+          name="contact"
+          placeholder="Contact Number"
+          value={formData.contact}
+          onChange={handleChange}
+          required
+        />
+
+        <select
+          className="
+            p-2.5 border rounded-lg text-[15px]
+            text-neutral-800 bg-white
+            border-neutral-300
+            transition-all duration-300
+            hover:border-violet-400
+            focus:border-violet-600
+            focus:ring-4 focus:ring-violet-200/50
+            focus:outline-none
+          "
+          name="event"
+          value={formData.event}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Select an Event</option>
+          {eventsList.map((event, index) => (
+            <option key={index} value={event}>
+              {event}
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            mt-2 px-4 py-3 rounded-lg
+            text-base font-semibold text-white
+            bg-gradient-to-r from-violet-600 to-violet-700
+            shadow-[0_12px_25px_rgba(124,58,237,0.45)]
+            transition-all duration-300
+            hover:translate-y-[-2px]
+            hover:shadow-[0_18px_35px_rgba(124,58,237,0.55)]
+            active:translate-y-0
+            disabled:opacity-60 disabled:cursor-not-allowed
+          "
+        >
+          {buttonMessage}
+        </button>
+      </form>
+    </div>
+  </section>
+);
+
+
 };
 
 export default Register;
