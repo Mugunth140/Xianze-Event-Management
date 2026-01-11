@@ -1,23 +1,21 @@
 'use client';
 
-import { forwardRef, ReactNode } from 'react';
+import {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  forwardRef,
+  HTMLAttributes,
+  ReactNode,
+} from 'react';
 
 export interface LiquidGlassProps {
-  /** The variant of the liquid glass component */
   variant?: 'card' | 'navbar' | 'button' | 'button-secondary' | 'badge';
-  /** Additional CSS classes */
   className?: string;
-  /** Child elements */
   children: ReactNode;
-  /** Blur intensity */
   blur?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Whether to show glow effect on hover (for buttons) */
   glow?: boolean;
-  /** HTML element to render as */
   as?: 'div' | 'nav' | 'button' | 'a' | 'span';
-  /** Click handler */
   onClick?: () => void;
-  /** Href for anchor elements */
   href?: string;
 }
 
@@ -40,37 +38,9 @@ const blurMap = {
  */
 const LiquidGlass = forwardRef<HTMLElement, LiquidGlassProps>(
   (
-    {
-      variant = 'card',
-      className = '',
-      children,
-      blur = 'lg',
-      // glow = true,
-      as,
-      onClick,
-      href,
-      ...props
-    },
+    { variant = 'card', className = '', children, blur = 'lg', as, onClick, href, ...props },
     ref
   ) => {
-    // Determine the element type based on variant or explicit 'as' prop
-    const getElement = () => {
-      if (as) return as;
-      switch (variant) {
-        case 'navbar':
-          return 'nav';
-        case 'button':
-        case 'button-secondary':
-          return href ? 'a' : 'button';
-        case 'badge':
-          return 'span';
-        default:
-          return 'div';
-      }
-    };
-
-    const Element = getElement() as keyof JSX.IntrinsicElements;
-
     // Get variant-specific classes
     const getVariantClasses = () => {
       switch (variant) {
@@ -93,16 +63,78 @@ const LiquidGlass = forwardRef<HTMLElement, LiquidGlassProps>(
       .filter(Boolean)
       .join(' ');
 
+    const elementType =
+      as ||
+      (() => {
+        switch (variant) {
+          case 'navbar':
+            return 'nav';
+          case 'button':
+          case 'button-secondary':
+            return href ? 'a' : 'button';
+          case 'badge':
+            return 'span';
+          default:
+            return 'div';
+        }
+      })();
+
+    const commonProps = {
+      className: classes,
+      onClick,
+      ...props,
+    };
+
+    if (elementType === 'a') {
+      return (
+        <a
+          ref={ref as React.Ref<HTMLAnchorElement>}
+          href={href}
+          {...(commonProps as AnchorHTMLAttributes<HTMLAnchorElement>)}
+        >
+          {children}
+        </a>
+      );
+    }
+
+    if (elementType === 'button') {
+      return (
+        <button
+          ref={ref as React.Ref<HTMLButtonElement>}
+          type="button"
+          {...(commonProps as ButtonHTMLAttributes<HTMLButtonElement>)}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    if (elementType === 'nav') {
+      return (
+        <nav ref={ref as React.Ref<HTMLElement>} {...(commonProps as HTMLAttributes<HTMLElement>)}>
+          {children}
+        </nav>
+      );
+    }
+
+    if (elementType === 'span') {
+      return (
+        <span
+          ref={ref as React.Ref<HTMLSpanElement>}
+          {...(commonProps as HTMLAttributes<HTMLSpanElement>)}
+        >
+          {children}
+        </span>
+      );
+    }
+
     return (
-      <Element
+      <div
         ref={ref as React.Ref<HTMLDivElement>}
-        className={classes}
-        onClick={onClick}
-        href={href}
-        {...props}
+        {...(commonProps as HTMLAttributes<HTMLDivElement>)}
       >
         {children}
-      </Element>
+      </div>
     );
   }
 );
@@ -111,7 +143,6 @@ LiquidGlass.displayName = 'LiquidGlass';
 
 export default LiquidGlass;
 
-// Named exports for convenience
 export const GlassCard = forwardRef<HTMLDivElement, Omit<LiquidGlassProps, 'variant'>>(
   (props, ref) => <LiquidGlass ref={ref} variant="card" {...props} />
 );
