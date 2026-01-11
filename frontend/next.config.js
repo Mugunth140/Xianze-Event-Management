@@ -3,11 +3,6 @@ const nextConfig = {
   // Output configuration for Docker
   output: 'standalone',
 
-  // Environment variables that will be available at build time
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
-  },
-
   // Image optimization configuration
   images: {
     remotePatterns: [
@@ -23,6 +18,17 @@ const nextConfig = {
 
   // Strict mode for better development
   reactStrictMode: true,
+
+  // Rewrites to proxy API requests to backend (solves CORS for browser requests)
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
