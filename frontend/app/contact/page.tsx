@@ -9,8 +9,9 @@ const Contact = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-     useEffect(() => {
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -32,7 +33,7 @@ const Contact = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/sendMail", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -42,6 +43,7 @@ const Contact = () => {
         setStatusMessage("Message sent successfully!");
         setFormData({ name: "", email: "", message: "" });
       } else {
+        console.log(response);
         setStatusMessage("Failed to send message. Please try again.");
       }
     } catch (error) {
