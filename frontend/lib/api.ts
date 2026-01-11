@@ -26,7 +26,7 @@ export class ApiError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public errors?: Record<string, string[]>,
+    public errors?: Record<string, string[]>
   ) {
     super(message);
     this.name = 'ApiError';
@@ -80,7 +80,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     throw new ApiError(
       response.status,
       errorData.message || `HTTP error ${response.status}`,
-      errorData.errors,
+      errorData.errors
     );
   }
 

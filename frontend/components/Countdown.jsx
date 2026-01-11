@@ -1,5 +1,5 @@
-'use client'
-import { useEffect, useState } from "react";
+'use client';
+import { useEffect, useState } from 'react';
 
 export default function Countdown({ targetDate }) {
   const calculateTimeLeft = () => {
@@ -57,7 +57,7 @@ export default function Countdown({ targetDate }) {
           xs:text-[2rem]
         "
       >
-        {String(value).padStart(2, "0")}
+        {String(value).padStart(2, '0')}
       </span>
 
       <span

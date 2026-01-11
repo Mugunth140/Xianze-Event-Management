@@ -80,10 +80,9 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-            ? 'liquid-glass-navbar'
-            : 'bg-white/60 backdrop-blur-md'
-          }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
+        }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
@@ -121,7 +120,12 @@ const Navbar = () => {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
               </Link>
             </div>
@@ -135,12 +139,14 @@ const Navbar = () => {
             >
               <div className="w-5 h-3 relative flex flex-col justify-between">
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
-                    }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
+                    isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
+                  }`}
                 />
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
-                    }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
+                    isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
+                  }`}
                 />
               </div>
             </button>
@@ -150,13 +156,15 @@ const Navbar = () => {
 
       {/* Mobile Menu - Full Screen Overlay */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${isMenuOpen ? 'visible' : 'invisible'
-          }`}
+        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${
+          isMenuOpen ? 'visible' : 'invisible'
+        }`}
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
-            }`}
+          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
           onClick={() => setIsMenuOpen(false)}
         />
 
@@ -175,7 +183,12 @@ const Navbar = () => {
               aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -204,7 +217,12 @@ const Navbar = () => {
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </Link>
                 </li>

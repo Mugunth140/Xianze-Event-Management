@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from "framer-motion";
+import { motion } from 'framer-motion';
 
 const listVariants = {
   hidden: {},
@@ -23,25 +23,22 @@ const itemVariants = {
   },
 };
 
-
-
-
 const Eventschedule = () => {
   const schedule = [
-    { title: "Spot Registration", time: "8:30 AM - 9:15 AM" },
-    { title: "Inauguration", time: "9:15 AM - 10:30 AM" },
-    { title: "Event Timing", time: "10:30 AM - 1:30 PM" },
-    { title: "Lunch Timing", time: "1:30 PM - 2:30 PM" },
-    { title: "Ceremony", time: "2:30 PM - 3:30 PM" },
+    { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
+    { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
+    { title: 'Event Timing', time: '10:30 AM - 1:30 PM' },
+    { title: 'Lunch Timing', time: '1:30 PM - 2:30 PM' },
+    { title: 'Ceremony', time: '2:30 PM - 3:30 PM' },
   ];
- return (
+  return (
     <motion.div
       initial={{ x: -60, opacity: 0 }}
       whileInView={{ x: 0, opacity: 1 }}
-      viewport={{ once: true }}   // ✅ NO LOOP
+      viewport={{ once: true }} // ✅ NO LOOP
       transition={{
-        duration: 0.4,            // fast entrance
-        ease: "easeOut",
+        duration: 0.4, // fast entrance
+        ease: 'easeOut',
       }}
       className="
         relative
@@ -57,14 +54,16 @@ const Eventschedule = () => {
       "
     >
       {/* Soft static glow (no animation) */}
-      <div className="
+      <div
+        className="
         absolute -top-28 -right-28
         w-80 h-80
         bg-violet-200/10
         rounded-full
         blur-3xl
         pointer-events-none
-      " />
+      "
+      />
 
       <h2
         className="
@@ -82,14 +81,14 @@ const Eventschedule = () => {
         variants={listVariants}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true }}  // ✅ reveal once
+        viewport={{ once: true }} // ✅ reveal once
         className="mt-4 space-y-3"
       >
         {schedule.map((item, index) => (
           <motion.li
             key={index}
             variants={itemVariants}
-            whileHover={{ y: -2 }}   // subtle hover only
+            whileHover={{ y: -2 }} // subtle hover only
             className="
               group
               relative
@@ -104,13 +103,15 @@ const Eventschedule = () => {
             "
           >
             {/* Fast hover sheen */}
-            <div className="
+            <div
+              className="
               absolute inset-0
               bg-gradient-to-r from-transparent via-violet-100 to-transparent
               opacity-0
               group-hover:opacity-100
               transition-opacity duration-200
-            " />
+            "
+            />
 
             <span className="relative text-lg font-semibold text-violet-600 md:text-base">
               {item.time}

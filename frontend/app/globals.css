@@ -81,11 +81,7 @@ h3 strong {
 
   /* Hero section background */
   .hero-gradient {
-    background: linear-gradient(180deg,
-        #6366f1 0%,
-        #7c3aed 30%,
-        #8b5cf6 60%,
-        #a78bfa 100%);
+    background: linear-gradient(180deg, #6366f1 0%, #7c3aed 30%, #8b5cf6 60%, #a78bfa 100%);
   }
 
   /* Floating animation delays */
@@ -120,7 +116,6 @@ h3 strong {
    ================================ */
 
 @layer components {
-
   /* Primary CTA button - pill style */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
@@ -203,11 +198,7 @@ h3 strong {
 
 .hero-illustration {
   position: relative;
-  background: linear-gradient(180deg,
-      #7c3aed 0%,
-      #6366f1 40%,
-      #818cf8 80%,
-      #a78bfa 100%);
+  background: linear-gradient(180deg, #7c3aed 0%, #6366f1 40%, #818cf8 80%, #a78bfa 100%);
   border-radius: 2rem;
   overflow: hidden;
 }
@@ -240,9 +231,7 @@ h3 strong {
   left: 0;
   right: 0;
   height: 120px;
-  background: linear-gradient(to top,
-      rgba(99, 102, 241, 0.8) 0%,
-      transparent 100%);
+  background: linear-gradient(to top, rgba(99, 102, 241, 0.8) 0%, transparent 100%);
 }
 
 /* ================================
@@ -259,10 +248,7 @@ h3 strong {
 
 /* Light mode liquid glass background */
 .liquid-glass-bg {
-  background: linear-gradient(180deg,
-      #ffffff 0%,
-      #f8f5ff 50%,
-      #f0ebff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8f5ff 50%, #f0ebff 100%);
   position: relative;
   overflow: hidden;
 }
@@ -280,7 +266,12 @@ h3 strong {
 .glass-blob-1 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(var(--glass-purple), 0.4) 0%, rgba(var(--glass-purple), 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--glass-purple), 0.4) 0%,
+    rgba(var(--glass-purple), 0.1) 50%,
+    transparent 70%
+  );
   top: -150px;
   left: -100px;
 }
@@ -288,7 +279,12 @@ h3 strong {
 .glass-blob-2 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(var(--glass-purple-light), 0.35) 0%, rgba(var(--glass-purple), 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--glass-purple-light), 0.35) 0%,
+    rgba(var(--glass-purple), 0.1) 50%,
+    transparent 70%
+  );
   top: 20%;
   right: -100px;
 }
@@ -296,7 +292,12 @@ h3 strong {
 .glass-blob-3 {
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, rgba(var(--glass-purple), 0.3) 0%, rgba(var(--glass-purple-light), 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--glass-purple), 0.3) 0%,
+    rgba(var(--glass-purple-light), 0.1) 50%,
+    transparent 70%
+  );
   bottom: 5%;
   left: 30%;
 }
@@ -319,10 +320,12 @@ h3 strong {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.8) 0%,
-      rgba(255, 255, 255, 0.4) 50%,
-      rgba(var(--glass-purple), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(var(--glass-purple), 0.05) 100%
+  );
   pointer-events: none;
 }
 
@@ -337,7 +340,11 @@ h3 strong {
 
 /* Liquid glass button - Primary */
 .liquid-glass-btn {
-  background: linear-gradient(135deg, rgb(var(--glass-purple)) 0%, rgb(var(--glass-purple-light)) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--glass-purple)) 0%,
+    rgb(var(--glass-purple-light)) 100%
+  );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -353,10 +360,12 @@ h3 strong {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.4) 0%,
-      transparent 50%,
-      transparent 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 50%,
+    transparent 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -401,12 +410,14 @@ h3 strong {
 
 /* Shimmer effect for text - Light mode purple */
 .shimmer-text {
-  background: linear-gradient(90deg,
-      rgb(var(--glass-purple)) 0%,
-      rgb(var(--glass-purple-light)) 25%,
-      rgb(var(--glass-purple-dark)) 50%,
-      rgb(var(--glass-purple-light)) 75%,
-      rgb(var(--glass-purple)) 100%);
+  background: linear-gradient(
+    90deg,
+    rgb(var(--glass-purple)) 0%,
+    rgb(var(--glass-purple-light)) 25%,
+    rgb(var(--glass-purple-dark)) 50%,
+    rgb(var(--glass-purple-light)) 75%,
+    rgb(var(--glass-purple)) 100%
+  );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;

@@ -98,28 +98,190 @@ const Register = () => {
   ];
 
   const courses = {
-    'B.Tech': ['Computer Science','Information Technology','Electronics','Mechanical','Civil','Aerospace','Automobile','Biotechnology','Chemical','Electrical','Electronics and Communication','Instrumentation','Others'],
-    'M.Tech': ['Computer Science','Data Science','Artificial Intelligence','VLSI','Cyber Security','Information Security','Network Security','Cloud Computing','Data Analytics','Machine Learning','Robotics','Others'],
-    'B.Sc': ['Mathematics','Physics','Computer Science','Information Technology','Biology','Chemistry','Zoology','Botany','Statistics','Electronics','Microbiology','Biochemistry','Others'],
-    'M.Sc': ['Mathematics','Physics','Computer Science','Information Technology','Software System','Biology','Chemistry','Zoology','Botany','Statistics','Electronics','Microbiology','Biochemistry','Biotechnology','Environmental Science','Others'],
-    BCA: ['General','Cloud Computing','Data Analytics','Artificial Intelligence','Cyber Security','Mobile Application Development','Web Development','Networking','Database Management','Others'],
-    MCA: ['General','Artificial Intelligence','Cyber Security','Data Science','Cloud Computing','Mobile Application Development','Web Development','Networking','Database Management','Enterprise Resource Planning','Others'],
-    'B.A': ['English','Hindi','History','Geography','Economics','Political Science','Psychology','Sociology','Philosophy','Others'],
-    'M.A': ['English','Hindi','History','Geography','Economics','Political Science','Psychology','Sociology','Philosophy','Anthropology','Linguistics','Others'],
-    'B.Com': ['General','Honors','Accounting','Finance','Marketing','Human Resource','International Business','Banking and Insurance','Computer Application','Others'],
-    'M.Com': ['General','Accounting','Finance','Marketing','Human Resource','International Business','Computer Application','Banking and Insurance','Taxation','Financial Management','Others'],
-    BBA: ['General','Human Resource','Marketing','Finance','International Business','Entrepreneurship','Operations Management','Computer Application','Others'],
-    MBA: ['General','Human Resource','Marketing','Finance','International Business','Entrepreneurship','Computer Application','Operations Management','Supply Chain Management','Information Technology','Others'],
-    'B.Ed': ['General','Special Education','Elementary Education','Secondary Education','Others'],
-    MS: ['General Surgery','Orthopedics','Ophthalmology','ENT','Others'],
+    'B.Tech': [
+      'Computer Science',
+      'Information Technology',
+      'Electronics',
+      'Mechanical',
+      'Civil',
+      'Aerospace',
+      'Automobile',
+      'Biotechnology',
+      'Chemical',
+      'Electrical',
+      'Electronics and Communication',
+      'Instrumentation',
+      'Others',
+    ],
+    'M.Tech': [
+      'Computer Science',
+      'Data Science',
+      'Artificial Intelligence',
+      'VLSI',
+      'Cyber Security',
+      'Information Security',
+      'Network Security',
+      'Cloud Computing',
+      'Data Analytics',
+      'Machine Learning',
+      'Robotics',
+      'Others',
+    ],
+    'B.Sc': [
+      'Mathematics',
+      'Physics',
+      'Computer Science',
+      'Information Technology',
+      'Biology',
+      'Chemistry',
+      'Zoology',
+      'Botany',
+      'Statistics',
+      'Electronics',
+      'Microbiology',
+      'Biochemistry',
+      'Others',
+    ],
+    'M.Sc': [
+      'Mathematics',
+      'Physics',
+      'Computer Science',
+      'Information Technology',
+      'Software System',
+      'Biology',
+      'Chemistry',
+      'Zoology',
+      'Botany',
+      'Statistics',
+      'Electronics',
+      'Microbiology',
+      'Biochemistry',
+      'Biotechnology',
+      'Environmental Science',
+      'Others',
+    ],
+    BCA: [
+      'General',
+      'Cloud Computing',
+      'Data Analytics',
+      'Artificial Intelligence',
+      'Cyber Security',
+      'Mobile Application Development',
+      'Web Development',
+      'Networking',
+      'Database Management',
+      'Others',
+    ],
+    MCA: [
+      'General',
+      'Artificial Intelligence',
+      'Cyber Security',
+      'Data Science',
+      'Cloud Computing',
+      'Mobile Application Development',
+      'Web Development',
+      'Networking',
+      'Database Management',
+      'Enterprise Resource Planning',
+      'Others',
+    ],
+    'B.A': [
+      'English',
+      'Hindi',
+      'History',
+      'Geography',
+      'Economics',
+      'Political Science',
+      'Psychology',
+      'Sociology',
+      'Philosophy',
+      'Others',
+    ],
+    'M.A': [
+      'English',
+      'Hindi',
+      'History',
+      'Geography',
+      'Economics',
+      'Political Science',
+      'Psychology',
+      'Sociology',
+      'Philosophy',
+      'Anthropology',
+      'Linguistics',
+      'Others',
+    ],
+    'B.Com': [
+      'General',
+      'Honors',
+      'Accounting',
+      'Finance',
+      'Marketing',
+      'Human Resource',
+      'International Business',
+      'Banking and Insurance',
+      'Computer Application',
+      'Others',
+    ],
+    'M.Com': [
+      'General',
+      'Accounting',
+      'Finance',
+      'Marketing',
+      'Human Resource',
+      'International Business',
+      'Computer Application',
+      'Banking and Insurance',
+      'Taxation',
+      'Financial Management',
+      'Others',
+    ],
+    BBA: [
+      'General',
+      'Human Resource',
+      'Marketing',
+      'Finance',
+      'International Business',
+      'Entrepreneurship',
+      'Operations Management',
+      'Computer Application',
+      'Others',
+    ],
+    MBA: [
+      'General',
+      'Human Resource',
+      'Marketing',
+      'Finance',
+      'International Business',
+      'Entrepreneurship',
+      'Computer Application',
+      'Operations Management',
+      'Supply Chain Management',
+      'Information Technology',
+      'Others',
+    ],
+    'B.Ed': [
+      'General',
+      'Special Education',
+      'Elementary Education',
+      'Secondary Education',
+      'Others',
+    ],
+    MS: ['General Surgery', 'Orthopedics', 'Ophthalmology', 'ENT', 'Others'],
     BDS: ['General'],
-    MDS: ['General','Orthodontics','Prosthodontics','Periodontics','Pedodontics','Oral Surgery','Others'],
+    MDS: [
+      'General',
+      'Orthodontics',
+      'Prosthodontics',
+      'Periodontics',
+      'Pedodontics',
+      'Oral Surgery',
+      'Others',
+    ],
     Others: [],
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
     if (e.target.name === 'course') {
@@ -225,9 +387,7 @@ const Register = () => {
             label="Course"
             options={Object.keys(courses)}
             selected={formData.course}
-            setSelected={(value) =>
-              setFormData((prev) => ({ ...prev, course: value }))
-            }
+            setSelected={(value) => setFormData((prev) => ({ ...prev, course: value }))}
             placeholder="Select Course"
           />
 
@@ -249,9 +409,7 @@ const Register = () => {
               label="Branch"
               options={courses[formData.course as keyof typeof courses] || []}
               selected={formData.branch}
-              setSelected={(value) =>
-                setFormData((prev) => ({ ...prev, branch: value }))
-              }
+              setSelected={(value) => setFormData((prev) => ({ ...prev, branch: value }))}
               placeholder="Select Branch"
             />
           )}
@@ -293,16 +451,14 @@ const Register = () => {
             label="Event"
             options={eventsList}
             selected={formData.event}
-            setSelected={(value) =>
-              setFormData((prev) => ({ ...prev, event: value }))
-            }
+            setSelected={(value) => setFormData((prev) => ({ ...prev, event: value }))}
             placeholder="Select Event"
           />
 
           <button
             type="submit"
             disabled={loading}
-           className="
+            className="
            inline-flex items-center justify-center
             rounded-xl
             bg-violet-600

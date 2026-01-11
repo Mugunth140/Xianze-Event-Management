@@ -48,16 +48,16 @@ const config: Config = {
         display: ['var(--font-outfit)', 'system-ui', 'sans-serif'],
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
+        float: 'float 6s ease-in-out infinite',
         'float-slow': 'float 8s ease-in-out infinite',
         'float-delayed': 'float 6s ease-in-out 2s infinite',
         'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
         'spin-slow': 'spin 20s linear infinite',
         'bounce-soft': 'bounce-soft 2s ease-in-out infinite',
-        'shimmer': 'shimmer 2s linear infinite',
+        shimmer: 'shimmer 2s linear infinite',
         'float-organic': 'float-organic 12s ease-in-out infinite',
         'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
-        'morph': 'morph 8s ease-in-out infinite',
+        morph: 'morph 8s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -72,7 +72,7 @@ const config: Config = {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-10px)' },
         },
-        'shimmer': {
+        shimmer: {
           '0%': { backgroundPosition: '200% 0' },
           '100%': { backgroundPosition: '-200% 0' },
         },
@@ -84,9 +84,12 @@ const config: Config = {
         },
         'glow-pulse': {
           '0%, 100%': { opacity: '0.4', boxShadow: '0 0 20px rgba(124, 58, 237, 0.3)' },
-          '50%': { opacity: '0.7', boxShadow: '0 0 40px rgba(124, 58, 237, 0.5), 0 0 60px rgba(236, 72, 153, 0.3)' },
+          '50%': {
+            opacity: '0.7',
+            boxShadow: '0 0 40px rgba(124, 58, 237, 0.5), 0 0 60px rgba(236, 72, 153, 0.3)',
+          },
         },
-        'morph': {
+        morph: {
           '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
           '25%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
           '50%': { borderRadius: '50% 60% 30% 60% / 30% 40% 70% 50%' },

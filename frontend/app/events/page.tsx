@@ -41,11 +41,7 @@ const events: Event[] = [
     image: '/event-debugging.svg',
     color: 'bg-yellow-500',
     bgColor: 'bg-yellow-50',
-    rules: [
-      'Team consists of 2 members',
-      'No smart devices allowed',
-      'C/C++/Java/Python only',
-    ],
+    rules: ['Team consists of 2 members', 'No smart devices allowed', 'C/C++/Java/Python only'],
     instructions: [
       'Two elimination rounds',
       'Time-bound challenges',
@@ -70,9 +66,7 @@ const events: Event[] = [
       '5-8 minute time limit per presentation',
       'Q&A session after each presentation',
     ],
-    notes: [
-      'Themes: AI, ML, Data Science, Blockchain, Network Security, IoT, NLP',
-    ],
+    notes: ['Themes: AI, ML, Data Science, Blockchain, Network Security, IoT, NLP'],
   },
   {
     id: 4,
@@ -100,11 +94,7 @@ const events: Event[] = [
     image: '/event-query.svg',
     color: 'bg-green-500',
     bgColor: 'bg-green-50',
-    rules: [
-      'Team consists of 2 members',
-      'Three progressive rounds',
-      '2-hour time limit',
-    ],
+    rules: ['Team consists of 2 members', 'Three progressive rounds', '2-hour time limit'],
     instructions: [
       'Riddle-based initial round',
       'Fun-filled SQL challenges',
@@ -167,8 +157,8 @@ export default function EventsPage() {
               Explore Our Events
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
-              Compete, collaborate, and showcase your skills across 7 exciting events.
-              From hackathons to gaming tournaments, there&apos;s something for everyone.
+              Compete, collaborate, and showcase your skills across 7 exciting events. From
+              hackathons to gaming tournaments, there&apos;s something for everyone.
             </p>
             <Link
               href="/register"
@@ -187,8 +177,9 @@ export default function EventsPage() {
             {events.map((event, index) => (
               <div
                 key={event.id}
-                className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
-                  } gap-8 lg:gap-16 items-center`}
+                className={`flex flex-col ${
+                  index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                } gap-8 lg:gap-16 items-center`}
               >
                 {/* Image Section */}
                 <div className="w-full lg:w-1/2">
@@ -206,12 +197,7 @@ export default function EventsPage() {
 
                     {/* Image */}
                     <div className="relative aspect-square max-w-md mx-auto transition-transform duration-500 group-hover:scale-105">
-                      <Image
-                        src={event.image}
-                        alt={event.name}
-                        fill
-                        className="object-contain"
-                      />
+                      <Image src={event.image} alt={event.name} fill className="object-contain" />
                     </div>
                   </div>
                 </div>
@@ -222,9 +208,7 @@ export default function EventsPage() {
                     <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 mb-3">
                       {event.name}
                     </h2>
-                    <p className="text-lg font-medium text-gray-600 mb-6">
-                      {event.tagline}
-                    </p>
+                    <p className="text-lg font-medium text-gray-600 mb-6">{event.tagline}</p>
 
                     {/* Rules */}
                     <div className="mb-6">
@@ -287,12 +271,8 @@ export default function EventsPage() {
                           />
                         </svg>
                         <div>
-                          <span className="text-sm font-semibold text-gray-700">
-                            Note:{' '}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {event.notes.join('. ')}
-                          </span>
+                          <span className="text-sm font-semibold text-gray-700">Note: </span>
+                          <span className="text-sm text-gray-600">{event.notes.join('. ')}</span>
                         </div>
                       </div>
                     </div>
@@ -315,8 +295,8 @@ export default function EventsPage() {
             Ready to Compete?
           </h2>
           <p className="text-md text-gray-400 mb-8 max-w-2xl mx-auto">
-            Don&apos;t miss out on the biggest inter-collegiate tech symposium.
-            Register now and be part of Xianze 2026.
+            Don&apos;t miss out on the biggest inter-collegiate tech symposium. Register now and be
+            part of Xianze 2026.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

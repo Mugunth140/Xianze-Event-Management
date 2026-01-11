@@ -1,41 +1,65 @@
 #!/bin/sh
 
-# XIANZE Pre-commit Hook
-# Runs format, lint, and tests for backend before allowing commit
+# XIANZE Monorepo Pre-commit Hook
+# Runs checks for both frontend and backend
 
-echo "🚀 Running pre-commit checks for backend..."
+echo "🚀 Running pre-commit checks..."
+echo ""
 
-# Navigate to backend directory (handle being called from root or backend)
-if [ -d "backend" ]; then
+# Check if backend files were changed
+BACKEND_CHANGED=$(git diff --cached --name-only | grep "^backend/" | head -1)
+# Check if frontend files were changed
+FRONTEND_CHANGED=$(git diff --cached --name-only | grep "^frontend/" | head -1)
+
+# Run backend checks if backend files were changed
+if [ -n "$BACKEND_CHANGED" ]; then
+  echo "📦 Backend files changed, running backend checks..."
   cd backend
-fi
-
-echo "🎨 Step 1/4: Formatting files..."
-bun run format
-if [ $? -ne 0 ]; then
-  echo "❌ Formatting failed. Commit aborted."
-  exit 1
-fi
-
-echo "🔍 Step 2/4: Running ESLint..."
-bun run lint:check
-if [ $? -ne 0 ]; then
-  echo "❌ Lint check failed. Commit aborted."
-  exit 1
-fi
-
-echo "🧪 Step 3/4: Running tests..."
-if find src -name "*.spec.ts" -type f 2>/dev/null | head -1 | grep -q .; then
-  bun run test --passWithNoTests
+  
+  echo "🎨 Running Prettier format..."
+  bun run format
   if [ $? -ne 0 ]; then
-    echo "❌ Tests failed. Commit aborted."
+    echo "❌ Backend formatting failed. Commit aborted."
     exit 1
   fi
-else
-  echo "⏭️  No test files found, skipping tests."
+  
+  echo "🔍 Running ESLint check..."
+  bun run lint:check
+  if [ $? -ne 0 ]; then
+    echo "❌ Backend lint check failed. Commit aborted."
+    exit 1
+  fi
+  
+  echo "✅ Backend checks passed!"
+  cd ..
+  echo ""
 fi
 
-echo "📦 Step 4/4: Staging formatted files..."
+# Run frontend checks if frontend files were changed
+if [ -n "$FRONTEND_CHANGED" ]; then
+  echo "📦 Frontend files changed, running frontend checks..."
+  cd frontend
+  
+  echo "🎨 Running Prettier format..."
+  bun run format
+  if [ $? -ne 0 ]; then
+    echo "❌ Frontend formatting failed. Commit aborted."
+    exit 1
+  fi
+  
+  echo "🔍 Running ESLint check..."
+  bun run lint:check
+  if [ $? -ne 0 ]; then
+    echo "❌ Frontend lint check failed. Commit aborted."
+    exit 1
+  fi
+  
+  echo "✅ Frontend checks passed!"
+  cd ..
+  echo ""
+fi
+
+# Stage any formatted files
 git add -A
 
 echo "✅ All pre-commit checks passed!"

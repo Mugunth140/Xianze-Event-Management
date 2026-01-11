@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { FaWhatsapp } from "react-icons/fa6";
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { FaWhatsapp } from 'react-icons/fa6';
 
 const Contact = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [statusMessage, setStatusMessage] = useState("");
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [statusMessage, setStatusMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -18,11 +18,9 @@ const Contact = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -34,35 +32,40 @@ const Contact = () => {
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        setStatusMessage("Message sent successfully!");
-        setFormData({ name: "", email: "", message: "" });
+        setStatusMessage('Message sent successfully!');
+        setFormData({ name: '', email: '', message: '' });
       } else {
         console.log(response);
-        setStatusMessage("Failed to send message. Please try again.");
+        setStatusMessage('Failed to send message. Please try again.');
       }
     } catch (error) {
-      setStatusMessage("An error occurred. Please try again later.");
+      setStatusMessage('An error occurred. Please try again later.');
     } finally {
       setIsLoading(false);
     }
 
-    setTimeout(() => setStatusMessage(""), 5000);
+    setTimeout(() => setStatusMessage(''), 5000);
   };
 
   return (
     <section className=" mt-10 mb-24 lg:mt-20 flex justify-center items-center min-h-screen px-4 bg-white bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.05),transparent_40%)]">
       <div className="bg-white/70 backdrop-blur-xl p-10 rounded-2xl border border-violet-200/40  shadow-[0_20px_40px_rgba(124,58,237,0.25)] max-w-[600px] w-full flex flex-col gap-6 animate-[fadeUp_0.8s_ease-out]">
-        
-        <h2 className="text-3xl font-bold text-neutral-900 text-center tracking-tight">Contact Us</h2>
+        <h2 className="text-3xl font-bold text-neutral-900 text-center tracking-tight">
+          Contact Us
+        </h2>
         <p className="text-center text-neutral-700 mb-2">Have questions? Reach out to us!</p>
 
-        <Link href="https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp" target="_blank" className="inline-flex items-center justify-center gap-2 text-white bg-green-500 hover:bg-green-600 rounded-lg px-4 py-2 font-semibold shadow-md transition-all duration-300 text-sm">
+        <Link
+          href="https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp"
+          target="_blank"
+          className="inline-flex items-center justify-center gap-2 text-white bg-green-500 hover:bg-green-600 rounded-lg px-4 py-2 font-semibold shadow-md transition-all duration-300 text-sm"
+        >
           <FaWhatsapp size={22} /> WhatsApp Community
         </Link>
 
@@ -74,37 +77,37 @@ const Contact = () => {
           >
             Student Coordinators
           </button>
-            {isOpen && (
+          {isOpen && (
             <div className="absolute top-full left-0 w-full mt-2 bg-white border border-violet-200/40 rounded-2xl shadow-lg flex flex-col z-10 overflow-hidden">
-      
-            <a
+              <a
                 href="tel:+918148529920"
                 className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
-            >
+              >
                 Sharulatha - 8148529920
-            </a>
+              </a>
 
-            <a
+              <a
                 href="tel:+918072390391"
                 className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
-            >
+              >
                 Rajakavika - 8072390391
-            </a>
+              </a>
 
-            <a
+              <a
                 href="tel:+916384761234"
                 className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
-            >
+              >
                 Mugunth - 6384761234
-            </a>
-
+              </a>
             </div>
           )}
         </div>
 
         {/* Status Message */}
         {statusMessage && (
-          <div className={`text-center py-2 px-4 rounded-lg font-medium ${statusMessage.includes("successfully") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+          <div
+            className={`text-center py-2 px-4 rounded-lg font-medium ${statusMessage.includes('successfully') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+          >
             {statusMessage}
           </div>
         )}
@@ -161,7 +164,8 @@ const Contact = () => {
                 hover:shadow-lg
                 active:translate-y-0
                 md:px-6 md:py-2.5 md:text-[0.95rem]
-              " >
+              "
+          >
             Send Message
           </button>
         </form>
