@@ -51,7 +51,7 @@ const Eventschedule = () => {
         bg-white/70 backdrop-blur-xl
         border border-violet-200/40
         rounded-2xl
-        shadow-[0_20px_40px_rgba(124,58,237,0.05)]
+        shadow-[0_20px_40px_rgba(124,58,237,0.25)]
         text-center
         overflow-hidden
       "

@@ -1,9 +1,7 @@
-'use client'
+'use client';
+
 import { useState } from "react";
 import { motion } from "framer-motion";
-
-
-
 
 const listVariants = {
   hidden: {},
@@ -26,31 +24,36 @@ const itemVariants = {
   },
 };
 
-
 const faqs = [
   {
     question: "What is Xianze?",
-    answer: "Xianze is an inter-college technical event where students showcase their skills in various competitions and workshops.",
+    answer:
+      "Xianze is an inter-college technical event where students showcase their skills in various competitions and workshops.",
   },
   {
     question: "How can I register?",
-    answer: "You can register online through Google forms or via official website.",
+    answer:
+      "You can register online through Google forms or via official website.",
   },
   {
     question: "Is there a cash prize for winners?",
-    answer: "Yes! Winners of competitions can win cash prizes of up to ₹20,000 along with certificates and other exciting rewards.",
+    answer:
+      "Yes! Winners of competitions can win cash prizes of up to ₹20,000 along with certificates and other exciting rewards.",
   },
   {
     question: "Is food provided?",
-    answer: "Yes, lunch will be provided for participants from other colleges.",
+    answer:
+      "Yes, lunch will be provided for participants from other colleges.",
   },
   {
     question: "Who can participate?",
-    answer: "Anyone with an interest in technology and innovation can participate.",
+    answer:
+      "Anyone with an interest in technology and innovation can participate.",
   },
   {
     question: "Will I get certificate?",
-    answer: "Yes! All participants will receive certificate, and winners will get special recognition and prizes.",
+    answer:
+      "Yes! All participants will receive certificate, and winners will get special recognition and prizes.",
   },
 ];
 
@@ -62,7 +65,7 @@ const FAQ = () => {
   };
 
   return (
-  <motion.div
+    <motion.div
       initial={{ x: -60, opacity: 0 }}
       whileInView={{ x: 0, opacity: 1 }}
       viewport={{ once: true }}
@@ -75,20 +78,22 @@ const FAQ = () => {
         bg-white/70 backdrop-blur-xl
         border border-violet-200/40
         rounded-2xl
-        shadow-[0_20px_40px_rgba(124,58,237,0.05)]
+        shadow-[0_20px_40px_rgba(124,58,237,0.25)]
         text-center
         overflow-hidden
       "
     >
       {/* Static glow */}
-      <div className="
-        absolute -top-28 -right-28
-        w-80 h-80
-        bg-violet-200/10
-        rounded-full
-        blur-3xl
-        pointer-events-none
-      " />
+      <div
+        className="
+          absolute -top-28 -right-28
+          w-80 h-80
+          bg-violet-200/10
+          rounded-full
+          blur-3xl
+          pointer-events-none
+        "
+      />
 
       <h2
         className="
@@ -121,12 +126,25 @@ const FAQ = () => {
               px-5 py-4
               rounded-xl
               border border-neutral-200
+              overflow-hidden
               transition-colors duration-200
               hover:bg-violet-50
             "
           >
+            {/* Hover sheen (visual only) */}
+            <div
+              className="
+                absolute inset-0
+                bg-gradient-to-r from-transparent via-violet-100 to-transparent
+                opacity-0
+                group-hover:opacity-100
+                transition-opacity duration-200
+                pointer-events-none
+              "
+            />
+
             {/* Question */}
-            <div className="flex justify-between items-center">
+            <div className="relative flex justify-between items-center">
               <span className="text-lg md:text-base font-semibold text-neutral-800">
                 {faq.question}
               </span>

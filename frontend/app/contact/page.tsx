@@ -57,7 +57,7 @@ const Contact = () => {
 
   return (
     <section className=" mt-10 mb-24 lg:mt-20 flex justify-center items-center min-h-screen px-4 bg-white bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.05),transparent_40%)]">
-      <div className="bg-white/70 backdrop-blur-xl p-10 rounded-2xl border border-violet-200/40 shadow-[0_20px_40px_rgba(124,58,237,0.05)] max-w-[600px] w-full flex flex-col gap-6 animate-[fadeUp_0.8s_ease-out]">
+      <div className="bg-white/70 backdrop-blur-xl p-10 rounded-2xl border border-violet-200/40  shadow-[0_20px_40px_rgba(124,58,237,0.25)] max-w-[600px] w-full flex flex-col gap-6 animate-[fadeUp_0.8s_ease-out]">
         
         <h2 className="text-3xl font-bold text-neutral-900 text-center tracking-tight">Contact Us</h2>
         <p className="text-center text-neutral-700 mb-2">Have questions? Reach out to us!</p>
@@ -79,21 +79,21 @@ const Contact = () => {
       
             <a
                 href="tel:+918148529920"
-                className="px-4 py-3 text-neutral-800 hover:bg-violet-50 transition-colors font-medium"
+                className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
             >
                 Sharulatha - 8148529920
             </a>
 
             <a
                 href="tel:+918072390391"
-                className="px-4 py-3 text-neutral-800 hover:bg-violet-50 transition-colors font-medium"
+                className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
             >
                 Rajakavika - 8072390391
             </a>
 
             <a
                 href="tel:+916384761234"
-                className="px-4 py-3 text-neutral-800 hover:bg-violet-50 transition-colors font-medium"
+                className="px-4 py-3 text-neutral-800 hover:bg-violet-100 transition-colors font-medium"
             >
                 Mugunth - 6384761234
             </a>
@@ -147,8 +147,21 @@ const Contact = () => {
           ></textarea>
           <button
             type="submit"
-            className="mt-2 px-4 py-3 rounded-lg text-base font-semibold text-white bg-gradient-to-r from-violet-600 to-violet-700 shadow-[0_12px_25px_rgba(124,58,237,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_35px_rgba(124,58,237,0.35)] active:translate-y-0"
-          >
+            className="
+                inline-flex items-center justify-center
+                rounded-xl
+                bg-violet-600
+                px-8 py-3
+                text-white
+                font-semibold
+                text-[1rem]
+                transition-all duration-300
+                hover:bg-violet-700
+                hover:-translate-y-0.5
+                hover:shadow-lg
+                active:translate-y-0
+                md:px-6 md:py-2.5 md:text-[0.95rem]
+              " >
             Send Message
           </button>
         </form>
