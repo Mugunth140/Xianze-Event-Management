@@ -192,9 +192,9 @@ const Register = () => {
   return (
     <section
       className="mt-10 flex justify-center items-center min-h-screen px-4
-      bg-white bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.08),transparent_40%)]"
+      bg-white bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.03),transparent_40%)]"
     >
-      <div className="bg-white/70 backdrop-blur-xl p-11 rounded-2xl border border-violet-200/40 shadow-[0_20px_40px_rgba(124,58,237,0.25)] max-w-[500px] w-full animate-[fadeUp_0.8s_ease-out]">
+      <div className="bg-white/70 backdrop-blur-xl p-11 rounded-2xl border border-violet-200/40 shadow-[0_20px_40px_rgba(124,58,237,0.05)] max-w-[500px] w-full animate-[fadeUp_0.8s_ease-out]">
         <h2 className="text-[32px] font-bold text-neutral-900 flex justify-center mb-[20px] tracking-tight">
           Event Registration
         </h2>
@@ -302,7 +302,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 px-4 py-3 rounded-lg text-base font-semibold text-white bg-gradient-to-r from-violet-600 to-violet-700 shadow-[0_12px_25px_rgba(124,58,237,0.45)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_18px_35px_rgba(124,58,237,0.55)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-2 px-4 py-3 rounded-lg text-base font-semibold text-white bg-gradient-to-r from-violet-600 to-violet-700 shadow-[0_12px_25px_rgba(124,58,237,0.05)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_18px_35px_rgba(124,58,237,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {buttonMessage}
           </button>
