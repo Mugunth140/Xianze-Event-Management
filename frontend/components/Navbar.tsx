@@ -1,11 +1,15 @@
 'use client';
 
+import gsap from 'gsap';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const menuLinksRef = useRef<HTMLLIElement[]>([]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +31,40 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
+  // GSAP animation for mobile menu
+  useEffect(() => {
+    if (menuPanelRef.current && menuLinksRef.current.length > 0) {
+      if (isMenuOpen) {
+        // Animate menu panel in
+        gsap.to(menuPanelRef.current, {
+          x: 0,
+          duration: 0.5,
+          ease: 'power3.out',
+        });
+        // Stagger animate menu links
+        gsap.fromTo(
+          menuLinksRef.current,
+          { x: 30, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.4,
+            stagger: 0.08,
+            ease: 'power2.out',
+            delay: 0.15,
+          }
+        );
+      } else {
+        // Animate menu panel out
+        gsap.to(menuPanelRef.current, {
+          x: '100%',
+          duration: 0.4,
+          ease: 'power3.in',
+        });
+      }
+    }
+  }, [isMenuOpen]);
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -41,16 +79,17 @@ const Navbar = () => {
   return (
     <>
       <nav
+        ref={navRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-            ? 'bg-white/95 backdrop-blur-xl shadow-lg shadow-gray-100/50'
-            : 'bg-white'
+            ? 'liquid-glass-navbar'
+            : 'bg-white/60 backdrop-blur-md'
           }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center group">
-              <span className="text-2xl font-display font-bold text-gray-900 tracking-tight">
+              <span className="text-2xl font-display font-bold tracking-tight text-purple-accent">
                 Xianze
               </span>
             </Link>
@@ -61,34 +100,36 @@ const Navbar = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="nav-link"
+                  className="relative px-4 py-2 text-gray-600 font-medium hover:text-primary-600 transition-colors duration-200 group"
                 >
                   {link.label}
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary-600 rounded-full transition-all duration-300 group-hover:w-1/2" />
                 </Link>
               ))}
             </div>
 
-            {/* CTA Button - Redesigned */}
+            {/* CTA Button - Glass Style */}
             <div className="hidden md:block">
               <Link
                 href="/register"
-                className="group relative inline-flex items-center gap-2 px-7 py-3 overflow-hidden rounded-full font-semibold text-white transition-all duration-300"
+                className="liquid-glass-btn inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-white"
               >
-                {/* Animated gradient background */}
-                <span className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 bg-[length:200%_100%] animate-shimmer" />
-                {/* Glow effect */}
-                <span className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-primary-400/20 blur-xl" />
-                {/* Button content */}
-                <span className="relative flex items-center gap-2">
-                  Register Now
-                </span>
+                <span>Register Now</span>
+                <svg
+                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
               </Link>
             </div>
 
             {/* Mobile Menu Button */}
             <button
               onClick={toggleMenu}
-              className="md:hidden relative w-12 h-12 flex items-center justify-center rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              className="md:hidden relative w-12 h-12 flex items-center justify-center rounded-2xl bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors"
               aria-expanded={isMenuOpen}
               aria-label="Toggle menu"
             >
@@ -114,22 +155,23 @@ const Navbar = () => {
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-gray-950/60 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
+          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
             }`}
           onClick={() => setIsMenuOpen(false)}
         />
 
-        {/* Menu Panel */}
+        {/* Menu Panel - Glass Effect */}
         <div
-          className={`absolute top-0 right-0 w-full max-w-sm h-full bg-white shadow-2xl transition-transform duration-500 ease-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}
+          ref={menuPanelRef}
+          className="absolute top-0 right-0 w-full max-w-sm h-full bg-white/95 backdrop-blur-xl shadow-2xl translate-x-full"
+          style={{ borderLeft: '1px solid rgba(109, 64, 212, 0.1)' }}
         >
           {/* Menu Header */}
-          <div className="flex items-center justify-between px-6 h-20 border-b border-gray-100">
-            <span className="text-xl font-display font-bold text-gray-900">Menu</span>
+          <div className="flex items-center justify-between px-6 h-20 border-b border-primary-100">
+            <span className="text-xl font-display font-bold text-primary-600">Menu</span>
             <button
               onClick={() => setIsMenuOpen(false)}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors"
               aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,16 +186,15 @@ const Navbar = () => {
               {navLinks.map((link, index) => (
                 <li
                   key={link.href}
-                  className={`transition-all duration-500 ${isMenuOpen
-                      ? 'opacity-100 translate-x-0'
-                      : 'opacity-0 translate-x-8'
-                    }`}
-                  style={{ transitionDelay: isMenuOpen ? `${index * 75 + 100}ms` : '0ms' }}
+                  ref={(el) => {
+                    if (el) menuLinksRef.current[index] = el;
+                  }}
+                  className="opacity-0"
                 >
                   <Link
                     href={link.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-4 px-4 py-4 text-lg font-medium text-gray-700 rounded-2xl hover:bg-gray-50 hover:text-primary-600 transition-all duration-200 group"
+                    className="flex items-center gap-4 px-4 py-4 text-lg font-medium text-gray-700 rounded-2xl hover:bg-primary-50 hover:text-primary-600 transition-all duration-200 group"
                   >
                     <span className="w-2 h-2 rounded-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.label}
@@ -172,16 +213,15 @@ const Navbar = () => {
 
             {/* CTA Button */}
             <div
-              className={`mt-8 transition-all duration-500 ${isMenuOpen
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-4'
-                }`}
-              style={{ transitionDelay: isMenuOpen ? '400ms' : '0ms' }}
+              ref={(el) => {
+                if (el) menuLinksRef.current[navLinks.length] = el as unknown as HTMLLIElement;
+              }}
+              className="mt-8 opacity-0"
             >
               <Link
                 href="/register"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold rounded-2xl shadow-lg shadow-primary-500/25 hover:shadow-xl transition-all duration-300"
+                className="liquid-glass-btn flex items-center justify-center gap-2 w-full px-6 py-4 text-white font-semibold rounded-2xl"
               >
                 Register Now
               </Link>
@@ -189,7 +229,7 @@ const Navbar = () => {
           </div>
 
           {/* Footer decoration */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-primary-50/50 to-transparent pointer-events-none" />
         </div>
       </div>
     </>

@@ -1,15 +1,10 @@
-import React from 'react'
-import Eventschedule from '@/components/Eventschedule';
 import Faqs from '@/components/Faqs';
 
+export const metadata = {
+  title: 'FAQ | XIANZE 2K26',
+  description: 'Frequently asked questions about XIANZE 2K26 - the ultimate inter-collegiate tech symposium.',
+};
 
-const FrequentlyAskedQuestion = () => {
-  return (
-    <div className='mt-20'>
-        <Faqs/>
-      
-    </div>
-  )
+export default function FAQPage() {
+  return <Faqs />;
 }
-
-export default FrequentlyAskedQuestion

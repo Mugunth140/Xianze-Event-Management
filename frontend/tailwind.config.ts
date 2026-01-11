@@ -9,19 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // XIANZE brand colors - vibrant palette
+        // XIANZE brand colors - Purple (#6D40D4) palette
         primary: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
+          50: '#f5f2ff',
+          100: '#ede8ff',
+          200: '#ddd4ff',
+          300: '#c4b3ff',
+          400: '#a78bff',
           500: '#8b5cf6',
-          600: '#7c3aed',
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
-          950: '#2e1065',
+          600: '#6D40D4', // Main brand purple
+          700: '#5a2fb8',
+          800: '#4c2499',
+          900: '#3f1d7d',
+          950: '#271154',
         },
         secondary: {
           50: '#faf5ff',
@@ -55,6 +55,9 @@ const config: Config = {
         'spin-slow': 'spin 20s linear infinite',
         'bounce-soft': 'bounce-soft 2s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        'float-organic': 'float-organic 12s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
+        'morph': 'morph 8s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -72,6 +75,22 @@ const config: Config = {
         'shimmer': {
           '0%': { backgroundPosition: '200% 0' },
           '100%': { backgroundPosition: '-200% 0' },
+        },
+        'float-organic': {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '25%': { transform: 'translate(30px, -40px) scale(1.05)' },
+          '50%': { transform: 'translate(-20px, 20px) scale(0.95)' },
+          '75%': { transform: 'translate(40px, 30px) scale(1.02)' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { opacity: '0.4', boxShadow: '0 0 20px rgba(124, 58, 237, 0.3)' },
+          '50%': { opacity: '0.7', boxShadow: '0 0 40px rgba(124, 58, 237, 0.5), 0 0 60px rgba(236, 72, 153, 0.3)' },
+        },
+        'morph': {
+          '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+          '25%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+          '50%': { borderRadius: '50% 60% 30% 60% / 30% 40% 70% 50%' },
+          '75%': { borderRadius: '40% 30% 60% 50% / 60% 50% 40% 30%' },
         },
       },
       backgroundImage: {
