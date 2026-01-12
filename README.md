@@ -75,22 +75,17 @@ Before you begin, ensure you have the following installed:
 The easiest way to run XIANZE is with Docker Compose:
 
 ```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd xianze
+# Production deployment (default)
+./deploy.sh
 
-# 2. Start all services
-docker compose up --build
+# Development deployment
+./deploy.sh dev
 
-# 3. Access the application
-# Frontend: http://localhost:3000
-# Backend:  http://localhost:5000
-# Health:   http://localhost:5000/health
-```
+# Force rebuild without cache
+./deploy.sh prod --no-cache
 
 ### Stopping the Application
 
-```bash
 # Stop all services (keeps data)
 docker compose down
 
@@ -106,22 +101,6 @@ For development without Docker, see the individual READMEs:
 
 - [Backend Development Guide](./backend/README.md)
 - [Frontend Development Guide](./frontend/README.md)
-
-### Quick Local Setup
-
-```bash
-# Terminal 1: Start Backend
-cd backend
-npm install
-npm run start:dev
-
-# Terminal 2: Start Frontend
-cd frontend
-npm install
-npm run dev
-```
-
----
 
 ## 🐳 Docker Architecture
 
