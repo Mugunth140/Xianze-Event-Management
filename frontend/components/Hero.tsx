@@ -82,7 +82,7 @@ export default function Hero() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Split Layout */}
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Left Column - Headline & CTAs */}
           <div>
             {/* Badge */}
@@ -92,7 +92,16 @@ export default function Hero() {
             >
               <span className="w-2 h-2 bg-primary-600 rounded-full animate-pulse" />
               <span className="text-sm font-medium text-primary-700 tracking-wide">
-                Tech Symposium
+                <span className="font-bold text-sm">
+                  {Math.max(
+                    0,
+                    Math.floor(
+                      (new Date('2026-02-07').getTime() - new Date().getTime()) /
+                      (1000 * 60 * 60 * 24)
+                    )
+                  )}
+                </span>{' '}
+                Days Left
               </span>
             </div>
 
@@ -135,7 +144,7 @@ export default function Hero() {
           </div>
 
           {/* Right Column - Description */}
-          <div className="lg:pt-8">
+          <div>
             <p ref={descriptionRef} className="text-lg text-gray-600 leading-relaxed opacity-0">
               Join the ultimate inter-collegiate tech symposium. Compete, collaborate, and showcase
               your skills across coding, design, and innovation challenges. Be part of something
@@ -154,6 +163,7 @@ export default function Hero() {
                 loop
                 muted
                 playsInline
+                poster="/event.png" // Using event.png as a placeholder/poster
               >
                 <source
                   src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"

@@ -76,11 +76,11 @@ export default function FunGamesBanner() {
               {/* Content */}
               <div className="max-w-xl">
                 {/* Event Badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-4">
+                {/* <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-4">
                   <span className="text-xs font-semibold text-white/90 uppercase tracking-wider">
                     8th Event
                   </span>
-                </div>
+                </div> */}
 
                 {/* Title */}
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-white mb-4">

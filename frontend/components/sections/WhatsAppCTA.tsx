@@ -49,7 +49,7 @@ export default function WhatsAppCTA() {
         background: 'linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%)',
       }}
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={cardRef}
           className="relative overflow-hidden rounded-3xl bg-white border border-primary-100 shadow-xl shadow-primary-500/5 p-8 sm:p-12 lg:p-16 text-center"

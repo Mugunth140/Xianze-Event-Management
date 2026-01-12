@@ -38,7 +38,8 @@ const Footer = () => {
             </div>
             <div className="space-y-2">
               <p className="text-lg font-medium text-white">
-                Department of Software Systems & <br /> Computer Science (PG)
+                School of Computational Sciences <br />
+                Department of Software Systems {'&'} <br /> Computer Science (PG)
               </p>
             </div>
           </div>
