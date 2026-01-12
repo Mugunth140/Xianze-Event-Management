@@ -75,16 +75,12 @@ Before you begin, ensure you have the following installed:
 The easiest way to run XIANZE is with Docker Compose:
 
 ```bash
-# Production deployment (default)
-./deploy.sh
+# Production
+./deploy.sh prod
 
-# Development deployment
-./deploy.sh dev
-
-# Force rebuild without cache
-./deploy.sh prod --no-cache
-
-### Stopping the Application
+# Development  
+docker compose up -d        # Start backend + redis
+cd frontend && bun run dev  # Start frontend locally
 
 # Stop all services (keeps data)
 docker compose down

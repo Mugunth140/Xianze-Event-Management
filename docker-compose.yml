@@ -1,12 +1,14 @@
-# XIANZE Event Management - Docker Compose
-# Services: Frontend (Next.js), Backend (NestJS), Redis (Cache)
+# XIANZE Event Management - Development Docker Compose
+# For development, run frontend locally with `bun run dev`
 
 services:
   redis:
     image: redis:7-alpine
-    container_name: xianze-redis
+    container_name: xianze-redis-dev
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
@@ -22,17 +24,19 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: xianze-backend
+    container_name: xianze-backend-dev
     restart: unless-stopped
     ports:
       - '${BACKEND_PORT:-5000}:5000'
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=development
       - PORT=5000
       - DATABASE_PATH=/data/xianze.db
       - DATABASE_SYNCHRONIZE=true
+      - DATABASE_LOGGING=true
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CORS_ORIGIN=http://localhost:3000
     volumes:
       - sqlite-data:/data
     networks:
@@ -47,32 +51,13 @@ services:
       retries: 3
       start_period: 40s
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:5000}
-    container_name: xianze-frontend
-    restart: unless-stopped
-    ports:
-      - '${FRONTEND_PORT:-3000}:3000'
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:5000}
-    networks:
-      - xianze-network
-    depends_on:
-      backend:
-        condition: service_healthy
-
 networks:
   xianze-network:
     driver: bridge
-    name: xianze-network
+    name: xianze-dev-network
 
 volumes:
   sqlite-data:
-    name: xianze-sqlite-data
+    name: xianze-dev-sqlite
   redis-data:
-    name: xianze-redis-data
+    name: xianze-dev-redis

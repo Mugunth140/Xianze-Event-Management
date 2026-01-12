@@ -1,7 +1,19 @@
-# XIANZE Event Management - Production Docker Compose
-# Use: docker compose -f docker-compose.prod.yml up -d
+# XIANZE Production - Nginx serves static frontend + proxies API
+# Usage: docker compose -f docker-compose.prod.yml up -d
 
 services:
+  # Build frontend static files
+  frontend-builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=/api
+    container_name: xianze-frontend-builder
+    volumes:
+      - frontend-static:/app/out
+    command: ["echo", "Build complete"]
+
   nginx:
     build:
       context: ./nginx
@@ -12,15 +24,15 @@ services:
       - '80:80'
       - '443:443'
     volumes:
+      - frontend-static:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot-conf:/etc/letsencrypt:ro
       - certbot-www:/var/www/certbot:ro
     networks:
       - xianze-network
     depends_on:
-      frontend:
-        condition: service_started
+      frontend-builder:
+        condition: service_completed_successfully
       backend:
         condition: service_healthy
     deploy:
@@ -88,30 +100,7 @@ services:
           cpus: '1'
           memory: 512M
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api}
-    container_name: xianze-frontend
-    restart: unless-stopped
-    expose:
-      - '3000'
-    environment:
-      - NODE_ENV=production
-    networks:
-      - xianze-network
-    depends_on:
-      backend:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-
-  # Optional: Certbot for SSL certificate renewal
+  # Optional: Certbot for SSL
   certbot:
     image: certbot/certbot:latest
     container_name: xianze-certbot
@@ -128,6 +117,8 @@ networks:
     name: xianze-prod-network
 
 volumes:
+  frontend-static:
+    name: xianze-frontend-static
   sqlite-data:
     name: xianze-prod-sqlite
   redis-data:
