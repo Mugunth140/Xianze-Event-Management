@@ -78,7 +78,7 @@ services:
       - DATABASE_LOGGING=false
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - CORS_ORIGIN=${CORS_ORIGIN:-https://your-domain.com}
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://xianze.tech}
       - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
     volumes:
