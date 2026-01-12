@@ -97,7 +97,7 @@ export default function Hero() {
                     0,
                     Math.floor(
                       (new Date('2026-02-07').getTime() - new Date().getTime()) /
-                      (1000 * 60 * 60 * 24)
+                        (1000 * 60 * 60 * 24)
                     )
                   )}
                 </span>{' '}

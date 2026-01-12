@@ -38,8 +38,9 @@ export default function EventsPage() {
             {events.map((event, index) => (
               <div
                 key={event.id}
-                className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
-                  } gap-8 lg:gap-16 items-center`}
+                className={`flex flex-col ${
+                  index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                } gap-8 lg:gap-16 items-center`}
               >
                 {/* Image Section */}
                 <div className="w-full lg:w-1/2">

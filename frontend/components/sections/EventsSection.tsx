@@ -1,11 +1,11 @@
 'use client';
 
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { animate, motion, useMotionValue } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { events } from '../../data/events';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { events } from '../../data/events';
 
 export default function EventsSection() {
   const [width, setWidth] = useState(0);
@@ -23,9 +23,9 @@ export default function EventsSection() {
     if (newX < -width) newX = -width;
 
     animate(x, newX, {
-      type: "spring",
+      type: 'spring',
       stiffness: 300,
-      damping: 30
+      damping: 30,
     });
   };
 
@@ -105,21 +105,21 @@ export default function EventsSection() {
           </div>
 
           {/* Carousel */}
-          <motion.div ref={carouselRef} className="cursor-grab active:cursor-grabbing overflow-hidden py-4">
+          <motion.div
+            ref={carouselRef}
+            className="cursor-grab active:cursor-grabbing overflow-hidden py-4"
+          >
             <motion.div
               ref={innerRef}
               style={{ x }}
               drag="x"
               dragConstraints={{ right: 0, left: -width }}
               whileTap={{ cursor: 'grabbing' }}
-              dragFree
+              dragElastic={0.1}
               className="flex gap-6"
             >
               {events.map((event) => (
-                <motion.div
-                  key={event.id}
-                  className="min-w-[320px] sm:min-w-[360px] h-[400px]"
-                >
+                <motion.div key={event.id} className="min-w-[320px] sm:min-w-[360px] h-[400px]">
                   <Link href={`/events`} className="block h-full group/card">
                     <div className="h-full p-6 rounded-2xl bg-white border border-gray-100 shadow-md hover:shadow-xl hover:border-primary-200 hover:-translate-y-2 transition-all duration-300">
                       {/* Image */}
