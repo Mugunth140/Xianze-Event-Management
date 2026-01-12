@@ -1,0 +1,138 @@
+# XIANZE Event Management - Production Docker Compose
+# Use: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: xianze-nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    networks:
+      - xianze-network
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+  redis:
+    image: redis:7-alpine
+    container_name: xianze-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - xianze-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: xianze-backend
+    restart: unless-stopped
+    expose:
+      - '5000'
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_PATH=/data/xianze.db
+      - DATABASE_SYNCHRONIZE=false
+      - DATABASE_LOGGING=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://your-domain.com}
+      - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+    volumes:
+      - sqlite-data:/data
+    networks:
+      - xianze-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api}
+    container_name: xianze-frontend
+    restart: unless-stopped
+    expose:
+      - '3000'
+    environment:
+      - NODE_ENV=production
+    networks:
+      - xianze-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # Optional: Certbot for SSL certificate renewal
+  certbot:
+    image: certbot/certbot:latest
+    container_name: xianze-certbot
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    profiles:
+      - ssl
+
+networks:
+  xianze-network:
+    driver: bridge
+    name: xianze-prod-network
+
+volumes:
+  sqlite-data:
+    name: xianze-prod-sqlite
+  redis-data:
+    name: xianze-prod-redis
+  certbot-conf:
+    name: xianze-certbot-conf
+  certbot-www:
+    name: xianze-certbot-www

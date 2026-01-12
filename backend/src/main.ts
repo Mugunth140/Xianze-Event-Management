@@ -1,44 +1,73 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { corsConfig, helmetConfig } from './config/security.config';
 
 /**
  * Bootstrap the XIANZE Backend Application
  *
- * This is the entry point for the NestJS application.
- * It sets up global pipes, CORS, and starts the HTTP server.
+ * Production-ready entry point with security middleware,
+ * graceful shutdown handling, and proper logging.
  */
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn', 'log']
+        : ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
+
+  const configService = app.get(ConfigService);
+
+  // Security: Helmet middleware (production only, nginx handles in prod)
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet(helmetConfig));
+  }
 
   // Global validation pipe for DTO validation
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip properties not in DTO
-      forbidNonWhitelisted: true, // Throw error for unknown properties
-      transform: true, // Auto-transform payloads to DTO instances
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
     }),
   );
 
-  // Enable CORS for frontend communication
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
-  });
+  // CORS configuration
+  app.enableCors(corsConfig(configService));
 
-  // Global prefix for all routes
+  // Global API prefix
   app.setGlobalPrefix('api', {
-    exclude: ['health'], // Health check at root level
+    exclude: ['health'],
   });
 
-  const port = process.env.PORT || 5000;
+  const port = configService.get<number>('PORT', 5000);
+
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    logger.log('SIGINT received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
+
   await app.listen(port);
 
-  logger.log(`🚀 XIANZE Backend is running on: http://localhost:${port}`);
-  logger.log(`📊 Health check available at: http://localhost:${port}/health`);
-  logger.log(`📡 API routes available at: http://localhost:${port}/api`);
+  logger.log(`🚀 XIANZE Backend running on port ${port}`);
+  logger.log(`📊 Health: http://localhost:${port}/health`);
+  logger.log(`📡 API: http://localhost:${port}/api`);
+  logger.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
 bootstrap();
