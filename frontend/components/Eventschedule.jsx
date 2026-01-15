@@ -11,26 +11,26 @@ const listVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.32, // fast
-      ease: [0.25, 0.8, 0.25, 1],
-    },
-  },
-};
+// const itemVariants = {
+//   hidden: { opacity: 0, y: 14 },
+//   show: {
+//     opacity: 1,
+//     y: 0,
+//     transition: {
+//       duration: 0.32, // fast
+//       ease: [0.25, 0.8, 0.25, 1],
+//     },
+//   },
+// };
 
 const Eventschedule = () => {
-  const schedule = [
-    { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
-    { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
-    { title: 'Event Timing', time: '10:30 AM - 1:30 PM' },
-    { title: 'Lunch Timing', time: '1:30 PM - 2:30 PM' },
-    { title: 'Ceremony', time: '2:30 PM - 3:30 PM' },
-  ];
+  // const schedule = [
+  //   { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
+  //   { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
+  //   { title: 'Event Timing', time: '10:30 AM - 1:30 PM' },
+  //   { title: 'Lunch Timing', time: '1:30 PM - 2:30 PM' },
+  //   { title: 'Ceremony', time: '2:30 PM - 3:30 PM' },
+  // ];
   return (
     <motion.div
       initial={{ x: -60, opacity: 0 }}
@@ -84,6 +84,44 @@ const Eventschedule = () => {
         viewport={{ once: true }} // ✅ reveal once
         className="mt-4 space-y-3"
       >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.5,
+            ease: 'backOut',
+          }}
+          className="flex flex-col items-center justify-center py-12"
+        >
+          <motion.div
+            animate={{
+              y: [0, -10, 0],
+              rotate: [0, 5, -5, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="text-6xl mb-6"
+          >
+            ⏳
+          </motion.div>
+
+          <motion.h3
+            className="text-2xl font-bold text-violet-600 mb-2"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Coming Soon
+          </motion.h3>
+
+          <p className="text-neutral-500">
+            The event schedule will be updated shortly. <br /> Stay tuned!
+          </p>
+        </motion.div>
+
+        {/* 
         {schedule.map((item, index) => (
           <motion.li
             key={index}
@@ -102,7 +140,6 @@ const Eventschedule = () => {
               md:flex-col-reverse md:text-center
             "
           >
-            {/* Fast hover sheen */}
             <div
               className="
               absolute inset-0
@@ -121,7 +158,8 @@ const Eventschedule = () => {
               {item.title}
             </span>
           </motion.li>
-        ))}
+        ))} 
+        */}
       </motion.ul>
     </motion.div>
   );

@@ -139,7 +139,7 @@ export default function EventsSection() {
                           <span
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${event.color} text-white font-display font-bold text-sm shadow-md`}
                           >
-                            {String(event.id).padStart(2, '0')}
+                            {event.id}
                           </span>
                         </div>
                       </div>
