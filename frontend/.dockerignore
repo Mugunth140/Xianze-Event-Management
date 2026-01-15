@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+
+# Development
+.env*.local
+.env
+*.log
+
+# IDE & OS
+.vscode
+.idea
+.DS_Store
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Docs
+docs
+*.md
+!README.md
+
+# Tests
+coverage

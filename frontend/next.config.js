@@ -1,34 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output configuration for Docker
-  output: 'standalone',
+  // Static export for nginx serving
+  output: 'export',
 
-  // Image optimization configuration
+  // Required for static export with images
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
+    unoptimized: true,
   },
 
-  // Disable x-powered-by header for security
+  // Disable x-powered-by header
   poweredByHeader: false,
 
   // Strict mode for better development
   reactStrictMode: true,
 
-  // Rewrites to proxy API requests to backend (solves CORS for browser requests)
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
-      },
-    ];
-  },
+  // Trailing slashes for static hosting compatibility
+  trailingSlash: true,
 };
 
 module.exports = nextConfig;
