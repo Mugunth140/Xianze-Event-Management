@@ -2,6 +2,10 @@
 
 # Stage 1: Dependencies
 FROM oven/bun:1-alpine AS deps
+
+# Install build dependencies for native modules (node-gyp)
+RUN apk add --no-cache python3 make g++ gcc
+
 WORKDIR /app
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
