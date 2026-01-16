@@ -22,7 +22,7 @@ export class RegistrationController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateRegistrationDto) {
+  async create(@Body() dto: CreateRegistrationDto): Promise<{ success: boolean; message: string }> {
     // Check for duplicate registration by email
     const exists = await this.registrationService.existsByEmail(dto.email);
 
@@ -32,13 +32,11 @@ export class RegistrationController {
         message: 'This email is already registered',
       });
     }
-
-    const registration = await this.registrationService.create(dto);
+    await this.registrationService.create(dto);
 
     return {
       success: true,
       message: 'Registration successful',
-      data: registration,
     };
   }
 
@@ -48,7 +46,7 @@ export class RegistrationController {
    * Get all registrations (for admin dashboard).
    */
   @Get()
-  async findAll() {
+  async findAll(): Promise<{ success: boolean; data: any }> {
     const registrations = await this.registrationService.findAll();
     return {
       success: true,
