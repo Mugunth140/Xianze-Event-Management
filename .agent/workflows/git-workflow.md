@@ -4,58 +4,66 @@ description: Git workflow for team collaboration with development, sharan, and p
 
 # Team Git Workflow 🔀
 
-## Your Branch Setup
+## Branch Setup
 
 ```
-        production (LIVE SITE - final merged code)
-              ↑
-    ┌─────────┴─────────┐
-    │                   │
-development         sharan
- (YOU)            (COLLEAGUE)
+              production (LIVE)
+                    ↑
+          ┌────────┴────────┐
+          │                 │
+     development         sharan
+       (YOU)           (COLLEAGUE)
 ```
 
-Both `development` and `sharan` feed into `production`.
+**Both of you can deploy to production!**
 
 ---
 
-## Daily Workflow
+## Daily Work
 
 ### YOU (on `development`)
 // turbo
 ```bash
-# Start of day - get latest
 git checkout development
 git pull origin development
-
-# Work on your code...
-
-# End of day - push your work
-git add .
-git commit -m "feat: your message"
-git push origin development
+# ... do your work ...
+git add . && git commit -m "your message" && git push
 ```
 
 ### COLLEAGUE (on `sharan`)
 // turbo
 ```bash
-# Start of day - get latest
 git checkout sharan
 git pull origin sharan
-
-# Work on their code...
-
-# End of day - push their work
-git add .
-git commit -m "feat: their message"
-git push origin sharan
+# ... do their work ...
+git add . && git commit -m "their message" && git push
 ```
 
 ---
 
-## Syncing Each Other's Work (Weekly or as needed)
+## Deploy to Production
 
-### YOU want COLLEAGUE's changes:
+### YOU deploying:
+```bash
+git checkout production
+git pull origin production
+git merge origin/development --no-edit
+git push origin production
+```
+
+### COLLEAGUE deploying:
+```bash
+git checkout production
+git pull origin production
+git merge origin/sharan --no-edit
+git push origin production
+```
+
+---
+
+## Sync Each Other's Work
+
+### YOU get colleague's changes:
 ```bash
 git checkout development
 git pull origin development
@@ -63,7 +71,7 @@ git merge origin/sharan --no-edit
 git push origin development
 ```
 
-### COLLEAGUE wants YOUR changes:
+### COLLEAGUE gets your changes:
 ```bash
 git checkout sharan
 git pull origin sharan
@@ -73,63 +81,52 @@ git push origin sharan
 
 ---
 
-## Deploy to Production (When ready to go live)
+## Best Practice: Full Sync Before Deploy
 
-### Step 1: Sync both branches first
+Before deploying, sync everyone's work first:
+
+### YOU:
 ```bash
-# Get colleague's latest work into development
 git checkout development
-git pull origin development
 git merge origin/sharan --no-edit
 git push origin development
+git checkout production
+git merge development --no-edit
+git push origin production
 ```
 
-### Step 2: Deploy to production
+### COLLEAGUE:
 ```bash
+git checkout sharan
+git merge origin/development --no-edit
+git push origin sharan
 git checkout production
-git pull origin production
-git merge development --no-edit
+git merge sharan --no-edit
 git push origin production
 ```
 
 ---
 
-## Merge Conflict Resolution 🚨
+## Conflict Resolution 🚨
 
-If you see conflict markers like:
+If you see:
 ```
 <<<<<<< HEAD
 your code
 =======
 their code
->>>>>>> sharan
+>>>>>>> origin/sharan
 ```
 
-1. Keep the code you want (or combine both)
-2. Delete the `<<<<<<<`, `=======`, `>>>>>>>` lines
-3. Save and commit:
-```bash
-git add .
-git commit -m "fix: resolve merge conflict"
-git push
-```
+1. Keep what you need, delete markers
+2. `git add . && git commit -m "fix: resolve conflict" && git push`
 
 ---
 
-## Quick Commands
+## Quick Reference
 
-| Action | Command |
-|--------|---------|
-| Start work | `git pull` |
-| Save work | `git add . && git commit -m "msg" && git push` |
-| Get colleague's work | `git merge origin/sharan` (on development) |
-| Deploy | `git checkout production && git merge development && git push` |
-
----
-
-## Golden Rules ⚠️
-
-1. **Pull before you start working**
-2. **Push at end of day**
-3. **Sync weekly** to avoid big conflicts
-4. **Only deploy from `development`** after merging colleague's work
+| Action | You | Colleague |
+|--------|-----|-----------|
+| Work branch | `development` | `sharan` |
+| Get their work | `git merge origin/sharan` | `git merge origin/development` |
+| Deploy | `git checkout production && git merge development && git push` | `git checkout production && git merge sharan && git push` |
