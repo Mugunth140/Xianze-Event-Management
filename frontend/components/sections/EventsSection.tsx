@@ -70,17 +70,9 @@ export default function EventsSection() {
           </motion.div>
           <Link
             href="/events"
-            className="liquid-glass-btn inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-full self-start sm:self-auto"
+            className="liquid-glass-btn inline-flex items-center px-6 py-3 text-white font-semibold rounded-full self-start sm:self-auto"
           >
             <span>Explore All Events</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
           </Link>
         </div>
 
@@ -154,21 +146,8 @@ export default function EventsSection() {
                         </p>
 
                         {/* Link indicator */}
-                        <div className="flex items-center gap-2 text-primary-600 font-medium">
+                        <div className="flex items-center text-primary-600 font-medium">
                           <span>View Details</span>
-                          <svg
-                            className="w-4 h-4 transition-transform group-hover/card:translate-x-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
                         </div>
                       </div>
                     </div>

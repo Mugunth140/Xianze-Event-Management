@@ -97,7 +97,7 @@ export default function Hero() {
                     0,
                     Math.floor(
                       (new Date('2026-02-07').getTime() - new Date().getTime()) /
-                        (1000 * 60 * 60 * 24)
+                      (1000 * 60 * 60 * 24)
                     )
                   )}
                 </span>{' '}
@@ -123,22 +123,9 @@ export default function Hero() {
               </Link>
               <Link
                 href="/events"
-                className="inline-flex items-center gap-2 px-4 py-3 text-gray-700 font-medium hover:text-primary-600 transition-colors group"
+                className="inline-flex items-center px-4 py-3 text-gray-700 font-medium hover:text-primary-600 transition-colors group"
               >
                 <span>View Events</span>
-                <svg
-                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </Link>
             </div>
           </div>

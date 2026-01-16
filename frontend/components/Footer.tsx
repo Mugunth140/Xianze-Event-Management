@@ -101,19 +101,6 @@ const Footer = () => {
                     <p className="text-xs text-gray-400">Join for updates</p>
                   </div>
                 </div>
-                <svg
-                  className="w-5 h-5 text-gray-500 group-hover:text-[#25D366] group-hover:translate-x-1 transition-all"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </a>
 
               <a
@@ -138,19 +125,6 @@ const Footer = () => {
                     <p className="text-xs text-gray-400">support@xianze.tech</p>
                   </div>
                 </div>
-                <svg
-                  className="w-5 h-5 text-gray-500 group-hover:text-primary-400 group-hover:translate-x-1 transition-all"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </a>
             </div>
           </div>

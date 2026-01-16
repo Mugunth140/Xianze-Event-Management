@@ -81,18 +81,24 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative w-12 h-12 rounded-full border border-gray-200 overflow-hidden">
-                <Image src="/event.png" alt="Xianze Logo" fill className="object-cover" />
+              <div className="relative w-11 h-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary-600/10 to-purple-600/10 border border-primary-200/50 shadow-lg shadow-primary-500/5 group-hover:scale-105 transition-transform duration-300 overflow-hidden backdrop-blur-sm">
+                <Image
+                  src="/event.png"
+                  alt="Xianze Logo"
+                  width={32}
+                  height={32}
+                  className="relative z-10 object-contain"
+                />
+                <div className="absolute inset-0 bg-white/40" />
               </div>
-              <span className="text-2xl font-display font-bold tracking-tight text-purple-accent">
+              <span className="text-2xl font-display font-bold tracking-tight text-gray-900 group-hover:text-primary-600 transition-colors duration-300">
                 Xianze
               </span>
             </Link>
@@ -115,22 +121,9 @@ const Navbar = () => {
             <div className="hidden md:block">
               <Link
                 href="/register"
-                className="liquid-glass-btn inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-white"
+                className="liquid-glass-btn inline-flex items-center px-7 py-3 rounded-full font-semibold text-white"
               >
                 <span>Register Now</span>
-                <svg
-                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
               </Link>
             </div>
 
@@ -143,14 +136,12 @@ const Navbar = () => {
             >
               <div className="w-5 h-3 relative flex flex-col justify-between">
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
-                    isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
-                  }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
+                    }`}
                 />
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
-                    isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
-                  }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
+                    }`}
                 />
               </div>
             </button>
@@ -160,15 +151,13 @@ const Navbar = () => {
 
       {/* Mobile Menu - Full Screen Overlay */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${
-          isMenuOpen ? 'visible' : 'invisible'
-        }`}
+        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${isMenuOpen ? 'visible' : 'invisible'
+          }`}
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           onClick={() => setIsMenuOpen(false)}
         />
 
@@ -215,19 +204,6 @@ const Navbar = () => {
                   >
                     <span className="w-2 h-2 rounded-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.label}
-                    <svg
-                      className="w-4 h-4 ml-auto text-gray-400 group-hover:text-primary-500 transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
                   </Link>
                 </li>
               ))}
