@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/'],
     },
-    sitemap: 'https://xianze.kgcas.ac.in/sitemap.xml',
+    sitemap: 'https://xianze.tech/sitemap.xml',
   };
 }

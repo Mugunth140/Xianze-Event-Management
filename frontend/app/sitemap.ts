@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://xianze.kgcas.ac.in';
+  const baseUrl = 'https://xianze.tech';
 
   // Static routes
   const routes = ['', '/register', '/events', '/contact', '/faq'].map((route) => ({
