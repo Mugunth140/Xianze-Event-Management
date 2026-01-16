@@ -14,6 +14,7 @@
     "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
+    "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.25.0",
     "gsap": "^3.14.2",
     "lottie-react": "^2.4.1",
@@ -25,6 +26,7 @@
     "tailwind-scrollbar-hide": "^4.0.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20.12.7",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",

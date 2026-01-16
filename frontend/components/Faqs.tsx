@@ -175,11 +175,10 @@ export default function Faqs() {
                                 p-5 sm:p-6 rounded-2xl
                                 bg-white/80 backdrop-blur-sm
                                 border-2 transition-all duration-300
-                                ${
-                                  openIndex === index
-                                    ? 'border-primary-400 shadow-lg shadow-primary-500/10'
-                                    : 'border-gray-100 hover:border-primary-200 hover:shadow-md'
-                                }
+                                ${openIndex === index
+                  ? 'border-primary-400 shadow-lg shadow-primary-500/10'
+                  : 'border-gray-100 hover:border-primary-200 hover:shadow-md'
+                }
                             `}
             >
               {/* Question */}
@@ -190,11 +189,10 @@ export default function Faqs() {
                                         flex-shrink-0 w-12 h-12 rounded-xl
                                         flex items-center justify-center text-2xl
                                         transition-all duration-300
-                                        ${
-                                          openIndex === index
-                                            ? 'bg-primary-500 shadow-lg shadow-primary-500/30 scale-110'
-                                            : 'bg-primary-100 group-hover:bg-primary-200'
-                                        }
+                                        ${openIndex === index
+                      ? 'bg-primary-500 shadow-lg shadow-primary-500/30 scale-110'
+                      : 'bg-primary-100 group-hover:bg-primary-200'
+                    }
                                     `}
                 >
                   {openIndex === index ? '✨' : faq.emoji}
@@ -218,11 +216,10 @@ export default function Faqs() {
                                                 flex items-center justify-center
                                                 text-lg font-bold
                                                 transition-all duration-300
-                                                ${
-                                                  openIndex === index
-                                                    ? 'bg-primary-500 text-white rotate-45'
-                                                    : 'bg-gray-100 text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600'
-                                                }
+                                                ${openIndex === index
+                          ? 'bg-primary-500 text-white rotate-45'
+                          : 'bg-gray-100 text-gray-500 group-hover:bg-primary-100 group-hover:text-primary-600'
+                        }
                                             `}
                     >
                       +
@@ -277,7 +274,7 @@ export default function Faqs() {
                   <span>Get in touch</span>
                 </a>
                 <a
-                  href="mailto:xianze2026@gmail.com"
+                  href="mailto:support@xianze.tech"
                   className="min-w-[160px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                 >
                   <span>Email us</span>

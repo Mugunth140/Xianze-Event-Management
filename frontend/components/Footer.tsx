@@ -101,23 +101,10 @@ const Footer = () => {
                     <p className="text-xs text-gray-400">Join for updates</p>
                   </div>
                 </div>
-                <svg
-                  className="w-5 h-5 text-gray-500 group-hover:text-[#25D366] group-hover:translate-x-1 transition-all"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </a>
 
               <a
-                href="mailto:xianze2026@gmail.com"
+                href="mailto:support@xianze.tech"
                 className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-primary-600/20 hover:border-primary-500/50 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
@@ -135,22 +122,9 @@ const Footer = () => {
                     <p className="font-semibold text-white group-hover:text-primary-400 transition-colors">
                       Email Us
                     </p>
-                    <p className="text-xs text-gray-400">xianze2026@gmail.com</p>
+                    <p className="text-xs text-gray-400">support@xianze.tech</p>
                   </div>
                 </div>
-                <svg
-                  className="w-5 h-5 text-gray-500 group-hover:text-primary-400 group-hover:translate-x-1 transition-all"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </a>
             </div>
           </div>
