@@ -7,15 +7,41 @@ export default function EventsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative pt-28 sm:pt-32 pb-12 overflow-hidden bg-gradient-to-b from-gray-50 to-white">
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-100/50 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gray-100 rounded-full blur-[80px] pointer-events-none" />
+      {/* Hero Section */}
+      <section className="relative pt-28 sm:pt-32 pb-12 overflow-hidden">
+        {/* Decorative blobs */}
+        <div
+          className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          className="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
+            {/* Fun badge */}
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
+              <span className="text-2xl">🚀</span>
+              <span className="text-sm font-semibold text-primary-700 uppercase tracking-wider">
+                Explore Events
+              </span>
+            </div>
+
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-gray-900 mb-6">
-              Explore Our Events
+              Discover Our{' '}
+              <span className="relative inline-block">
+                <span className="relative z-10 text-primary-600">Events</span>
+                <span className="absolute bottom-1 left-0 w-full h-3 bg-primary-200/60 -rotate-1 -z-0" />
+              </span>
+              ✨
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
               Compete, collaborate, and showcase your skills across 7 exciting events. From
