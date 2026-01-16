@@ -1,29 +1,57 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { events } from '../../data/events';
 
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 export default function EventsSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    if (headerRef.current) {
+      tl.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+      );
+    }
+  }, []);
+
   return (
-    <section className="py-8 lg:py-12 bg-transparent overflow-hidden relative">
+    <section ref={sectionRef} className="py-8 lg:py-12 bg-transparent overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+        <div
+          ref={headerRef}
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 opacity-0"
+        >
+          <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 border border-primary-100 mb-4">
               <span className="text-sm font-medium text-primary-600">Featured Events</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900">
               Exciting <span className="text-primary-600">Competitions</span> Await
             </h2>
-          </motion.div>
+          </div>
           <Link
             href="/events"
             className="liquid-glass-btn inline-flex items-center px-6 py-3 text-white font-semibold rounded-full self-start sm:self-auto"
@@ -55,11 +83,11 @@ export default function EventsSection() {
                 </div>
                 Let's adjust the structure to be correct for the CSS we added:
                 .animate-marquee { animation: marquee ... }
-                
+
                 Wait, the CSS I added was:
                 .animate-marquee { animation: ... translateX(-50%) }
-                This implies the content should be double width. 
-                
+                This implies the content should be double width.
+
                 So I will render the list twice INSIDE the single animating container.
             */}
             {events.map((event) => (
@@ -67,20 +95,20 @@ export default function EventsSection() {
             ))}
           </div>
 
-          {/* 
-             NOTE: The CSS `translateX(-50%)` works if the container is 200% width of the viewport or simply if the content inside is long enough. 
+          {/*
+             NOTE: The CSS `translateX(-50%)` works if the container is 200% width of the viewport or simply if the content inside is long enough.
              Ideally the `animate-marquee` class is on the WRAPPER moving left.
              Inside it, we have the items.
-             
+
              To make it truly seamless, the animation should move by exactly 50% of the TOTAL width (which is the width of one set of items).
-             
+
              Let's ensure the structure matches:
              <div className="flex animate-marquee ...">
                 {items}
                 {items}
              </div>
-             
-             This single div moves left. When it hits -50%, it resets to 0. 
+
+             This single div moves left. When it hits -50%, it resets to 0.
              Since the second half is identical to the first, the reset is invisible.
           */}
         </div>

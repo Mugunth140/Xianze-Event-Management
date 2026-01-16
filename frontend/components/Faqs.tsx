@@ -63,44 +63,38 @@ export default function Faqs() {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Header animation
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 70%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    // Header
     if (headerRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
       );
     }
 
     // FAQ cards stagger animation
     if (cardsRef.current) {
-      const cards = cardsRef.current.querySelectorAll('.faq-card');
-      gsap.fromTo(
+      const cards = cardsRef.current.querySelectorAll('.faq-card-item'); // Updated class name
+      tl.fromTo(
         cards,
-        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 0, y: 50, filter: 'blur(10px)' },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 0.5,
+          filter: 'blur(0px)',
+          duration: 0.8,
           stagger: 0.1,
-          ease: 'back.out(1.2)',
-          scrollTrigger: {
-            trigger: cardsRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
 
@@ -139,7 +133,7 @@ export default function Faqs() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div ref={headerRef} className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16 opacity-0">
           {/* Fun badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">🤔</span>
@@ -171,10 +165,11 @@ export default function Faqs() {
               key={index}
               onClick={() => toggleFAQ(index)}
               className={`
-                                faq-card group cursor-pointer
+                                faq-card-item group cursor-pointer
                                 p-5 sm:p-6 rounded-2xl
                                 bg-white/80 backdrop-blur-sm
                                 border-2 transition-all duration-300
+                                opacity-0
                                 ${
                                   openIndex === index
                                     ? 'border-primary-400 shadow-lg shadow-primary-500/10'

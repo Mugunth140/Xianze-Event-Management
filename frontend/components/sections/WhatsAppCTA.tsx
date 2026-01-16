@@ -18,21 +18,25 @@ export default function WhatsAppCTA() {
     const section = sectionRef.current;
     if (!section || !cardRef.current) return;
 
-    // Main Card Animation
-    gsap.fromTo(
+    // Main Card Animation - Cinematic Fast
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    tl.fromTo(
       cardRef.current,
-      { opacity: 0, y: 40, scale: 0.98 },
+      { opacity: 0, y: 60, scale: 0.95, filter: 'blur(10px)' },
       {
         opacity: 1,
         y: 0,
         scale: 1,
+        filter: 'blur(0px)',
         duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 85%',
-          toggleActions: 'play none none reverse',
-        },
+        ease: 'power4.out',
       }
     );
 
@@ -65,7 +69,7 @@ export default function WhatsAppCTA() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={cardRef}
-          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-green-900/20 group"
+          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-green-900/20 group opacity-0"
           style={{
             background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
           }}

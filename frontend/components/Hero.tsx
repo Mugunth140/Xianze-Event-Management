@@ -19,44 +19,51 @@ export default function Hero() {
     if (badgeRef.current) {
       tl.fromTo(
         badgeRef.current,
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
+        { opacity: 0, y: 30, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
       );
     }
 
     if (headlineRef.current) {
       tl.fromTo(
         headlineRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-        '-=0.3'
+        { opacity: 0, y: 40, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
+        '-=0.6'
       );
     }
 
     if (descriptionRef.current) {
       tl.fromTo(
         descriptionRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        '-=0.3'
+        { opacity: 0, y: 30, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
+        '-=0.6'
       );
     }
 
     if (ctaRef.current) {
       tl.fromTo(
         ctaRef.current,
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        '-=0.2'
+        { opacity: 0, y: 30, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
+        '-=0.6'
       );
     }
 
     if (videoRef.current) {
       tl.fromTo(
         videoRef.current,
-        { opacity: 0, y: 30, scale: 0.98 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' },
-        '-=0.3'
+        { opacity: 0, y: 60, scale: 0.95, filter: 'blur(10px)' },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: 'blur(0px)',
+          duration: 1.0,
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
   }, []);
@@ -123,7 +130,7 @@ export default function Hero() {
               </Link>
               <Link
                 href="/events"
-                className="inline-flex items-center justify-center px-7 py-3.5 bg-primary-600/10 text-primary-600 font-semibold rounded-full border border-primary-600/20 hover:bg-primary-600/20 transition-all duration-400"
+                className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-gray-700 transition-all duration-300 bg-white/50 border border-gray-200/50 hover:bg-white/80 hover:border-primary-200/50 hover:text-primary-600 rounded-full backdrop-blur-sm shadow-sm hover:shadow-md hover:shadow-primary-500/10"
               >
                 <span>View Events</span>
               </Link>
@@ -132,7 +139,10 @@ export default function Hero() {
 
           {/* Right Column - Description */}
           <div>
-            <p ref={descriptionRef} className="text-lg text-gray-600 leading-relaxed opacity-0">
+            <p
+              ref={descriptionRef}
+              className="text-center lg:text-left text-lg text-gray-600 leading-relaxed opacity-0"
+            >
               Join the ultimate inter-collegiate tech symposium. Compete, collaborate, and showcase
               your skills across coding, design, and innovation challenges. Be part of something
               extraordinary.

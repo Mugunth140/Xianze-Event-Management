@@ -18,21 +18,25 @@ export default function FunGamesBanner() {
     const banner = bannerRef.current;
     if (!banner || !contentRef.current) return;
 
-    // Main Card Animation
-    gsap.fromTo(
+    // Main Card Animation - Cinematic Fast
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: banner,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    tl.fromTo(
       contentRef.current,
-      { opacity: 0, y: 40, scale: 0.98 },
+      { opacity: 0, y: 60, scale: 0.95, filter: 'blur(10px)' },
       {
         opacity: 1,
         y: 0,
         scale: 1,
+        filter: 'blur(0px)',
         duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: banner,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse',
-        },
+        ease: 'power4.out',
       }
     );
 
@@ -62,7 +66,7 @@ export default function FunGamesBanner() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={contentRef}
-          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-primary-500/20 group"
+          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-primary-500/20 group opacity-0"
           style={{
             background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #8b5cf6 100%)',
           }}

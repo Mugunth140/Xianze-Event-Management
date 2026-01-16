@@ -134,48 +134,43 @@ const Register = () => {
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Header animation
+    // Unified Animation Timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 80%', // Trigger earlier for better visibility
+        toggleActions: 'play none none none', // Don't reverse, just play once cleanly
+      },
+    });
+
     if (headerRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
       );
     }
 
-    // Form animation
-    if (formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { opacity: 0, y: 40 },
+    // Stagger Form Sections
+    const formSections = document.querySelectorAll('.form-section-item');
+    if (formSections.length > 0) {
+      tl.fromTo(
+        formSections,
+        { opacity: 0, y: 50, filter: 'blur(10px)' },
         {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-          delay: 0.2,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: formRef.current,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          filter: 'blur(0px)',
+          duration: 0.8,
+          stagger: 0.1,
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
 
@@ -579,10 +574,7 @@ const Register = () => {
           {submitStatus !== 'success' && (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* SECTION 1: Personal Details */}
-              <div
-                ref={formRef}
-                className="bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30"
-              >
+              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center text-2xl">
                     👤
@@ -643,7 +635,7 @@ const Register = () => {
               </div>
 
               {/* SECTION 2: Academic Info */}
-              <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-20">
+              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-20">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">
                     🎓
@@ -745,7 +737,7 @@ const Register = () => {
               </div>
 
               {/* SECTION 3: Event Selection */}
-              <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
+              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center text-2xl">
                     🚀
@@ -767,7 +759,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading || !isFormValid}
-                className="w-full liquid-glass-btn inline-flex items-center justify-center px-8 py-5 text-white text-lg font-semibold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300"
+                className="form-section-item opacity-0 w-full liquid-glass-btn inline-flex items-center justify-center px-8 py-5 text-white text-lg font-semibold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300"
               >
                 {loading ? (
                   <>

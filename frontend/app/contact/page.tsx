@@ -30,69 +30,77 @@ const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const coordinatorsRef = useRef<HTMLDivElement>(null); // New Ref for Coordinators
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Header animation
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 70%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    // Header
     if (headerRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
       );
     }
 
-    // Cards stagger animation
-    if (cardsRef.current) {
-      const cards = cardsRef.current.querySelectorAll('.contact-card');
-      gsap.fromTo(
+    // Contact Cards
+    const cards = document.querySelectorAll('.contact-card-item'); // Changed class name targeting
+    if (cards.length > 0) {
+      tl.fromTo(
         cards,
-        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 0, y: 50, filter: 'blur(10px)' },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 0.5,
+          filter: 'blur(0px)',
+          duration: 0.8,
           stagger: 0.1,
-          ease: 'back.out(1.2)',
-          scrollTrigger: {
-            trigger: cardsRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
 
-    // Form animation
-    if (formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { opacity: 0, y: 40 },
+    // Student Coordinators Section
+    if (coordinatorsRef.current) {
+      tl.fromTo(
+        coordinatorsRef.current,
+        { opacity: 0, y: 50, filter: 'blur(10px)' },
         {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: formRef.current,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          filter: 'blur(0px)',
+          duration: 0.8,
+          ease: 'power4.out',
+        },
+        '-=0.6'
+      );
+    }
+
+    // Form
+    if (formRef.current) {
+      tl.fromTo(
+        formRef.current,
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.8,
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
 
@@ -157,7 +165,7 @@ const Contact = () => {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div ref={headerRef} className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16 opacity-0">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">📬</span>
@@ -188,7 +196,7 @@ const Contact = () => {
           <Link
             href="https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp"
             target="_blank"
-            className="contact-card group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300"
+            className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 opacity-0"
           >
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-green-100 group-hover:bg-green-500 group-hover:shadow-lg group-hover:shadow-green-500/30 flex items-center justify-center text-3xl transition-all duration-300">
@@ -206,7 +214,7 @@ const Contact = () => {
           {/* Email Card */}
           <a
             href="mailto:support@xianze.tech"
-            className="contact-card group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300"
+            className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300 opacity-0"
           >
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary-100 group-hover:bg-primary-500 group-hover:shadow-lg group-hover:shadow-primary-500/30 flex items-center justify-center text-2xl transition-all duration-300">
@@ -223,7 +231,7 @@ const Contact = () => {
         </div>
 
         {/* Student Coordinators */}
-        <div className="mb-12">
+        <div ref={coordinatorsRef} className="mb-12 opacity-0">
           <h2 className="text-2xl font-display font-bold text-gray-900 mb-6 text-center">
             Student Coordinators 📞
           </h2>
@@ -252,7 +260,7 @@ const Contact = () => {
         {/* Contact Form Section */}
         <div
           ref={formRef}
-          className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden"
+          className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden opacity-0"
         >
           {/* Subtle background pattern */}
           <div

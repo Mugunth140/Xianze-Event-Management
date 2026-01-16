@@ -22,26 +22,25 @@ export default function AboutSection() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 80%',
-        end: 'bottom 20%',
-        toggleActions: 'play none none reverse',
+        start: 'top 70%',
+        toggleActions: 'play none none none',
       },
     });
 
     if (headingRef.current) {
       tl.fromTo(
         headingRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
+        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
       );
     }
 
     if (textRef.current) {
       tl.fromTo(
         textRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        '-=0.3'
+        { opacity: 0, y: 30, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
+        '-=0.6'
       );
     }
 
@@ -49,9 +48,16 @@ export default function AboutSection() {
       const statItems = statsRef.current.querySelectorAll('.stat-item');
       tl.fromTo(
         statItems,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' },
-        '-=0.2'
+        { opacity: 0, y: 40, filter: 'blur(10px)' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.8,
+          stagger: 0.1,
+          ease: 'power4.out',
+        },
+        '-=0.6'
       );
     }
 
@@ -72,13 +78,13 @@ export default function AboutSection() {
           {/* Heading */}
           <h2
             ref={headingRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6"
+            className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6 opacity-0"
           >
             Where Innovation Meets <span className="text-primary-600">Competition</span>
           </h2>
 
           {/* Description */}
-          <p ref={textRef} className="text-lg text-gray-600 leading-relaxed mb-12">
+          <p ref={textRef} className="text-lg text-gray-600 leading-relaxed mb-12 opacity-0">
             XIANZE 2K26 is the premier inter-collegiate tech symposium bringing together the
             brightest minds from across campuses. Experience a day packed with coding challenges,
             design battles, innovative workshops, and exciting prizes.
@@ -90,19 +96,19 @@ export default function AboutSection() {
           ref={statsRef}
           className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto"
         >
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               300+
             </div>
             <div className="text-sm sm:text-base text-gray-500 font-medium">Participants</div>
           </div>
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               25+
             </div>
             <div className="text-sm sm:text-base text-gray-500 font-medium">Colleges</div>
           </div>
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               ₹20K+
             </div>
