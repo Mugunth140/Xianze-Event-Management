@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# XIANZE Backend Pre-commit Hook
+# Runs format, lint, and tests before allowing commit
+
+cd backend
+
+echo "🎨 Running Prettier format..."
+bun run format
+if [ $? -ne 0 ]; then
+  echo "❌ Formatting failed. Commit aborted."
+  exit 1
+fi
+
+echo "🔍 Running ESLint check..."
+bun run lint:check
+if [ $? -ne 0 ]; then
+  echo "❌ Lint check failed. Commit aborted."
+  exit 1
+fi
+
+echo "🧪 Running tests..."
+if [ -d "src" ] && find src -name "*.spec.ts" -type f | head -1 | grep -q .; then
+  bun run test --passWithNoTests
+  if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Commit aborted."
+    exit 1
+  fi
+else
+  echo "⏭️  No test files found, skipping tests."
+fi
+
+echo "📦 Staging formatted files..."
+git add -A
+
+echo "✅ All checks passed! Proceeding with commit."

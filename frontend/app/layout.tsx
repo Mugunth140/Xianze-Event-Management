@@ -1,8 +1,20 @@
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Sans, Outfit } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -22,9 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <main className="min-h-screen bg-gray-50">{children}</main>
+    <html lang="en" className={`${outfit.variable} ${dmSans.variable}`}>
+      <body className="font-sans antialiased">
+        <Navbar />
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );

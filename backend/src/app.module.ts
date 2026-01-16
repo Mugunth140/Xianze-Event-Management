@@ -1,42 +1,49 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
+import { throttlerConfig } from './config/security.config';
+import { ContactModule } from './modules/contact/contact.module';
+import { RegistrationModule } from './modules/registration/registration.module';
 
 /**
  * Root Application Module
  *
- * This is the main module that bootstraps the entire application.
- * It imports core modules and will be extended with feature modules.
- *
- * Current modules:
+ * Production-ready module with security features:
  * - ConfigModule: Environment variable management
  * - TypeOrmModule: Database connection (SQLite)
- *
- * To add new features, create modules in src/modules/ and import them here.
+ * - ThrottlerModule: Rate limiting
  */
 @Module({
   imports: [
-    // Global configuration from environment variables
+    // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
 
-    // Database connection using TypeORM
+    // Rate limiting
+    ThrottlerModule.forRootAsync(throttlerConfig),
+
+    // Database connection
     TypeOrmModule.forRootAsync(databaseConfig),
 
-    // =================================================================
-    // FEATURE MODULES
-    // Import your feature modules below. Example:
-    // AuthModule,
-    // EventsModule,
-    // UsersModule,
-    // =================================================================
+    // Feature modules
+    ContactModule,
+    RegistrationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Global rate limiting guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

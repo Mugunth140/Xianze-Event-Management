@@ -1,28 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output configuration for Docker
-  output: 'standalone',
+  // Static export for nginx serving
+  output: 'export',
 
-  // Environment variables that will be available at build time
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
-  },
-
-  // Image optimization configuration
+  // Required for static export with images
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
+    unoptimized: true,
   },
 
-  // Disable x-powered-by header for security
+  // Disable x-powered-by header
   poweredByHeader: false,
 
   // Strict mode for better development
   reactStrictMode: true,
+
+  // Trailing slashes for static hosting compatibility
+  trailingSlash: true,
 };
 
 module.exports = nextConfig;

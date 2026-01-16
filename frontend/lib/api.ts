@@ -16,9 +16,6 @@
  * ```
  */
 
-// Base URL for the API, configured via environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
 /**
  * API Error class for handling HTTP errors
  */
@@ -26,7 +23,7 @@ export class ApiError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public errors?: Record<string, string[]>,
+    public errors?: Record<string, string[]>
   ) {
     super(message);
     this.name = 'ApiError';
@@ -50,8 +47,8 @@ interface RequestConfig extends RequestInit {
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
   const { params, ...init } = config;
 
-  // Build URL with query parameters
-  let url = `${API_BASE_URL}/api${endpoint}`;
+  // Build URL with query parameters - using relative URL for Next.js rewrites
+  let url = `/api${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams(params);
     url += `?${searchParams.toString()}`;
@@ -62,12 +59,6 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     'Content-Type': 'application/json',
     ...init.headers,
   };
-
-  // TODO: Add authentication header when auth is implemented
-  // const token = getAuthToken();
-  // if (token) {
-  //   headers['Authorization'] = `Bearer ${token}`;
-  // }
 
   const response = await fetch(url, {
     ...init,
@@ -80,7 +71,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     throw new ApiError(
       response.status,
       errorData.message || `HTTP error ${response.status}`,
-      errorData.errors,
+      errorData.errors
     );
   }
 
@@ -141,6 +132,7 @@ export const api = {
  * Health check function
  *
  * Use this to verify backend connectivity.
+ * Note: Health check bypasses Next.js rewrites and goes directly to backend
  *
  * @returns Health status from the backend
  */
@@ -149,6 +141,7 @@ export async function checkHealth(): Promise<{
   timestamp: string;
   version: string;
 }> {
-  const response = await fetch(`${API_BASE_URL}/health`);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const response = await fetch(`${apiUrl}/health`);
   return response.json();
 }
