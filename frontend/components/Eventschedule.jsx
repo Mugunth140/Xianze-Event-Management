@@ -11,10 +11,26 @@ const listVariants = {
   },
 };
 
-
+// const itemVariants = {
+//   hidden: { opacity: 0, y: 14 },
+//   show: {
+//     opacity: 1,
+//     y: 0,
+//     transition: {
+//       duration: 0.32, // fast
+//       ease: [0.25, 0.8, 0.25, 1],
+//     },
+//   },
+// };
 
 const Eventschedule = () => {
- 
+  // const schedule = [
+  //   { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
+  //   { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
+  //   { title: 'Event Timing', time: '10:30 AM - 1:30 PM' },
+  //   { title: 'Lunch Timing', time: '1:30 PM - 2:30 PM' },
+  //   { title: 'Ceremony', time: '2:30 PM - 3:30 PM' },
+  // ];
   return (
     <motion.div
       initial={{ x: -60, opacity: 0 }}
@@ -80,7 +96,7 @@ const Eventschedule = () => {
           <motion.div
             animate={{
               y: [0, -10, 0],
-              rotate: [0, 5.2, -5, 0],
+              rotate: [0, 5, -5, 0],
             }}
             transition={{
               duration: 3,
@@ -104,8 +120,6 @@ const Eventschedule = () => {
             The event schedule will be updated shortly. <br /> Stay tuned!
           </p>
         </motion.div>
-
-      
       </motion.ul>
     </motion.div>
   );

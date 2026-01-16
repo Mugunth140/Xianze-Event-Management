@@ -465,7 +465,7 @@ const Register = () => {
             px-8 py-3
             text-white
             font-semibold
-            text-[1rem]
+            text-[1.rem]
             transition-all duration-300
             hover:bg-violet-700
             hover:-translate-y-0.5

@@ -277,7 +277,7 @@ export default function Faqs() {
                   <span>Get in touch</span>
                 </a>
                 <a
-                  href="mailto:xianze2026@gmail.com"
+                  href="mailto:support@xinaze.tech"
                   className="min-w-[160px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                 >
                   <span>Email us</span>

@@ -41,7 +41,6 @@ const Contact = () => {
         setStatusMessage('Message sent successfully!');
         setFormData({ name: '', email: '', message: '' });
       } else {
-        console.log(response);
         setStatusMessage('Failed to send message. Please try again.');
       }
     } catch (error) {
