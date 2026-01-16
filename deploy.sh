@@ -1,6 +1,6 @@
 #!/bin/bash
 # XIANZE Deployment Script
-# Usage: ./deploy.sh [dev|prod] [--no-cache] [--init-ssl]
+# Usage: ./deploy.sh [dev|prod] [--init-ssl]
 
 set -e
 
@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 ENV="${1:-prod}"
-NO_CACHE=""
+NO_CACHE="--no-cache"
 INIT_SSL=false
 COMPOSE_FILE="docker-compose.yml"
 DOMAIN="${DOMAIN:-xianze.tech}"
@@ -22,9 +22,6 @@ EMAIL="${EMAIL:-admin@xianze.tech}"
 # Parse arguments
 for arg in "$@"; do
     case $arg in
-        --no-cache)
-            NO_CACHE="--no-cache"
-            ;;
         --init-ssl)
             INIT_SSL=true
             ;;
@@ -145,8 +142,11 @@ if [[ "$INIT_SSL" == true ]] && [[ "$ENV" == "prod" ]]; then
     init_ssl_certificates
 fi
 
-# Step 3: Build new images
-echo -e "${BLUE}[3/5]${NC} Building new images..."
+# Step 3: Remove old volumes and build fresh
+echo -e "${BLUE}[3/5]${NC} Removing old frontend volume for fresh build..."
+docker volume rm xianze-frontend-static 2>/dev/null || true
+
+echo -e "${BLUE}[3/5]${NC} Building new images (no-cache, fresh)..."
 docker compose -f "$COMPOSE_FILE" build $NO_CACHE
 
 # Step 4: Start containers
