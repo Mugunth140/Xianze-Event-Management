@@ -2,7 +2,7 @@
 
 import gsap from 'gsap';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
@@ -11,6 +11,38 @@ export default function Hero() {
   const descriptionRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLDivElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+
+  // Intersection Observer for lazy video loading
+  useEffect(() => {
+    const videoContainer = videoRef.current;
+    if (!videoContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVideoVisible(true);
+            observer.disconnect(); // Only need to trigger once
+          }
+        });
+      },
+      { rootMargin: '200px', threshold: 0.1 } // Start loading 200px before visible
+    );
+
+    observer.observe(videoContainer);
+    return () => observer.disconnect();
+  }, []);
+
+  // Start video playback when visible
+  useEffect(() => {
+    if (isVideoVisible && videoElementRef.current) {
+      videoElementRef.current.play().catch(() => {
+        // Auto-play might be blocked, that's okay
+      });
+    }
+  }, [isVideoVisible]);
 
   useEffect(() => {
     // Entrance animations with GSAP
@@ -155,17 +187,20 @@ export default function Hero() {
           <div className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl shadow-primary-500/10">
             <div className="relative w-full aspect-[9/14] sm:aspect-[16/10] lg:aspect-video">
               <video
+                ref={videoElementRef}
                 className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
                 loop
                 muted
                 playsInline
-                poster="/event.png" // Using event.png as a placeholder/poster
+                preload="none"
+                poster="/event.png"
               >
-                <source
-                  src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
-                  type="video/mp4"
-                />
+                {isVideoVisible && (
+                  <source
+                    src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
+                    type="video/mp4"
+                  />
+                )}
                 Your browser does not support the video tag.
               </video>
 

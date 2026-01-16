@@ -1,5 +1,6 @@
 'use client';
 
+import { sanitizeInput, validateEmail, validateMessage, validateName } from '@/lib/validation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
@@ -26,6 +27,11 @@ const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [statusMessage, setStatusMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    message?: string;
+  }>({});
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -110,18 +116,50 @@ const Contact = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof typeof fieldErrors]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setFieldErrors({});
+
+    // Validate fields
+    const errors: { name?: string; email?: string; message?: string } = {};
+
+    const nameResult = validateName(formData.name);
+    if (!nameResult.isValid) errors.name = nameResult.error!;
+
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.isValid) errors.email = emailResult.error!;
+
+    const messageResult = validateMessage(formData.message, 2000);
+    if (!messageResult.isValid) errors.message = messageResult.error!;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setStatusMessage('Please fix the errors below.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Sanitize before sending
+    const sanitizedData = {
+      name: sanitizeInput(formData.name),
+      email: formData.email.trim().toLowerCase(),
+      message: sanitizeInput(formData.message),
+    };
 
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
 
       if (response.ok) {

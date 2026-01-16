@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  sanitizeInput,
+  validateCollege,
+  validateEmail,
+  validateName,
+  validatePhone,
+  validateSelection,
+} from '@/lib/validation';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -131,6 +139,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -374,18 +383,24 @@ const Register = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
 
-    if (e.target.name === 'course') {
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof FormData]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+
+    if (name === 'course') {
       setFormData((prev) => ({
         ...prev,
         branch: '',
-        otherCourse: e.target.value === 'Others' ? '' : prev.otherCourse,
+        otherCourse: value === 'Others' ? '' : prev.otherCourse,
         otherBranch: '',
       }));
     }
 
-    if (e.target.name === 'branch' && e.target.value !== 'Others') {
+    if (name === 'branch' && value !== 'Others') {
       setFormData((prev) => ({ ...prev, otherBranch: '' }));
     }
   };
@@ -396,23 +411,55 @@ const Register = () => {
     setSubmitStatus('idle');
     setErrorMessage('');
 
-    if (!/^\d{10,}$/.test(formData.contact)) {
-      setErrorMessage('Please enter a valid contact number (at least 10 digits)');
+    // Clear previous errors
+    setFieldErrors({});
+
+    // Validate all fields
+    const errors: Partial<Record<keyof FormData, string>> = {};
+
+    const nameResult = validateName(formData.name);
+    if (!nameResult.isValid) errors.name = nameResult.error!;
+
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.isValid) errors.email = emailResult.error!;
+
+    const phoneResult = validatePhone(formData.contact);
+    if (!phoneResult.isValid) errors.contact = phoneResult.error!;
+
+    const collegeResult = validateCollege(formData.college);
+    if (!collegeResult.isValid) errors.college = collegeResult.error!;
+
+    const courseResult = validateSelection(formData.course, 'course');
+    if (!courseResult.isValid) errors.course = courseResult.error!;
+
+    if (formData.course === 'Others') {
+      const otherCourseResult = validateSelection(formData.otherCourse, 'course name');
+      if (!otherCourseResult.isValid) errors.otherCourse = otherCourseResult.error!;
+    }
+
+    const eventResult = validateSelection(formData.event, 'event');
+    if (!eventResult.isValid) errors.event = eventResult.error!;
+
+    // Check if there are validation errors
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       setSubmitStatus('error');
+      setErrorMessage('Please fix the errors below.');
       setLoading(false);
       return;
     }
 
     const submittedData = {
-      name: formData.name,
-      email: formData.email,
-      course: formData.course === 'Others' ? formData.otherCourse : formData.course,
-      branch:
+      name: sanitizeInput(formData.name),
+      email: formData.email.trim().toLowerCase(),
+      course: sanitizeInput(formData.course === 'Others' ? formData.otherCourse : formData.course),
+      branch: sanitizeInput(
         formData.course === 'Others' || formData.branch === 'Others'
           ? formData.otherBranch
-          : formData.branch,
-      college: formData.college,
-      contact: formData.contact,
+          : formData.branch
+      ),
+      college: sanitizeInput(formData.college),
+      contact: formData.contact.replace(/[^\d]/g, ''),
       event: formData.event,
     };
 
@@ -595,8 +642,11 @@ const Register = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.name ? 'border-red-400' : 'border-gray-100'}`}
                     />
+                    {fieldErrors.name && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.name}</p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -610,8 +660,11 @@ const Register = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.email ? 'border-red-400' : 'border-gray-100'}`}
                     />
+                    {fieldErrors.email && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
+                    )}
                   </div>
                   <div>
                     <label
@@ -628,8 +681,11 @@ const Register = () => {
                       value={formData.contact}
                       onChange={handleChange}
                       required
-                      className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.contact ? 'border-red-400' : 'border-gray-100'}`}
                     />
+                    {fieldErrors.contact && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.contact}</p>
+                    )}
                   </div>
                 </div>
               </div>
