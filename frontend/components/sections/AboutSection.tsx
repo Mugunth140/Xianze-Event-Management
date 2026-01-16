@@ -61,7 +61,7 @@ export default function AboutSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-20 lg:py-28 bg-white">
+    <section ref={sectionRef} className="py-20 lg:py-28 ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Section Badge */}

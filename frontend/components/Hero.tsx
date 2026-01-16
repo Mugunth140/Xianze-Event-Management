@@ -123,7 +123,7 @@ export default function Hero() {
               </Link>
               <Link
                 href="/events"
-                className="inline-flex items-center px-4 py-3 text-gray-700 font-medium hover:text-primary-600 transition-colors group"
+                className="inline-flex items-center justify-center px-7 py-3.5 bg-primary-600/10 text-primary-600 font-semibold rounded-full border border-primary-600/20 hover:bg-primary-600/20 transition-all duration-400"
               >
                 <span>View Events</span>
               </Link>

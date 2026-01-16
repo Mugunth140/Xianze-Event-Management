@@ -3,6 +3,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef } from 'react';
+import { FaCommentDots, FaPhoneAlt, FaShareAlt, FaWhatsapp } from 'react-icons/fa';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -11,11 +12,13 @@ if (typeof window !== 'undefined') {
 export default function WhatsAppCTA() {
   const sectionRef = useRef<HTMLElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const iconsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section || !cardRef.current) return;
 
+    // Main Card Animation
     gsap.fromTo(
       cardRef.current,
       { opacity: 0, y: 40, scale: 0.98 },
@@ -23,7 +26,7 @@ export default function WhatsAppCTA() {
         opacity: 1,
         y: 0,
         scale: 1,
-        duration: 0.7,
+        duration: 0.8,
         ease: 'power3.out',
         scrollTrigger: {
           trigger: section,
@@ -32,6 +35,22 @@ export default function WhatsAppCTA() {
         },
       }
     );
+
+    // Floating Icons Animation
+    if (iconsRef.current) {
+      const icons = iconsRef.current.children;
+      Array.from(icons).forEach((icon, index) => {
+        gsap.to(icon, {
+          y: -20,
+          rotation: index % 2 === 0 ? 15 : -15,
+          duration: 2.5 + index * 0.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: index * 0.3,
+        });
+      });
+    }
 
     return () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
@@ -42,62 +61,75 @@ export default function WhatsAppCTA() {
   const whatsappLink = 'https://chat.whatsapp.com/your-community-link';
 
   return (
-    <section
-      ref={sectionRef}
-      className="py-20 lg:py-28"
-      style={{
-        background: 'linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%)',
-      }}
-    >
+    <section ref={sectionRef} className="py-12 lg:py-20 bg-transparent relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={cardRef}
-          className="relative overflow-hidden rounded-3xl bg-white border border-primary-100 shadow-xl shadow-primary-500/5 p-8 sm:p-12 lg:p-16 text-center"
+          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-green-900/20 group"
+          style={{
+            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+          }}
         >
-          {/* Decorative background */}
-          <div className="absolute inset-0 opacity-50 pointer-events-none">
-            <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px]"
-              style={{
-                background:
-                  'radial-gradient(ellipse, rgba(109, 64, 212, 0.08) 0%, transparent 70%)',
-              }}
-            />
+          {/* Animated Background Mesh */}
+          <div className="absolute inset-0 opacity-40 mix-blend-overlay">
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-green-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob opacity-70" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000 opacity-60" />
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000 opacity-50" />
           </div>
 
-          <div className="relative z-10">
-            {/* WhatsApp Icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500 shadow-lg shadow-green-500/30 mb-6">
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
+          {/* Noise Overlay */}
+          <div className="absolute inset-0 opacity-[0.05] bg-[url('/noise.png')] mix-blend-overlay pointer-events-none" />
+
+          <div className="relative z-10 px-8 py-16 sm:px-12 sm:py-20 lg:px-20 lg:py-24 text-center">
+            {/* Floating Icons Container */}
+            <div ref={iconsRef} className="absolute inset-0 pointer-events-none overflow-hidden">
+              {/* Top Left - Basic Icon */}
+              <div className="absolute top-12 left-12 text-white/10 text-7xl transform -rotate-12">
+                <FaCommentDots />
+              </div>
+              {/* Top Right - Share */}
+              <div className="absolute top-16 right-20 text-white/10 text-6xl transform rotate-12">
+                <FaShareAlt />
+              </div>
+              {/* Bottom Left - Phone */}
+              <div className="absolute bottom-16 left-20 text-white/10 text-5xl transform -rotate-6">
+                <FaPhoneAlt />
+              </div>
+              {/* Bottom Right - Whatsapp Logo */}
+              <div className="absolute bottom-12 right-16 text-white/20 text-8xl transform rotate-12">
+                <FaWhatsapp />
+              </div>
             </div>
 
-            {/* Heading */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-gray-900 mb-4">
-              Join Our <span className="text-green-500">WhatsApp</span> Community
-            </h2>
+            <div className="relative z-20 max-w-4xl mx-auto">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white text-green-600 shadow-xl shadow-black/10 mb-8 transform transition-transform duration-500 hover:scale-110">
+                <FaWhatsapp className="w-10 h-10" />
+              </div>
 
-            {/* Description */}
-            <p className="text-lg text-gray-600 max-w-lg mx-auto mb-8">
-              Stay updated with the latest announcements, event schedules, and connect with fellow
-              participants. Be part of the XIANZE family!
-            </p>
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-6 drop-shadow-sm">
+                Join the <span className="text-green-100">Conversation</span>
+              </h2>
 
-            {/* CTA Button */}
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-8 py-4 bg-green-500 text-white font-semibold rounded-full shadow-lg shadow-green-500/30 hover:bg-green-600 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              <span>Join Community</span>
-            </a>
+              <p className="text-lg sm:text-xl text-green-50 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                Get instant updates, exclusive announcements, and connect with thousands of other
+                tech enthusiasts in our official WhatsApp community.
+              </p>
 
-            {/* Member count hint */}
-            <p className="mt-6 text-sm text-gray-500">
-              <span className="font-medium text-gray-700">200+</span> members already joined
-            </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative inline-flex items-center px-8 py-4 bg-white text-green-700 font-bold rounded-full shadow-xl shadow-green-900/20 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                >
+                  <span className="relative z-10 flex items-center gap-3">
+                    <FaWhatsapp className="w-5 h-5" />
+                    <span>Join Community</span>
+                  </span>
+                  <div className="absolute inset-0 bg-green-50 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>

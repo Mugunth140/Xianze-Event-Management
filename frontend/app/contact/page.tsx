@@ -172,8 +172,8 @@ const Contact = () => {
             <span className="relative inline-block">
               <span className="relative z-10 text-primary-600">Connect</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary-200/60 -rotate-1 -z-0" />
-            </span>
-            ! 💬
+            </span>{' '}
+            !
           </h1>
 
           <p className="text-lg text-gray-600 max-w-lg mx-auto">
