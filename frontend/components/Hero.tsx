@@ -1,7 +1,6 @@
 'use client';
 
 import gsap from 'gsap';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -14,25 +13,12 @@ export default function Hero() {
   const videoRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const [isVideoVisible, setIsVideoVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
 
-  // Detect mobile on mount
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Intersection Observer for lazy video loading (desktop only)
+  // Intersection Observer for lazy video loading
   useEffect(() => {
     const videoContainer = videoRef.current;
     if (!videoContainer) return;
-
-    // On mobile, don't auto-load video
-    if (isMobile) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,25 +34,18 @@ export default function Hero() {
 
     observer.observe(videoContainer);
     return () => observer.disconnect();
-  }, [isMobile]);
+  }, []);
 
-  // Start video playback when visible (desktop) or when user clicks (mobile)
+  // Start video playback when visible
   useEffect(() => {
-    if ((isVideoVisible || shouldPlayVideo) && videoElementRef.current) {
+    if (isVideoVisible && videoElementRef.current) {
       setIsVideoLoading(true);
       videoElementRef.current.play().catch(() => {
-        // Auto-play might be blocked
+        // Auto-play might be blocked on some browsers
       });
       videoElementRef.current.oncanplaythrough = () => setIsVideoLoading(false);
     }
-  }, [isVideoVisible, shouldPlayVideo]);
-
-  // Handle mobile click-to-play
-  const handlePlayClick = () => {
-    if (isMobile && !shouldPlayVideo) {
-      setShouldPlayVideo(true);
-    }
-  };
+  }, [isVideoVisible]);
 
   useEffect(() => {
     // Entrance animations with GSAP
@@ -208,57 +187,28 @@ export default function Hero() {
 
         {/* Video Section */}
         <div ref={videoRef} className="mt-16 lg:mt-20 opacity-0">
-          <div
-            className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl shadow-primary-500/10 cursor-pointer"
-            onClick={handlePlayClick}
-          >
+          <div className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl shadow-primary-500/10">
             <div className="relative w-full aspect-[9/14] sm:aspect-[16/10] lg:aspect-video">
-              {/* Mobile: Show static image until tap */}
-              {isMobile && !shouldPlayVideo ? (
-                <Image
-                  src="/event.png"
-                  alt="Xianze Event Preview"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <video
-                  ref={videoElementRef}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loop
-                  muted
-                  playsInline
-                  preload="none"
-                  poster="/event.png"
-                >
-                  {(isVideoVisible || shouldPlayVideo) && (
-                    <source
-                      src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
-                      type="video/mp4"
-                    />
-                  )}
-                  Your browser does not support the video tag.
-                </video>
-              )}
+              <video
+                ref={videoElementRef}
+                className="absolute inset-0 w-full h-full object-cover"
+                loop
+                muted
+                playsInline
+                preload="auto"
+                poster="/video_image.webp"
+              >
+                {isVideoVisible && (
+                  <source
+                    src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
+                    type="video/mp4"
+                  />
+                )}
+                Your browser does not support the video tag.
+              </video>
 
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-
-              {/* Mobile: Tap to play overlay */}
-              {isMobile && !shouldPlayVideo && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                  <div className="w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                    <svg
-                      className="w-8 h-8 text-primary-600 ml-1"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
 
               {/* Loading indicator */}
               {isVideoLoading && (
@@ -267,8 +217,8 @@ export default function Hero() {
                 </div>
               )}
 
-              {/* Play indicator - only show when video is playing */}
-              {(!isMobile || shouldPlayVideo) && !isVideoLoading && (
+              {/* Play indicator */}
+              {!isVideoLoading && (
                 <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 text-xs font-medium border border-gray-200">
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                   LIVE PREVIEW
@@ -276,9 +226,6 @@ export default function Hero() {
               )}
             </div>
           </div>
-
-          {/* Purple accent bar */}
-          <div className="h-1.5 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-500 rounded-b-full" />
         </div>
       </div>
     </section>
