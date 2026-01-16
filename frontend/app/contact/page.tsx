@@ -250,7 +250,10 @@ const Contact = () => {
         </div>
 
         {/* Contact Form Section */}
-        <div ref={formRef} className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden">
+        <div
+          ref={formRef}
+          className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden"
+        >
           {/* Subtle background pattern */}
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -276,10 +279,11 @@ const Contact = () => {
             {/* Status Message */}
             {statusMessage && (
               <div
-                className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${statusMessage.includes('successfully')
-                  ? 'bg-green-50 text-green-700 border border-green-200'
-                  : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}
+                className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${
+                  statusMessage.includes('successfully')
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}
               >
                 {statusMessage.includes('successfully') ? '✅' : '❌'} {statusMessage}
               </div>
@@ -353,9 +357,7 @@ const Contact = () => {
                     Sending...
                   </>
                 ) : (
-                  <>
-                    Send Message
-                  </>
+                  <>Send Message</>
                 )}
               </button>
             </form>

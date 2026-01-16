@@ -357,7 +357,13 @@ const Register = () => {
       'Information Technology',
       'Others',
     ],
-    'B.Ed': ['General', 'Special Education', 'Elementary Education', 'Secondary Education', 'Others'],
+    'B.Ed': [
+      'General',
+      'Special Education',
+      'Elementary Education',
+      'Secondary Education',
+      'Others',
+    ],
     MS: ['General Surgery', 'Orthopedics', 'Ophthalmology', 'ENT', 'Others'],
     BDS: ['General'],
     MDS: [
@@ -406,7 +412,10 @@ const Register = () => {
       name: formData.name,
       email: formData.email,
       course: formData.course === 'Others' ? formData.otherCourse : formData.course,
-      branch: (formData.course === 'Others' || formData.branch === 'Others') ? formData.otherBranch : formData.branch,
+      branch:
+        formData.course === 'Others' || formData.branch === 'Others'
+          ? formData.otherBranch
+          : formData.branch,
       college: formData.college,
       contact: formData.contact,
       event: formData.event,
@@ -452,7 +461,10 @@ const Register = () => {
         let friendlyMessage = 'Registration failed. Please try again.';
 
         if (res.status === 409) {
-          friendlyMessage = data.message || data.error || 'This email is already registered. Please use a different email.';
+          friendlyMessage =
+            data.message ||
+            data.error ||
+            'This email is already registered. Please use a different email.';
         } else if (data.message) {
           friendlyMessage = Array.isArray(data.message) ? data.message.join(', ') : data.message;
         } else if (data.error) {
@@ -483,7 +495,11 @@ const Register = () => {
     formData.course !== '' &&
     formData.event !== '' &&
     (formData.course === 'Others' ? formData.otherCourse.trim() !== '' : true) &&
-    (formData.branch === 'Others' ? formData.otherBranch.trim() !== '' : (formData.course === 'B.Tech' || formData.course === 'M.Tech' ? formData.branch !== '' : true));
+    (formData.branch === 'Others'
+      ? formData.otherBranch.trim() !== ''
+      : formData.course === 'B.Tech' || formData.course === 'M.Tech'
+        ? formData.branch !== ''
+        : true);
 
   return (
     <section
@@ -562,9 +578,11 @@ const Register = () => {
           {/* Form State */}
           {submitStatus !== 'success' && (
             <form onSubmit={handleSubmit} className="space-y-6">
-
               {/* SECTION 1: Personal Details */}
-              <div ref={formRef} className="bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30">
+              <div
+                ref={formRef}
+                className="bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30"
+              >
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center text-2xl">
                     👤
@@ -604,7 +622,10 @@ const Register = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="contact"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Contact Number
                     </label>
                     <input
@@ -632,7 +653,10 @@ const Register = () => {
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="college" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="college"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       College Name
                     </label>
                     <input
@@ -665,7 +689,10 @@ const Register = () => {
                   </div>
                   {formData.course === 'Others' && (
                     <div>
-                      <label htmlFor="otherCourse" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="otherCourse"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Specify Course
                       </label>
                       <input
@@ -688,9 +715,7 @@ const Register = () => {
                         label="Branch"
                         options={courses[formData.course] || []}
                         selected={formData.branch}
-                        setSelected={(value) =>
-                          setFormData((prev) => ({ ...prev, branch: value }))
-                        }
+                        setSelected={(value) => setFormData((prev) => ({ ...prev, branch: value }))}
                         placeholder="Select your branch"
                       />
                     </div>
@@ -698,7 +723,10 @@ const Register = () => {
 
                   {(formData.course === 'Others' || formData.branch === 'Others') && (
                     <div>
-                      <label htmlFor="otherBranch" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="otherBranch"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Specify Branch
                       </label>
                       <input
@@ -747,9 +775,7 @@ const Register = () => {
                     Registering...
                   </>
                 ) : (
-                  <>
-                    Register
-                  </>
+                  <>Register</>
                 )}
               </button>
 
