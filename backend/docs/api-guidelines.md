@@ -37,7 +37,7 @@ DELETE /api/events/:eventId/attendees/:id  # Remove attendee from event
     /* resource data */
   },
   "meta": {
-    "timestamp": "2024-01-01T00:00:00.000Z"
+    "timestamp": "2026-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -70,7 +70,7 @@ DELETE /api/events/:eventId/attendees/:id  # Remove attendee from event
       "message": "Invalid email format"
     }
   ],
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "timestamp": "2026-01-01T00:00:00.000Z"
 }
 ```
 

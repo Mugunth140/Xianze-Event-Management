@@ -23,10 +23,87 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'XIANZE - Event Management System',
-  description: 'Admin-only event management system for organizations',
-  keywords: ['events', 'management', 'admin', 'XIANZE'],
-  authors: [{ name: 'XIANZE Team' }],
+  title: {
+    default: 'Xianze 2026 | National Level Technical Symposium',
+    template: '%s | Xianze 2026',
+  },
+  description:
+    'Xianze is a National Level Technical Symposium hosted by KG College of Arts and Science. Join us for a day of technical events, workshops, and innovation.',
+  keywords: [
+    'Xianze',
+    'Xianze 2026',
+    'Technical Symposium',
+    'KG College of Arts and Science',
+    'KGCAS',
+    'Coimbatore Events',
+    'College Symposium',
+    'Student Events',
+    'Coding Competition',
+    'Hackathon',
+    'Technical Workshops',
+  ],
+  authors: [{ name: 'Xianze Team', url: 'https://xianze.tech' }],
+  creator: 'mugunth140',
+  publisher: 'mugunth140',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://xianze.tech'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'Xianze 2026 | National Level Technical Symposium',
+    description:
+      'Join the ultimate inter-collegiate tech symposium. Compete, collaborate, and showcase your skills across coding, design, and innovation challenges.',
+    url: 'https://xianze.tech',
+    siteName: 'Xianze 2026',
+    images: [
+      {
+        url: '/event.png',
+        width: 1200,
+        height: 630,
+        alt: 'Xianze 2026 Symposium',
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Xianze 2026 | National Level Technical Symposium',
+    description:
+      'Join the ultimate inter-collegiate tech symposium at KG College of Arts and Science.',
+    creator: '@mugunth140',
+    images: ['/event.png'],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon/favicon.ico' },
+      { url: '/favicon/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: [{ url: '/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    other: [
+      {
+        rel: 'manifest',
+        url: '/favicon/site.webmanifest',
+      },
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -42,6 +119,40 @@ export default function RootLayout({
           <main>{children}</main>
           <Footer />
         </ErrorBoundary>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Event',
+              name: 'Xianze 2026',
+              startDate: '2026-03-15',
+              endDate: '2026-03-15',
+              eventStatus: 'https://schema.org/EventScheduled',
+              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+              location: {
+                '@type': 'Place',
+                name: 'KG College of Arts and Science',
+                address: {
+                  '@type': 'PostalAddress',
+                  streetAddress: 'KG Campus, Saravanampatti',
+                  addressLocality: 'Coimbatore',
+                  postalCode: '641035',
+                  addressRegion: 'Tamil Nadu',
+                  addressCountry: 'IN',
+                },
+              },
+              image: ['https://xianze.tech/event.png'],
+              description:
+                'National Level Technical Symposium hosted by KG College of Arts and Science featuring coding competitions, hackathons, and technical workshops.',
+              organizer: {
+                '@type': 'Organization',
+                name: 'mugunth140',
+                url: 'https://xianze.tech',
+              },
+            }),
+          }}
+        />
       </body>
     </html>
   );
