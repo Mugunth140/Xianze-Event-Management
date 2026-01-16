@@ -11,7 +11,6 @@ const Navbar = () => {
   const navRef = useRef<HTMLElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
   const menuLinksRef = useRef<HTMLDivElement[]>([]);
-  const circleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,54 +32,41 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
-  // GSAP animation for mobile menu
+  // GSAP animation for mobile menu - optimized for performance
   useEffect(() => {
     if (menuContainerRef.current) {
       if (isMenuOpen) {
-        // Open Animation
-        const tl = gsap.timeline();
-
-        tl.to(menuContainerRef.current, {
+        // Open Animation - Simple and fast
+        gsap.to(menuContainerRef.current, {
           opacity: 1,
-          duration: 0.4,
+          duration: 0.25,
           ease: 'power2.out',
         });
 
-        // Stagger links
-        tl.fromTo(
+        // Stagger links with simple fade/slide
+        gsap.fromTo(
           menuLinksRef.current,
-          { y: 50, opacity: 0 },
+          { y: 20, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 0.5,
-            stagger: 0.1,
-            ease: 'back.out(1.7)',
-          },
-          '-=0.2'
+            duration: 0.3,
+            stagger: 0.05,
+            ease: 'power2.out',
+          }
         );
-
-        // Animate decoration
-        if (circleRef.current) {
-          tl.fromTo(
-            circleRef.current,
-            { scale: 0, opacity: 0 },
-            { scale: 1, opacity: 1, duration: 0.8, ease: 'elastic.out(1, 0.7)' },
-            '-=0.6'
-          );
-        }
       } else {
         // Close Animation
         gsap.to(menuContainerRef.current, {
           opacity: 0,
-          duration: 0.3,
+          duration: 0.2,
           ease: 'power2.in',
         });
 
         gsap.to(menuLinksRef.current, {
-          y: 20,
+          y: 10,
           opacity: 0,
-          duration: 0.2,
+          duration: 0.15,
         });
       }
     }
@@ -175,23 +161,16 @@ const Navbar = () => {
       {/* Full Screen Mobile Menu Overlay */}
       <div
         ref={menuContainerRef}
-        className={`fixed inset-0 z-40 md:hidden bg-white/90 backdrop-blur-3xl flex items-center justify-center pointer-events-none opacity-0 ${
+        className={`fixed inset-0 z-40 md:hidden bg-white/95 backdrop-blur-sm flex items-center justify-center pointer-events-none opacity-0 ${
           isMenuOpen ? 'pointer-events-auto' : ''
         }`}
       >
-        {/* Animated Background Mesh */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[20%] -right-[20%] w-[80%] h-[80%] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob" />
-          <div className="absolute -bottom-[20%] -left-[20%] w-[80%] h-[80%] bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000" />
-          <div
-            ref={circleRef}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-primary-200/30 rounded-full opacity-0"
-          />
-        </div>
+        {/* Simple gradient background - no animated blobs */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary-50/50 to-white pointer-events-none" />
 
         {/* Menu Items */}
         <div className="relative z-10 w-full px-8 pb-12 text-center">
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
             {navLinks.map((link, index) => (
               <div
                 key={link.href}
@@ -203,7 +182,7 @@ const Navbar = () => {
                 <Link
                   href={link.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className="block text-4xl sm:text-5xl font-display font-bold text-gray-900 hover:text-primary-600 transition-colors"
+                  className="block text-3xl sm:text-4xl font-display font-bold text-gray-900 hover:text-primary-600 transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -220,7 +199,7 @@ const Navbar = () => {
               <Link
                 href="/register"
                 onClick={() => setIsMenuOpen(false)}
-                className="inline-flex items-center px-10 py-5 bg-primary-600 text-white text-xl font-bold rounded-full shadow-xl shadow-primary-600/30 hover:scale-105 transition-transform"
+                className="inline-flex items-center px-8 py-4 bg-primary-600 text-white text-lg font-bold rounded-full shadow-lg shadow-primary-600/20 hover:bg-primary-700 transition-colors"
               >
                 Register Now
               </Link>
@@ -232,7 +211,7 @@ const Navbar = () => {
             ref={(el) => {
               if (el) menuLinksRef.current[navLinks.length + 1] = el;
             }}
-            className="mt-16 text-gray-500 text-sm font-medium"
+            className="mt-12 text-gray-500 text-sm font-medium"
           >
             <p>© 2026 Xianze Event Management</p>
           </div>

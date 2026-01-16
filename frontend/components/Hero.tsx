@@ -1,6 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -13,36 +14,59 @@ export default function Hero() {
   const videoRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const [isVideoVisible, setIsVideoVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [shouldPlayVideo, setShouldPlayVideo] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
-  // Intersection Observer for lazy video loading
+  // Detect mobile on mount
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Intersection Observer for lazy video loading (desktop only)
   useEffect(() => {
     const videoContainer = videoRef.current;
     if (!videoContainer) return;
+
+    // On mobile, don't auto-load video
+    if (isMobile) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVideoVisible(true);
-            observer.disconnect(); // Only need to trigger once
+            observer.disconnect();
           }
         });
       },
-      { rootMargin: '200px', threshold: 0.1 } // Start loading 200px before visible
+      { rootMargin: '200px', threshold: 0.1 }
     );
 
     observer.observe(videoContainer);
     return () => observer.disconnect();
-  }, []);
+  }, [isMobile]);
 
-  // Start video playback when visible
+  // Start video playback when visible (desktop) or when user clicks (mobile)
   useEffect(() => {
-    if (isVideoVisible && videoElementRef.current) {
+    if ((isVideoVisible || shouldPlayVideo) && videoElementRef.current) {
+      setIsVideoLoading(true);
       videoElementRef.current.play().catch(() => {
-        // Auto-play might be blocked, that's okay
+        // Auto-play might be blocked
       });
+      videoElementRef.current.oncanplaythrough = () => setIsVideoLoading(false);
     }
-  }, [isVideoVisible]);
+  }, [isVideoVisible, shouldPlayVideo]);
+
+  // Handle mobile click-to-play
+  const handlePlayClick = () => {
+    if (isMobile && !shouldPlayVideo) {
+      setShouldPlayVideo(true);
+    }
+  };
 
   useEffect(() => {
     // Entrance animations with GSAP
@@ -184,34 +208,72 @@ export default function Hero() {
 
         {/* Video Section */}
         <div ref={videoRef} className="mt-16 lg:mt-20 opacity-0">
-          <div className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl shadow-primary-500/10">
+          <div
+            className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl shadow-primary-500/10 cursor-pointer"
+            onClick={handlePlayClick}
+          >
             <div className="relative w-full aspect-[9/14] sm:aspect-[16/10] lg:aspect-video">
-              <video
-                ref={videoElementRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                loop
-                muted
-                playsInline
-                preload="none"
-                poster="/event.png"
-              >
-                {isVideoVisible && (
-                  <source
-                    src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
-                    type="video/mp4"
-                  />
-                )}
-                Your browser does not support the video tag.
-              </video>
+              {/* Mobile: Show static image until tap */}
+              {isMobile && !shouldPlayVideo ? (
+                <Image
+                  src="/event.png"
+                  alt="Xianze Event Preview"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <video
+                  ref={videoElementRef}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loop
+                  muted
+                  playsInline
+                  preload="none"
+                  poster="/event.png"
+                >
+                  {(isVideoVisible || shouldPlayVideo) && (
+                    <source
+                      src="https://framerusercontent.com/modules/assets/dIzxOpo2vafKbdKB2yyZi8bt5o~CwtI99P76DbvF7z19Hr01mXKUlQXrWPBySz_UaKKHqY.mp4"
+                      type="video/mp4"
+                    />
+                  )}
+                  Your browser does not support the video tag.
+                </video>
+              )}
 
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
 
-              {/* Play indicator */}
-              <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-xl rounded-full text-gray-700 text-xs font-medium border border-gray-200">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                LIVE PREVIEW
-              </div>
+              {/* Mobile: Tap to play overlay */}
+              {isMobile && !shouldPlayVideo && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                  <div className="w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+                    <svg
+                      className="w-8 h-8 text-primary-600 ml-1"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading indicator */}
+              {isVideoLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+
+              {/* Play indicator - only show when video is playing */}
+              {(!isMobile || shouldPlayVideo) && !isVideoLoading && (
+                <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 text-xs font-medium border border-gray-200">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  LIVE PREVIEW
+                </div>
+              )}
             </div>
           </div>
 
