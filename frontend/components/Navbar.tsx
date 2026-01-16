@@ -81,9 +81,8 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
@@ -137,14 +136,12 @@ const Navbar = () => {
             >
               <div className="w-5 h-3 relative flex flex-col justify-between">
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
-                    isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
-                  }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
+                    }`}
                 />
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${
-                    isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
-                  }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[4px]' : ''
+                    }`}
                 />
               </div>
             </button>
@@ -154,15 +151,13 @@ const Navbar = () => {
 
       {/* Mobile Menu - Full Screen Overlay */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${
-          isMenuOpen ? 'visible' : 'invisible'
-        }`}
+        className={`fixed inset-0 z-40 md:hidden transition-all duration-500 ${isMenuOpen ? 'visible' : 'invisible'
+          }`}
       >
         {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 bg-primary-950/40 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           onClick={() => setIsMenuOpen(false)}
         />
 
