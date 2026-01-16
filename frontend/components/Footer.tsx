@@ -117,7 +117,7 @@ const Footer = () => {
               </a>
 
               <a
-                href="mailto:support@xinaze.tech"
+                href="mailto:support@xianze.tech"
                 className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-primary-600/20 hover:border-primary-500/50 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
@@ -135,7 +135,7 @@ const Footer = () => {
                     <p className="font-semibold text-white group-hover:text-primary-400 transition-colors">
                       Email Us
                     </p>
-                    <p className="text-xs text-gray-400">support@xinaze.tech</p>
+                    <p className="text-xs text-gray-400">support@xianze.tech</p>
                   </div>
                 </div>
                 <svg
