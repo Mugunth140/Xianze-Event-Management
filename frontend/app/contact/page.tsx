@@ -163,7 +163,7 @@ const Contact = () => {
       });
 
       if (response.ok) {
-        setStatusMessage('Message sent successfully!');
+        setStatusMessage('Message sent! A confirmation email has been sent to your inbox.');
         setFormData({ name: '', email: '', message: '' });
       } else {
         setStatusMessage('Failed to send message. Please try again.');
