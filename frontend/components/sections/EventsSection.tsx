@@ -128,8 +128,7 @@ function EventCard({ event }: { event: any }) {
               <Image
                 src={event.image}
                 alt={event.name}
-                width={150}
-                height={150}
+                fill
                 className="object-contain transition-transform duration-500 group-hover/card:scale-110"
               />
             </div>

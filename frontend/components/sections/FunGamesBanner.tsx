@@ -79,7 +79,7 @@ export default function FunGamesBanner() {
           </div>
 
           {/* Noise Overlay */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('/noise.png')] mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" />
 
           <div className="relative z-10 px-8 py-16 sm:px-12 sm:py-20 lg:px-20 lg:py-24 text-center">
             {/* Floating Icons Container */}
