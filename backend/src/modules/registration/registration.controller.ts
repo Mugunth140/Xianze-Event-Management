@@ -8,6 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { Registration } from './registration.entity';
 import { RegistrationService } from './registration.service';
 
 @Controller('register')
@@ -46,7 +47,7 @@ export class RegistrationController {
    * Get all registrations (for admin dashboard).
    */
   @Get()
-  async findAll(): Promise<{ success: boolean; data: any }> {
+  async findAll(): Promise<{ success: boolean; data: Registration[] }> {
     const registrations = await this.registrationService.findAll();
     return {
       success: true,

@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { corsConfig, helmetConfig } from './config/security.config';
+import { UsersService } from './modules/users/users.service';
 
 /**
  * Bootstrap the XIANZE Backend Application
@@ -21,6 +22,10 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
+
+  // Seed default admin user
+  const usersService = app.get(UsersService);
+  await usersService.seedAdmin();
 
   // Security: Helmet middleware (production only, nginx handles in prod)
   if (process.env.NODE_ENV === 'production') {
