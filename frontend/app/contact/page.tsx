@@ -241,10 +241,10 @@ const Contact = () => {
                 <FaWhatsapp className="text-green-600 group-hover:text-white transition-colors" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
+                <h2 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
                   WhatsApp Community
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">Join our community for updates</p>
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">Join our community for updates</p>
               </div>
             </div>
           </Link>
@@ -259,10 +259,10 @@ const Contact = () => {
                 <span className="group-hover:scale-110 transition-transform">✉️</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                <h2 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                   Email Us
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">support@xianze.tech</p>
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">support@xianze.tech</p>
               </div>
             </div>
           </a>
@@ -314,10 +314,10 @@ const Contact = () => {
               ✍️
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3 text-center">
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3 text-center">
               Send us a Message
-            </h3>
-            <p className="text-gray-500 text-center mb-8 max-w-md mx-auto">
+            </h2>
+            <p className="text-gray-600 text-center mb-8 max-w-md mx-auto">
               Have something specific to ask? Fill out the form below and we&apos;ll get back to you
               soon!
             </p>

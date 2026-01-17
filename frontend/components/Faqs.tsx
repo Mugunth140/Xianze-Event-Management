@@ -259,7 +259,7 @@ export default function Faqs() {
               <h3 className="text-3xl font-display font-bold text-gray-900 mb-4">
                 Still have questions?
               </h3>
-              <p className="text-gray-500 text-lg mb-10 leading-relaxed">
+              <p className="text-gray-600 text-lg mb-10 leading-relaxed">
                 Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly
                 team.
               </p>

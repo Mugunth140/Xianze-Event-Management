@@ -211,7 +211,7 @@ const Navbar = () => {
             ref={(el) => {
               if (el) menuLinksRef.current[navLinks.length + 1] = el;
             }}
-            className="mt-12 text-gray-500 text-sm font-medium"
+            className="mt-12 text-gray-600 text-sm font-medium"
           >
             <p>© 2026 Xianze Event Management</p>
           </div>

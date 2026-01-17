@@ -133,10 +133,10 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="py-6">
           <div className="max-w-8xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-500 text-sm font-medium">
+            <p className="text-gray-600 text-sm font-medium">
               © XIANZE {currentYear} All rights reserved
             </p>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-600 text-sm">
               Credits: <span className="text-white font-medium">Sharan & Mugunth</span>
             </p>
           </div>

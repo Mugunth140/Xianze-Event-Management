@@ -197,6 +197,8 @@ export default function Hero() {
                 playsInline
                 preload="auto"
                 poster="/video_image.webp"
+                // @ts-expect-error - fetchPriority is standard but React types might not emulate it perfectly yet
+                fetchPriority="high"
               >
                 {isVideoVisible && (
                   <source
@@ -204,6 +206,7 @@ export default function Hero() {
                     type="video/mp4"
                   />
                 )}
+                <track kind="captions" srcLang="en" label="English" />
                 Your browser does not support the video tag.
               </video>
 

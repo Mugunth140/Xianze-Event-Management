@@ -100,19 +100,19 @@ export default function AboutSection() {
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               300+
             </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Participants</div>
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Participants</div>
           </div>
           <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               25+
             </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Colleges</div>
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Colleges</div>
           </div>
           <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               ₹20K+
             </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Prizes</div>
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Prizes</div>
           </div>
         </div>
       </div>

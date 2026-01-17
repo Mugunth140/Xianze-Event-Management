@@ -99,7 +99,7 @@ export default function EventsPage() {
             </p>
             <Link
               href="/register"
-              className="inline-block px-10 py-4 bg-primary-600 text-white font-bold text-lg rounded-full shadow-lg hover:bg-gray-50 hover:scale-105 transition-all duration-300"
+              className="inline-block px-10 py-4 bg-primary-600 text-white font-bold text-lg rounded-full shadow-lg hover:text-primary-600 hover:bg-gray-50 hover:scale-105 transition-all duration-300"
             >
               Register for Events
             </Link>
