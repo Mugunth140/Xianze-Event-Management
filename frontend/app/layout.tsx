@@ -24,11 +24,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Xianze 2026 | National Level Technical Symposium',
+    default: 'Xianze 2026',
     template: '%s | Xianze 2026',
   },
   description:
-    'Xianze is a National Level Technical Symposium hosted by KG College of Arts and Science. Join us for a day of technical events, workshops, and innovation.',
+    'Xianze is a Technical Symposium hosted by KG College of Arts and Science. Join us for a day of technical events, workshops, and innovation.',
   keywords: [
     'Xianze',
     'Xianze 2026',
@@ -46,23 +46,23 @@ export const metadata: Metadata = {
   creator: 'mugunth140',
   publisher: 'mugunth140',
   formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
+    email: true,
+    address: true,
+    telephone: true,
   },
   metadataBase: new URL('https://xianze.tech'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'Xianze 2026 | National Level Technical Symposium',
+    title: 'Xianze 2026',
     description:
       'Join the ultimate inter-collegiate tech symposium. Compete, collaborate, and showcase your skills across coding, design, and innovation challenges.',
     url: 'https://xianze.tech',
     siteName: 'Xianze 2026',
     images: [
       {
-        url: '/event.png',
+        url: '/favicon/web-app-manifest-512x512.png',
         width: 1200,
         height: 630,
         alt: 'Xianze 2026 Symposium',
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     description:
       'Join the ultimate inter-collegiate tech symposium at KG College of Arts and Science.',
     creator: '@mugunth140',
-    images: ['/event.png'],
+    images: ['/favicon/web-app-manifest-512x512.png'],
   },
   icons: {
     icon: [
@@ -113,6 +113,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${dmSans.variable}`}>
+      <head>
+        <link rel="icon" type="image/png" href="/favicon.png" />
+      </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <ErrorBoundary>
           <Navbar />
@@ -122,35 +125,59 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Event',
-              name: 'Xianze 2026',
-              startDate: '2026-03-15',
-              endDate: '2026-03-15',
-              eventStatus: 'https://schema.org/EventScheduled',
-              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-              location: {
-                '@type': 'Place',
-                name: 'KG College of Arts and Science',
-                address: {
-                  '@type': 'PostalAddress',
-                  streetAddress: 'KG Campus, Saravanampatti',
-                  addressLocality: 'Coimbatore',
-                  postalCode: '641035',
-                  addressRegion: 'Tamil Nadu',
-                  addressCountry: 'IN',
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'Xianze 2026',
+                url: 'https://xianze.tech',
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: 'https://xianze.tech/events?q={search_term_string}',
+                  'query-input': 'required name=search_term_string',
                 },
               },
-              image: ['https://xianze.tech/event.png'],
-              description:
-                'National Level Technical Symposium hosted by KG College of Arts and Science featuring coding competitions, hackathons, and technical workshops.',
-              organizer: {
-                '@type': 'Organization',
-                name: 'mugunth140',
-                url: 'https://xianze.tech',
+              {
+                '@context': 'https://schema.org',
+                '@type': 'SiteNavigationElement',
+                name: ['Register', 'Events', 'Contact', 'FAQ'],
+                url: [
+                  'https://xianze.tech/register',
+                  'https://xianze.tech/events',
+                  'https://xianze.tech/contact',
+                  'https://xianze.tech/faq',
+                ],
               },
-            }),
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Event',
+                name: 'Xianze 2026',
+                startDate: '2026-03-15',
+                endDate: '2026-03-15',
+                eventStatus: 'https://schema.org/EventScheduled',
+                eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                location: {
+                  '@type': 'Place',
+                  name: 'KG College of Arts and Science',
+                  address: {
+                    '@type': 'PostalAddress',
+                    streetAddress: 'KG Campus, Saravanampatti',
+                    addressLocality: 'Coimbatore',
+                    postalCode: '641035',
+                    addressRegion: 'Tamil Nadu',
+                    addressCountry: 'IN',
+                  },
+                },
+                image: ['https://xianze.tech/favicon/web-app-manifest-512x512.png'],
+                description:
+                  'National Level Technical Symposium hosted by KG College of Arts and Science featuring coding competitions, hackathons, and technical workshops.',
+                organizer: {
+                  '@type': 'Organization',
+                  name: 'mugunth140',
+                  url: 'https://xianze.tech',
+                },
+              },
+            ]),
           }}
         />
       </body>

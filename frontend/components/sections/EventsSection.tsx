@@ -129,6 +129,7 @@ function EventCard({ event }: { event: any }) {
                 src={event.image}
                 alt={event.name}
                 fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-contain transition-transform duration-500 group-hover/card:scale-110"
               />
             </div>

@@ -2,7 +2,7 @@
   "name": "xianze-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "XIANZE Event Management System - Frontend",
+  "description": "Xianze is a Technical Symposium hosted by KG College of Arts and Science. Join us for a day of technical events, workshops, and innovation.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

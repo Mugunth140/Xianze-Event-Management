@@ -116,7 +116,7 @@ const Navbar = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="relative px-4 py-2 text-gray-600 font-medium hover:text-primary-600 transition-colors duration-200 group"
+                  className="relative px-4 py-2 text-gray-600 font-medium hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 rounded-lg transition-colors duration-200 group"
                 >
                   {link.label}
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary-600 rounded-full transition-all duration-300 group-hover:w-1/2" />
