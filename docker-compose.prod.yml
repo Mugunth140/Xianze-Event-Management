@@ -133,31 +133,6 @@ services:
     depends_on:
       - nginx
 
-networks:
-  xianze-network:
-    driver: bridge
-    name: xianze-prod-network
-
-volumes:
-  frontend-static:
-    name: xianze-frontend-static
-  sqlite-data:
-    name: xianze-prod-sqlite
-  redis-data:
-    name: xianze-prod-redis
-  certbot-conf:
-    name: xianze-certbot-conf
-  certbot-www:
-    name: xianze-certbot-www
-  mail-data:
-    name: xianze-mail-data
-  mail-state:
-    name: xianze-mail-state
-  mail-logs:
-    name: xianze-mail-logs
-  mail-config:
-    name: xianze-mail-config
-
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
     container_name: xianze-mailserver
@@ -188,3 +163,28 @@ volumes:
     restart: always
     networks:
       - xianze-network
+
+networks:
+  xianze-network:
+    driver: bridge
+    name: xianze-prod-network
+
+volumes:
+  frontend-static:
+    name: xianze-frontend-static
+  sqlite-data:
+    name: xianze-prod-sqlite
+  redis-data:
+    name: xianze-prod-redis
+  certbot-conf:
+    name: xianze-certbot-conf
+  certbot-www:
+    name: xianze-certbot-www
+  mail-data:
+    name: xianze-mail-data
+  mail-state:
+    name: xianze-mail-state
+  mail-logs:
+    name: xianze-mail-logs
+  mail-config:
+    name: xianze-mail-config
