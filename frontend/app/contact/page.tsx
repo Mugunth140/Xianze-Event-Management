@@ -251,7 +251,7 @@ const Contact = () => {
 
           {/* Email Card */}
           <a
-            href="mailto:support@xianze.tech"
+            href="mailto:contact@xianze.tech"
             className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300 opacity-0"
           >
             <div className="flex items-start gap-4">
@@ -262,7 +262,7 @@ const Contact = () => {
                 <h2 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                   Email Us
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">support@xianze.tech</p>
+                <p className="text-sm text-gray-600 mt-1">contact@xianze.tech</p>
               </div>
             </div>
           </a>

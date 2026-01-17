@@ -24,6 +24,17 @@ export class ContactService {
       this.logger.error(`Failed to send auto-reply to ${savedContact.email}`, err.stack);
     });
 
+    // Notify Admin (contact@xianze.tech)
+    this.mailService
+      .sendAdminNotification({
+        name: savedContact.name,
+        email: savedContact.email,
+        message: savedContact.message,
+      })
+      .catch((err) => {
+        this.logger.error('Failed to send admin notification', err.stack);
+      });
+
     return savedContact;
   }
 

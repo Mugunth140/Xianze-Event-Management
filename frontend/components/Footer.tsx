@@ -104,8 +104,8 @@ const Footer = () => {
               </a>
 
               <a
-                href="mailto:support@xianze.tech"
-                className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-primary-600/20 hover:border-primary-500/50 transition-all duration-300"
+                href="mailto:contact@xianze.tech"
+                className="group flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform">
@@ -122,7 +122,7 @@ const Footer = () => {
                     <p className="font-semibold text-white group-hover:text-primary-400 transition-colors">
                       Email Us
                     </p>
-                    <p className="text-xs text-gray-400">support@xianze.tech</p>
+                    <p className="text-xs text-gray-400">contact@xianze.tech</p>
                   </div>
                 </div>
               </a>
