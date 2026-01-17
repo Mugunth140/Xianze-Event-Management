@@ -26,18 +26,4 @@ export class MailService {
       },
     });
   }
-
-  async sendAdminNotification(data: any) {
-    await this.mailerService.sendMail({
-      to: 'contact@xianze.tech',
-      subject: `New Contact: ${data.name}`,
-      template: './contact-admin-notification',
-      context: {
-        name: data.name,
-        email: data.email,
-        message: data.message,
-        date: new Date().toLocaleString(),
-      },
-    });
-  }
 }
