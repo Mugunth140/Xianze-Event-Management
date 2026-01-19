@@ -156,7 +156,7 @@ const Contact = () => {
     };
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sanitizedData),
@@ -326,12 +326,12 @@ const Contact = () => {
             {statusMessage && (
               <div
                 className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${
-                  statusMessage.includes('successfully')
+                  statusMessage.includes('sent')
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-red-50 text-red-700 border border-red-200'
                 }`}
               >
-                {statusMessage.includes('successfully') ? '✅' : '❌'} {statusMessage}
+                {statusMessage.includes('sent') ? '✅' : '❌'} {statusMessage}
               </div>
             )}
 
