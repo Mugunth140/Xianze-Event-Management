@@ -92,7 +92,7 @@ All cached data **MUST** have a TTL to prevent memory bloat.
 
 ```typescript
 // Example using ioredis
-await redis.setex('xianze:quiz:bug-smash:session:abc123', 7200, sessionData);
+await redis.setex("xianze:quiz:bug-smash:session:abc123", 7200, sessionData);
 //                                                        ^^^^
 //                                                        TTL in seconds (2 hours)
 ```
@@ -183,7 +183,7 @@ async function getFromCache(key: string): Promise<string | null> {
   try {
     return await redis.get(key);
   } catch (error) {
-    console.error('Redis error:', error);
+    console.error("Redis error:", error);
     return null; // Fallback: cache miss
   }
 }
