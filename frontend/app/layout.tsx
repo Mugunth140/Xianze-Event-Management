@@ -1,6 +1,4 @@
-import ErrorBoundary from '@/components/ErrorBoundary';
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+import MainLayout from '@/components/MainLayout';
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Outfit } from 'next/font/google';
 import './globals.css';
@@ -117,11 +115,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/favicon.png" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <ErrorBoundary>
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-        </ErrorBoundary>
+        <MainLayout>{children}</MainLayout>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

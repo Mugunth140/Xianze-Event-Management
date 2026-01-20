@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiUrl } from '@/lib/api';
 import { useEffect, useState } from 'react';
 
 interface User {
@@ -40,7 +41,7 @@ export default function UsersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch('/api/users', {
+      const res = await fetch(getApiUrl('/api/users'), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -70,14 +71,14 @@ export default function UsersPage() {
 
       const body = editingUser
         ? {
-            name: formData.name,
-            role: formData.role,
-            assignedEvent: formData.role === 'member' ? formData.assignedEvent : null,
-            ...(formData.password && { password: formData.password }),
-          }
+          name: formData.name,
+          role: formData.role,
+          assignedEvent: formData.role === 'member' ? formData.assignedEvent : null,
+          ...(formData.password && { password: formData.password }),
+        }
         : formData;
 
-      const res = await fetch(url, {
+      const res = await fetch(getApiUrl(url), {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ export default function UsersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`/api/users/${id}`, {
+      const res = await fetch(getApiUrl(`/api/users/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -179,13 +180,12 @@ export default function UsersPage() {
                 </span>
               </div>
               <span
-                className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                  user.role === 'admin'
+                className={`px-2 py-1 rounded-lg text-xs font-medium ${user.role === 'admin'
                     ? 'bg-red-500/20 text-red-400'
                     : user.role === 'coordinator'
                       ? 'bg-yellow-500/20 text-yellow-400'
                       : 'bg-green-500/20 text-green-400'
-                }`}
+                  }`}
               >
                 {user.role}
               </span>

@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiUrl } from '@/lib/api';
 import { useEffect, useState } from 'react';
 
 interface Registration {
@@ -53,7 +54,7 @@ export default function RegistrationsPage() {
       try {
         const eventParam =
           selectedEvent !== 'All Events' ? `?event=${encodeURIComponent(selectedEvent)}` : '';
-        const res = await fetch(`/api/analytics/registrations${eventParam}`, {
+        const res = await fetch(getApiUrl(`/api/analytics/registrations${eventParam}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 

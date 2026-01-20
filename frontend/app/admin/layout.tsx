@@ -36,16 +36,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Check if we're on login page - handle trailing slash
+  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/';
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    // Skip auth check for login page
+    if (isLoginPage) return;
+
     // Check authentication
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
     if (!token || !userData) {
-      if (pathname !== '/admin/login') {
-        router.push('/admin/login');
-      }
+      router.push('/admin/login');
       return;
     }
 
@@ -54,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     } catch {
       router.push('/admin/login');
     }
-  }, [pathname, router]);
+  }, [pathname, router, isClient, isLoginPage]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -62,16 +73,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login');
   };
 
-  // Don't show layout on login page
-  if (pathname === '/admin/login') {
+  // Don't show layout on login page - just render children directly
+  if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Loading state
-  if (!user) {
+  // Wait for client-side hydration
+  if (!isClient) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Loading state - waiting for user data
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-gray-400 mt-4 text-sm">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -114,17 +137,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {filteredNavItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || pathname === item.href + '/';
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isActive
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
                       ? 'bg-primary-600 text-white'
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path

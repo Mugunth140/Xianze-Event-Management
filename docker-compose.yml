@@ -2,24 +2,6 @@
 # For development, run frontend locally with `bun run dev`
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: xianze-redis-dev
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - xianze-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   backend:
     build:
       context: ./backend
@@ -34,18 +16,20 @@ services:
       - DATABASE_PATH=/data/xianze.db
       - DATABASE_SYNCHRONIZE=true
       - DATABASE_LOGGING=true
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
       - CORS_ORIGIN=http://localhost:3000
+      # Auth
+      - JWT_SECRET=xianze-dev-secret-2026
+      # Mail (optional for dev)
+      - MAIL_HOST=localhost
+      - MAIL_USER=dev@xianze.tech
+      - MAIL_PASSWORD=dev
+      - MAIL_FROM=dev@xianze.tech
     volumes:
       - sqlite-data:/data
     networks:
       - xianze-network
-    depends_on:
-      redis:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,5 +43,3 @@ networks:
 volumes:
   sqlite-data:
     name: xianze-dev-sqlite
-  redis-data:
-    name: xianze-dev-redis
