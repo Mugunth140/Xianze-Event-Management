@@ -12,6 +12,7 @@ import confetti from 'canvas-confetti';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -140,6 +141,8 @@ const Register = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+  const router = useRouter();
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -524,11 +527,6 @@ const Register = () => {
     setLoading(false);
   };
 
-  const resetForm = () => {
-    setSubmitStatus('idle');
-    setErrorMessage('');
-  };
-
   // Validation Logic
   const isFormValid =
     formData.name.trim() !== '' &&
@@ -610,10 +608,10 @@ const Register = () => {
                 See you there! 🎊
               </p>
               <button
-                onClick={resetForm}
+                onClick={() => router.push('/events')}
                 className="liquid-glass-btn inline-flex items-center justify-center px-8 py-4 text-white font-semibold rounded-xl"
               >
-                Register Another
+                Explore Events
               </button>
             </div>
           )}
