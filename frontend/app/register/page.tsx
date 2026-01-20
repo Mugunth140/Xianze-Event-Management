@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    sanitizeInput,
-    validateCollege,
-    validateEmail,
-    validateName,
-    validatePhone,
-    validateSelection,
+  sanitizeInput,
+  validateCollege,
+  validateEmail,
+  validateName,
+  validatePhone,
+  validateSelection,
 } from '@/lib/validation';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
@@ -444,7 +444,7 @@ const Register = () => {
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setSubmitStatus('error');
-      setErrorMessage('Please fix the errors below.');
+      setErrorMessage('Please fix the errors above.');
       setLoading(false);
       return;
     }
@@ -464,7 +464,7 @@ const Register = () => {
     };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submittedData),
@@ -575,7 +575,7 @@ const Register = () => {
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">🚀</span>
             <span className="text-sm font-semibold text-primary-700 uppercase tracking-wider">
-              Join XIANZE 2K26
+              Join Xianze 2K26
             </span>
           </div>
 
@@ -599,7 +599,7 @@ const Register = () => {
           {/* Success State */}
           {submitStatus === 'success' && (
             <div className="rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 shadow-xl shadow-primary-500/5 text-center overflow-hidden">
-              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6 text-5xl animate-bounce">
+              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6 text-5xl">
                 🎉
               </div>
               <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3">

@@ -85,7 +85,7 @@ export default function AboutSection() {
 
           {/* Description */}
           <p ref={textRef} className="text-lg text-gray-600 leading-relaxed mb-12 opacity-0">
-            XIANZE 2K26 is the premier inter-collegiate tech symposium bringing together the
+            Xianze 2K26 is the premier inter-collegiate tech symposium bringing together the
             brightest minds from across campuses. Experience a day packed with coding challenges,
             design battles, innovative workshops, and exciting prizes.
           </p>

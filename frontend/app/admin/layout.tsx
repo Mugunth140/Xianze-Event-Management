@@ -127,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-gray-700">
-            <h1 className="text-xl font-bold text-white">XIANZE Admin</h1>
+            <h1 className="text-xl font-bold text-white">Admin Panel</h1>
             <p className="text-sm text-gray-400 mt-1">{user.name}</p>
             <span className="inline-block mt-2 px-2 py-1 bg-primary-500/20 text-primary-400 text-xs font-medium rounded-full capitalize">
               {user.role}
