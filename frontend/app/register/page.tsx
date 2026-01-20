@@ -1,12 +1,12 @@
 'use client';
 
 import {
-  sanitizeInput,
-  validateCollege,
-  validateEmail,
-  validateName,
-  validatePhone,
-  validateSelection,
+    sanitizeInput,
+    validateCollege,
+    validateEmail,
+    validateName,
+    validatePhone,
+    validateSelection,
 } from '@/lib/validation';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
@@ -484,6 +484,7 @@ const Register = () => {
         // Play success sound (local file)
         const audio = new Audio('/success.mp3');
         audio.volume = 0.5;
+        // eslint-disable-next-line no-console
         audio.play().catch((e) => console.error('Audio play failed:', e));
 
         setFormData({

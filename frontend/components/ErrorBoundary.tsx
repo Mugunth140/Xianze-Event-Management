@@ -30,6 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console in development
+    // eslint-disable-next-line no-console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     // In production, you could send this to an error tracking service

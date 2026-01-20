@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { events } from '../../data/events';
+import { Event, events } from '../../data/events';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -117,7 +117,7 @@ export default function EventsSection() {
   );
 }
 
-function EventCard({ event }: { event: any }) {
+function EventCard({ event }: { event: Event }) {
   return (
     <div className="min-w-[320px] sm:min-w-[360px] h-[400px]">
       <Link href={`/events`} className="block h-full group/card">
