@@ -54,7 +54,7 @@ export default function RegistrationsPage() {
       try {
         const eventParam =
           selectedEvent !== 'All Events' ? `?event=${encodeURIComponent(selectedEvent)}` : '';
-        const res = await fetch(getApiUrl(`/api/analytics/registrations${eventParam}`), {
+        const res = await fetch(getApiUrl(`/analytics/registrations${eventParam}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 

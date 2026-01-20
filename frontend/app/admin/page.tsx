@@ -37,10 +37,10 @@ export default function AdminDashboard() {
 
       try {
         const [overviewRes, recentRes] = await Promise.all([
-          fetch(getApiUrl('/api/analytics/overview'), {
+          fetch(getApiUrl('/analytics/overview'), {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch(getApiUrl('/api/analytics/recent?limit=5'), {
+          fetch(getApiUrl('/analytics/recent?limit=5'), {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
