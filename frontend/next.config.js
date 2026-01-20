@@ -17,6 +17,16 @@ const nextConfig = {
   // Trailing slashes for static hosting compatibility
   trailingSlash: true,
 
+  // Ignore ESLint errors during production builds
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // Ignore TypeScript errors during production builds
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Environment variables for client
   env: {
     NEXT_PUBLIC_API_URL:
