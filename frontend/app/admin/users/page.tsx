@@ -2,24 +2,35 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useEffect, useState } from 'react';
+import { PageHeader } from '../components/layout';
+import Badge, { RoleBadge } from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import { ConfirmModal } from '../components/ui/Modal';
+import Select from '../components/ui/Select';
+import { PageLoader } from '../components/ui/Spinner';
+import TaskCheckboxes from '../components/ui/TaskCheckboxes';
 
 interface User {
   id: number;
   username: string;
   name: string;
   role: 'admin' | 'coordinator' | 'member';
-  assignedEvent?: string;
-  createdAt: string;
+  assignedEvent?: string | null;
+  assignedEvents?: string[] | null;
+  tasks?: string[] | null;
 }
 
-const events = [
-  'Buildathon',
-  'Bug Smash',
+// Available events in the system
+const AVAILABLE_EVENTS = [
   'Paper Presentation',
-  'Ctrl+ Quiz',
-  'Code Hunt: Word Edition',
+  'Bug Smash',
+  'Buildathon',
   'Think & Link',
+  'Ctrl + Quiz',
   'Gaming',
+  'Code Hunt',
 ];
 
 export default function UsersPage() {
@@ -28,27 +39,28 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<User | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     name: '',
     role: 'member' as 'admin' | 'coordinator' | 'member',
     assignedEvent: '',
+    assignedEvents: [] as string[],
+    tasks: [] as string[],
   });
 
   const fetchUsers = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
       const res = await fetch(getApiUrl('/users'), {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error('Failed to fetch users');
-
-      const data = await res.json();
-      setUsers(data);
+      setUsers(await res.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
@@ -60,25 +72,74 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      password: '',
+      name: '',
+      role: 'member',
+      assignedEvent: '',
+      assignedEvents: [],
+      tasks: [],
+    });
+    setEditingUser(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      username: user.username,
+      password: '', // Don't show password
+      name: user.name,
+      role: user.role,
+      assignedEvent: user.assignedEvent || '',
+      assignedEvents: user.assignedEvents || [],
+      tasks: user.tasks || [],
+    });
+    setShowModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const url = editingUser ? `/users/${editingUser.id}` : '/users';
+      const body: Record<string, unknown> = {
+        username: formData.username,
+        name: formData.name,
+        role: formData.role,
+      };
+
+      // Only include password if provided
+      if (formData.password) {
+        body.password = formData.password;
+      }
+
+      // Handle event assignment based on role
+      if (formData.role === 'coordinator') {
+        body.assignedEvent = formData.assignedEvent || null;
+        body.assignedEvents = null;
+      } else if (formData.role === 'member') {
+        body.assignedEvent = null;
+        body.assignedEvents = formData.assignedEvents.length > 0 ? formData.assignedEvents : null;
+      } else {
+        body.assignedEvent = null;
+        body.assignedEvents = null;
+      }
+
+      // Include tasks
+      body.tasks = formData.tasks.length > 0 ? formData.tasks : null;
+
+      const url = editingUser ? getApiUrl(`/users/${editingUser.id}`) : getApiUrl('/users');
       const method = editingUser ? 'PATCH' : 'POST';
 
-      const body = editingUser
-        ? {
-          name: formData.name,
-          role: formData.role,
-          assignedEvent: formData.role === 'member' ? formData.assignedEvent : null,
-          ...(formData.password && { password: formData.password }),
-        }
-        : formData;
-
-      const res = await fetch(getApiUrl(url), {
+      const res = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -93,233 +154,292 @@ export default function UsersPage() {
       }
 
       setShowModal(false);
-      setEditingUser(null);
-      setFormData({ username: '', password: '', name: '', role: 'member', assignedEvent: '' });
+      resetForm();
       fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save user');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
     const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const res = await fetch(getApiUrl(`/users/${id}`), {
+      const res = await fetch(getApiUrl(`/users/${deleteConfirm.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) throw new Error('Failed to delete user');
-
+      setDeleteConfirm(null);
       fetchUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete user');
     }
   };
 
-  const openEditModal = (user: User) => {
-    setEditingUser(user);
-    setFormData({
-      username: user.username,
-      password: '',
-      name: user.name,
-      role: user.role,
-      assignedEvent: user.assignedEvent || '',
-    });
-    setShowModal(true);
-  };
-
-  const openCreateModal = () => {
-    setEditingUser(null);
-    setFormData({ username: '', password: '', name: '', role: 'member', assignedEvent: '' });
-    setShowModal(true);
+  const handleEventToggle = (event: string) => {
+    const current = formData.assignedEvents;
+    if (current.includes(event)) {
+      setFormData({ ...formData, assignedEvents: current.filter((e) => e !== event) });
+    } else {
+      setFormData({ ...formData, assignedEvents: [...current, event] });
+    }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Loading users..." />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
-          <p className="text-gray-400 mt-1">Manage admin users, coordinators, and members</p>
-        </div>
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors"
-        >
-          Add User
-        </button>
-      </div>
+      <PageHeader
+        title="User Management"
+        subtitle="Manage admin users, coordinators, and members"
+        actions={
+          <Button onClick={openCreateModal}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Add User
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
           {error}
+          <button onClick={() => setError('')} className="ml-4 underline">
+            Dismiss
+          </button>
         </div>
       )}
 
       {/* Users Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {users.map((user) => (
-          <div key={user.id} className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+          <Card key={user.id} className="p-5">
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-primary-400 font-bold text-lg">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-100 to-purple-100 flex items-center justify-center border border-primary-200">
+                  <span className="text-primary-600 font-bold text-lg">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                  <p className="text-sm text-gray-500">@{user.username}</p>
+                </div>
               </div>
-              <span
-                className={`px-2 py-1 rounded-lg text-xs font-medium ${user.role === 'admin'
-                    ? 'bg-red-500/20 text-red-400'
-                    : user.role === 'coordinator'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-green-500/20 text-green-400'
-                  }`}
-              >
-                {user.role}
-              </span>
+              <RoleBadge role={user.role} />
             </div>
 
-            <h3 className="text-lg font-semibold text-white">{user.name}</h3>
-            <p className="text-gray-400 text-sm">@{user.username}</p>
-
-            {user.role === 'member' && user.assignedEvent && (
-              <p className="mt-2 text-sm text-primary-400">Event: {user.assignedEvent}</p>
+            {/* Event assignment info */}
+            {user.role === 'coordinator' && user.assignedEvent && (
+              <div className="mb-3 text-sm">
+                <span className="text-gray-500">Event: </span>
+                <Badge variant="purple">{user.assignedEvent}</Badge>
+              </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2">
-              <button
-                onClick={() => openEditModal(user)}
-                className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
-              >
+            {user.role === 'member' && user.assignedEvents && user.assignedEvents.length > 0 && (
+              <div className="mb-3 text-sm">
+                <span className="text-gray-500">Events: </span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {user.assignedEvents.map((event) => (
+                    <Badge key={event} variant="purple">
+                      {event}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tasks info */}
+            {user.tasks && user.tasks.length > 0 && (
+              <div className="mb-3 text-sm">
+                <span className="text-gray-500">Extra Tasks: </span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {user.tasks.map((task) => (
+                    <Badge key={task} variant="active">
+                      {task.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+              <Button variant="secondary" className="flex-1" onClick={() => openEditModal(user)}>
                 Edit
-              </button>
-              <button
-                onClick={() => handleDelete(user.id)}
-                className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-medium rounded-lg transition-colors"
-              >
-                Delete
-              </button>
+              </Button>
+              <Button variant="danger" onClick={() => setDeleteConfirm(user)}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
+
+        {users.length === 0 && (
+          <div className="col-span-full text-center py-12 text-gray-500">
+            No users found. Create one to get started.
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md border border-gray-700">
-            <h2 className="text-xl font-bold text-white mb-6">
-              {editingUser ? 'Edit User' : 'Create User'}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">
+                {editingUser ? 'Edit User' : 'Create User'}
+              </h2>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!editingUser && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    required
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <Input
+                label="Username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+                disabled={!!editingUser}
+              />
+
+              <Input
+                label={editingUser ? 'New Password (leave blank to keep)' : 'Password'}
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required={!editingUser}
+              />
+
+              <Input
+                label="Display Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+
+              <Select
+                label="Role"
+                value={formData.role}
+                onChange={(e) => {
+                  const newRole = e.target.value as 'admin' | 'coordinator' | 'member';
+                  setFormData({
+                    ...formData,
+                    role: newRole,
+                    assignedEvent: '',
+                    assignedEvents: [],
+                    tasks: [], // Reset tasks when role changes
+                  });
+                }}
+                options={[
+                  { value: 'admin', label: 'Admin' },
+                  { value: 'coordinator', label: 'Coordinator' },
+                  { value: 'member', label: 'Member' },
+                ]}
+              />
+
+              {/* Event assignment - Coordinator (single) */}
+              {formData.role === 'coordinator' && (
+                <Select
+                  label="Assigned Event"
+                  value={formData.assignedEvent}
+                  onChange={(e) => setFormData({ ...formData, assignedEvent: e.target.value })}
+                  options={[
+                    { value: '', label: 'Select Event' },
+                    ...AVAILABLE_EVENTS.map((e) => ({ value: e, label: e })),
+                  ]}
+                />
+              )}
+
+              {/* Event assignment - Member (multiple) */}
+              {formData.role === 'member' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Assigned Events</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {AVAILABLE_EVENTS.map((event) => (
+                      <label
+                        key={event}
+                        className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-primary-50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.assignedEvents.includes(event)}
+                          onChange={() => handleEventToggle(event)}
+                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-gray-700">{event}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Password {editingUser && '(leave blank to keep current)'}
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required={!editingUser}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Role</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      role: e.target.value as 'admin' | 'coordinator' | 'member',
-                    })
-                  }
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="member">Member</option>
-                  <option value="coordinator">Coordinator</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              {formData.role === 'member' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Assigned Event
+              {/* Task assignment */}
+              {formData.role !== 'admin' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tasks & Permissions
                   </label>
-                  <select
-                    value={formData.assignedEvent}
-                    onChange={(e) => setFormData({ ...formData, assignedEvent: e.target.value })}
-                    required={formData.role === 'member'}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">Select Event</option>
-                    {events.map((event) => (
-                      <option key={event} value={event}>
-                        {event}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <TaskCheckboxes
+                      role={formData.role}
+                      selectedTasks={formData.tasks}
+                      onChange={(tasks) => setFormData({ ...formData, tasks })}
+                    />
+                  </div>
                 </div>
               )}
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  className="flex-1"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-xl transition-colors"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors"
-                >
-                  {editingUser ? 'Save Changes' : 'Create User'}
-                </button>
+                </Button>
+                <Button type="submit" className="flex-1" loading={saving}>
+                  {editingUser ? 'Update' : 'Create'}
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={handleDelete}
+        title="Delete User"
+        message={`Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

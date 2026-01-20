@@ -2,17 +2,23 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useEffect, useState } from 'react';
+import { PageHeader } from '../components/layout';
+import Badge from '../components/ui/Badge';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import { PageLoader } from '../components/ui/Spinner';
 
 interface Registration {
   id: number;
   name: string;
   email: string;
   college: string;
-  course: string;
-  branch: string;
-  contact: string;
+  id: number;
+  name: string;
+  email: string;
+  college: string;
   event: string;
-  createdAt: string;
 }
 
 interface User {
@@ -21,14 +27,14 @@ interface User {
 }
 
 const events = [
-  'All Events',
-  'Buildathon',
-  'Bug Smash',
-  'Paper Presentation',
-  'Ctrl+ Quiz',
-  'Code Hunt: Word Edition',
-  'Think & Link',
-  'Gaming',
+  { value: 'All Events', label: 'All Events' },
+  { value: 'Buildathon', label: 'Buildathon' },
+  { value: 'Bug Smash', label: 'Bug Smash' },
+  { value: 'Paper Presentation', label: 'Paper Presentation' },
+  { value: 'Ctrl+ Quiz', label: 'Ctrl+ Quiz' },
+  { value: 'Code Hunt: Word Edition', label: 'Code Hunt: Word Edition' },
+  { value: 'Think & Link', label: 'Think & Link' },
+  { value: 'Gaming', label: 'Gaming' },
 ];
 
 export default function RegistrationsPage() {
@@ -80,103 +86,89 @@ export default function RegistrationsPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Loading registrations..." />;
   }
 
   // Members can only see their assigned event
   const availableEvents =
-    user?.role === 'member' && user.assignedEvent ? [user.assignedEvent] : events;
+    user?.role === 'member' && user.assignedEvent
+      ? [{ value: user.assignedEvent, label: user.assignedEvent }]
+      : events;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Registrations</h1>
-          <p className="text-gray-400 mt-1">View and manage event registrations</p>
-        </div>
-        <div className="text-sm text-gray-400">
-          Total: <span className="text-white font-semibold">{filteredRegistrations.length}</span>
-        </div>
-      </div>
+      <PageHeader
+        title="Registrations"
+        subtitle="View and manage event registrations"
+        actions={
+          <div className="text-sm text-[var(--admin-text-secondary)]">
+            Total:{' '}
+            <span className="text-[var(--admin-text-primary)] font-semibold">
+              {filteredRegistrations.length}
+            </span>
+          </div>
+        }
+      />
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search by name, email, or college..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by name, email, or college..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-        {/* Event Filter */}
-        {user?.role !== 'member' && (
-          <select
-            value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            {availableEvents.map((event) => (
-              <option key={event} value={event}>
-                {event}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
+          {user?.role !== 'member' && (
+            <div className="w-full sm:w-64">
+              <Select
+                value={selectedEvent}
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                options={availableEvents}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
 
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
+        <div className="p-4 rounded-xl bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-red-400">
           {error}
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <Card className="p-0 overflow-hidden">
+        <div className="overflow-x-auto admin-scrollbar">
+          <table className="admin-table">
             <thead>
-              <tr className="text-left text-gray-400 text-sm bg-gray-800/50">
-                <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Email</th>
-                <th className="px-6 py-4 font-medium">Contact</th>
-                <th className="px-6 py-4 font-medium">Event</th>
-                <th className="px-6 py-4 font-medium">College</th>
-                <th className="px-6 py-4 font-medium">Course</th>
-                <th className="px-6 py-4 font-medium">Date</th>
+              <tr className="bg-[rgba(139,92,246,0.05)]">
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Event</th>
+                <th className="px-6 py-4">College</th>
               </tr>
             </thead>
-            <tbody className="text-gray-300 divide-y divide-gray-700">
+            <tbody>
               {filteredRegistrations.map((reg) => (
-                <tr key={reg.id} className="hover:bg-gray-700/30 transition-colors">
-                  <td className="px-6 py-4 font-medium text-white">{reg.name}</td>
+                <tr key={reg.id}>
+                  <td className="px-6 py-4 font-medium text-[var(--admin-text-primary)]">
+                    {reg.name}
+                  </td>
                   <td className="px-6 py-4">{reg.email}</td>
-                  <td className="px-6 py-4">{reg.contact}</td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-primary-500/20 text-primary-400 rounded-lg text-sm">
-                      {reg.event}
-                    </span>
+                    <div className="max-w-[150px] overflow-x-auto whitespace-nowrap admin-scrollbar pb-1">
+                      <Badge variant="purple">{reg.event}</Badge>
+                    </div>
                   </td>
                   <td className="px-6 py-4 max-w-[200px] truncate">{reg.college}</td>
-                  <td className="px-6 py-4">
-                    {reg.course} - {reg.branch}
-                  </td>
-                  <td className="px-6 py-4 text-gray-400">
-                    {new Date(reg.createdAt).toLocaleDateString()}
-                  </td>
                 </tr>
               ))}
               {filteredRegistrations.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan={4} className="px-6 py-12 text-center text-[var(--admin-text-muted)]">
                     No registrations found
                   </td>
                 </tr>
@@ -184,7 +176,7 @@ export default function RegistrationsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
