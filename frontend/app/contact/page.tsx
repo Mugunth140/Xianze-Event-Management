@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import { sanitizeInput, validateEmail, validateMessage, validateName } from '@/lib/validation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -23,9 +24,13 @@ const coordinators: Coordinator[] = [
   { name: 'Mugunth', phone: '6384761234', role: 'Student Coordinator' },
 ];
 
+// Debounce for preventing double submissions
+const submitDebounce = createSubmitDebounce(3000);
+
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusType, setStatusType] = useState<'success' | 'error' | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
@@ -126,8 +131,21 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submissions with debounce
+    if (!submitDebounce()) {
+      setStatusMessage('Please wait before submitting again.');
+      setStatusType('error');
+      return;
+    }
+
+    // Prevent submission while already loading
+    if (isLoading) return;
+
     setIsLoading(true);
     setFieldErrors({});
+    setStatusMessage('');
+    setStatusType('');
 
     // Validate fields
     const errors: { name?: string; email?: string; message?: string } = {};
@@ -144,6 +162,7 @@ const Contact = () => {
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setStatusMessage('Please fix the errors below.');
+      setStatusType('error');
       setIsLoading(false);
       return;
     }
@@ -156,7 +175,8 @@ const Contact = () => {
     };
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contact`, {
+      // Use fetchWithRetry for automatic retry on network/server errors
+      const response = await fetchWithRetry(getApiUrl('/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sanitizedData),
@@ -164,18 +184,46 @@ const Contact = () => {
 
       if (response.ok) {
         setStatusMessage('Message sent! A confirmation email has been sent to your inbox.');
+        setStatusType('success');
         setFormData({ name: '', email: '', message: '' });
+      } else if (response.status === 429) {
+        setStatusMessage('Too many requests. Please wait a moment and try again.');
+        setStatusType('error');
+      } else if (response.status >= 500) {
+        setStatusMessage('Server is busy. Please try again in a few moments.');
+        setStatusType('error');
       } else {
         setStatusMessage('Failed to send message. Please try again.');
+        setStatusType('error');
       }
-    } catch {
-      setStatusMessage('An error occurred. Please try again later.');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'TIMEOUT') {
+          setStatusMessage('Request timed out. Please check your connection and try again.');
+        } else if (error.code === 'NETWORK_ERROR') {
+          setStatusMessage('Network error. Please check your internet connection.');
+        } else {
+          setStatusMessage(error.message);
+        }
+      } else {
+        setStatusMessage('An unexpected error occurred. Please try again later.');
+      }
+      setStatusType('error');
     } finally {
       setIsLoading(false);
     }
-
-    setTimeout(() => setStatusMessage(''), 5000);
   };
+
+  // Auto-clear success messages
+  useEffect(() => {
+    if (statusType === 'success' && statusMessage) {
+      const timer = setTimeout(() => {
+        setStatusMessage('');
+        setStatusType('');
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusType, statusMessage]);
 
   return (
     <section

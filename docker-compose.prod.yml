@@ -58,6 +58,8 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-https://xianze.tech}
       # Auth
       - JWT_SECRET=${JWT_SECRET:-xianze-production-secret-2026}
+      # QR Code Hash Salt (for secure QR codes)
+      - QR_HASH_SALT=${QR_HASH_SALT:-xianze2026-qr-salt-secure}
       # Mail Configuration
       - MAIL_HOST=xianze-mailserver
       - MAIL_USER=contact@xianze.tech

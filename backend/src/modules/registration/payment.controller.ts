@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Post,
@@ -12,7 +13,9 @@ import {
 import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TasksGuard } from '../auth/guards/tasks.guard';
+import { MailService } from '../mail/mail.service';
 import { UserRole, UserTask } from '../users/user.entity';
+import { Registration } from './registration.entity';
 import { RegistrationService } from './registration.service';
 
 interface AuthRequest {
@@ -27,7 +30,12 @@ interface AuthRequest {
 @Controller('payments')
 @UseGuards(JwtAuthGuard, TasksGuard)
 export class PaymentController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  private readonly logger = new Logger(PaymentController.name);
+
+  constructor(
+    private readonly registrationService: RegistrationService,
+    private readonly mailService: MailService,
+  ) {}
 
   /**
    * Get pending payments
@@ -62,7 +70,7 @@ export class PaymentController {
   }
 
   /**
-   * Verify a payment
+   * Verify a payment and send event pass email
    */
   @Post(':id/verify')
   @RequireTasks(UserTask.VERIFY_PAYMENT)
@@ -70,13 +78,52 @@ export class PaymentController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: AuthRequest,
     @Body('note') note?: string,
-  ) {
-    // TODO: Add event scope validation
-    return this.registrationService.verifyPayment(id, req.user.id, note);
+  ): Promise<{ success: boolean; registration: Registration; emailSent: boolean }> {
+    const registration = await this.registrationService.verifyPayment(id, req.user.id, note);
+
+    // Send event pass email (async)
+    const emailSent = await this.sendEventPassEmail(registration);
+
+    return {
+      success: true,
+      registration,
+      emailSent,
+    };
   }
 
   /**
-   * Reject a payment
+   * Send event pass email with QR code
+   */
+  private async sendEventPassEmail(registration: Registration): Promise<boolean> {
+    if (!registration.passId || !registration.qrCodeHash) {
+      this.logger.error(`Missing pass data for registration ${registration.id}`);
+      return false;
+    }
+
+    try {
+      const emailSent = await this.mailService.sendEventPass({
+        name: registration.name,
+        email: registration.email,
+        event: registration.event,
+        passId: registration.passId,
+        qrCodeHash: registration.qrCodeHash,
+        college: registration.college,
+      });
+
+      if (emailSent) {
+        await this.registrationService.markPassEmailSent(registration.id);
+        this.logger.log(`Event pass email sent for registration ${registration.id}`);
+      }
+
+      return emailSent;
+    } catch (error) {
+      this.logger.error(`Failed to send event pass email: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Reject a payment and send rejection email
    */
   @Post(':id/reject')
   @RequireTasks(UserTask.VERIFY_PAYMENT)
@@ -84,9 +131,45 @@ export class PaymentController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: AuthRequest,
     @Body('reason') reason: string,
-  ) {
-    // TODO: Add event scope validation
-    return this.registrationService.rejectPayment(id, req.user.id, reason || 'Rejected');
+  ): Promise<{ success: boolean; registration: Registration; emailSent: boolean }> {
+    const rejectionReason = reason || 'Payment could not be verified';
+    const registration = await this.registrationService.rejectPayment(
+      id,
+      req.user.id,
+      rejectionReason,
+    );
+
+    // Send rejection email (async)
+    const emailSent = await this.mailService.sendPaymentRejection(
+      registration.email,
+      registration.name,
+      registration.event,
+      rejectionReason,
+    );
+
+    return {
+      success: true,
+      registration,
+      emailSent,
+    };
+  }
+
+  /**
+   * Resend event pass email (for already verified registrations)
+   */
+  @Post(':id/resend-pass')
+  @RequireTasks(UserTask.VERIFY_PAYMENT)
+  async resendEventPass(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ success: boolean; emailSent: boolean }> {
+    const registration = await this.registrationService.findOne(id);
+
+    if (registration.paymentStatus !== 'verified') {
+      return { success: false, emailSent: false };
+    }
+
+    const emailSent = await this.sendEventPassEmail(registration);
+    return { success: true, emailSent };
   }
 
   /**

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -16,6 +18,7 @@ import { UsersModule } from './modules/users/users.module';
  * Production-ready module:
  * - ConfigModule: Environment variable management
  * - TypeOrmModule: Database connection (SQLite)
+ * - ThrottlerModule: Rate limiting for load protection
  */
 @Module({
   imports: [
@@ -23,6 +26,21 @@ import { UsersModule } from './modules/users/users.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
+    }),
+
+    // Rate limiting - protects against abuse and high load
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            // Default: 100 requests per minute per IP
+            ttl: (config.get<number>('RATE_LIMIT_TTL') || 60) * 1000,
+            limit: config.get<number>('RATE_LIMIT_MAX') || 100,
+          },
+        ],
+      }),
     }),
 
     // Database connection
@@ -36,6 +54,13 @@ import { UsersModule } from './modules/users/users.module';
     AnalyticsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Apply rate limiting globally
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
