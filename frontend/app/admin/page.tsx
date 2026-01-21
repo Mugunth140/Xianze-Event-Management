@@ -3,6 +3,11 @@
 import { getApiUrl } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { PageHeader } from './components/layout';
+import Badge from './components/ui/Badge';
+import Card, { StatCard } from './components/ui/Card';
+import { EventBarChart, OverviewLineChart, PaymentPieChart } from './components/ui/Charts';
+import { PageLoader } from './components/ui/Spinner';
 
 interface OverviewData {
   totalRegistrations: number;
@@ -20,12 +25,37 @@ interface Registration {
   createdAt: string;
 }
 
+interface PaymentStat {
+  status: string;
+  count: number;
+}
+
+interface TrendData {
+  date: string;
+  count: string;
+}
+
+interface User {
+  role: 'admin' | 'coordinator' | 'member';
+  assignedEvent?: string;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [recentRegistrations, setRecentRegistrations] = useState<Registration[]>([]);
+  const [paymentStats, setPaymentStats] = useState<PaymentStat[]>([]);
+  const [trends, setTrends] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,11 +66,17 @@ export default function AdminDashboard() {
       }
 
       try {
-        const [overviewRes, recentRes] = await Promise.all([
+        const [overviewRes, recentRes, paymentRes, trendsRes] = await Promise.all([
           fetch(getApiUrl('/analytics/overview'), {
             headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(getApiUrl('/analytics/recent?limit=5'), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(getApiUrl('/analytics/payment-stats'), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(getApiUrl('/analytics/trends'), {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -52,15 +88,19 @@ export default function AdminDashboard() {
           return;
         }
 
-        if (!overviewRes.ok || !recentRes.ok) {
+        if (!overviewRes.ok || !recentRes.ok || !paymentRes.ok || !trendsRes.ok) {
           throw new Error('Failed to fetch dashboard data');
         }
 
         const overviewData = await overviewRes.json();
         const recentData = await recentRes.json();
+        const paymentData = await paymentRes.json();
+        const trendsData = await trendsRes.json();
 
         setOverview(overviewData);
         setRecentRegistrations(recentData);
+        setPaymentStats(paymentData);
+        setTrends(trendsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
@@ -72,232 +112,170 @@ export default function AdminDashboard() {
   }, [router]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Loading dashboard..." />;
   }
 
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
-          {error}
-        </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-        >
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">{error}</div>
+        <button onClick={() => window.location.reload()} className="admin-btn admin-btn-primary">
           Retry
         </button>
       </div>
     );
   }
 
-  const eventColors = [
-    'bg-blue-500',
-    'bg-yellow-500',
-    'bg-pink-500',
-    'bg-orange-500',
-    'bg-green-500',
-    'bg-purple-500',
-    'bg-sky-500',
-  ];
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
-        <p className="text-gray-400 mt-1">Monitor your event registrations and analytics</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          user?.role === 'coordinator' && user.assignedEvent
+            ? `Managing: ${user.assignedEvent}`
+            : 'Monitor your event registrations and analytics'
+        }
+      />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-500/20 rounded-xl flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-primary-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">{overview?.totalRegistrations || 0}</p>
-              <p className="text-sm text-gray-400">Total Registrations</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+          }
+          value={overview?.totalRegistrations || 0}
+          label="Total Registrations"
+          iconColor="text-primary-600"
+        />
 
-        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">{overview?.totalContacts || 0}</p>
-              <p className="text-sm text-gray-400">Contact Inquiries</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          }
+          value={overview?.totalContacts || 0}
+          label="Contact Inquiries"
+          iconColor="text-emerald-600"
+        />
 
-        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">
-                {overview?.registrationsByEvent?.length || 0}
-              </p>
-              <p className="text-sm text-gray-400">Active Events</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          }
+          value={overview?.registrationsByEvent?.length || 0}
+          label="Active Events"
+          iconColor="text-amber-600"
+        />
 
-        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-purple-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">
-                {overview?.registrationsByCollege?.length || 0}
-              </p>
-              <p className="text-sm text-gray-400">Colleges</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+          }
+          value={overview?.registrationsByCollege?.length || 0}
+          label="Colleges"
+          iconColor="text-pink-600"
+        />
       </div>
 
-      {/* Event Breakdown */}
-      <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Registrations by Event</h2>
-        <div className="space-y-4">
-          {overview?.registrationsByEvent?.map((item, index) => {
-            const maxCount = Math.max(
-              ...(overview.registrationsByEvent?.map((e) => parseInt(e.count)) || [1])
-            );
-            const percentage = (parseInt(item.count) / maxCount) * 100;
-            return (
-              <div key={item.event} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-300">{item.event}</span>
-                  <span className="text-gray-400">{item.count}</span>
-                </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${eventColors[index % eventColors.length]} rounded-full transition-all`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-          {(!overview?.registrationsByEvent || overview.registrationsByEvent.length === 0) && (
-            <p className="text-gray-400 text-center py-4">No registrations yet</p>
-          )}
-        </div>
+      {/* Analytics Charts */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Registration Trends</h2>
+          <OverviewLineChart data={trends} />
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h2>
+          <PaymentPieChart data={paymentStats} />
+        </Card>
       </div>
 
-      {/* Top Colleges */}
-      <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Top Colleges</h2>
-        <div className="space-y-3">
-          {overview?.registrationsByCollege?.slice(0, 5).map((item, index) => (
-            <div
-              key={item.college}
-              className="flex items-center justify-between py-2 border-b border-gray-700 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-6 h-6 flex items-center justify-center bg-primary-500/20 text-primary-400 text-xs font-bold rounded-full">
-                  {index + 1}
-                </span>
-                <span className="text-gray-300">{item.college}</span>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Event Breakdown */}
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Registrations by Event</h2>
+          <EventBarChart data={overview?.registrationsByEvent || []} />
+        </Card>
+
+        {/* Top Colleges */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Colleges</h2>
+          <div className="space-y-3">
+            {overview?.registrationsByCollege?.slice(0, 5).map((item, index) => (
+              <div
+                key={item.college}
+                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 h-6 flex items-center justify-center bg-primary-50 text-primary-600 text-xs font-bold rounded-full">
+                    {index + 1}
+                  </span>
+                  <span className="text-gray-600 truncate max-w-[150px]" title={item.college}>
+                    {item.college}
+                  </span>
+                </div>
+                <Badge variant="purple">{item.count}</Badge>
               </div>
-              <span className="text-gray-400 font-medium">{item.count}</span>
-            </div>
-          ))}
-          {(!overview?.registrationsByCollege || overview.registrationsByCollege.length === 0) && (
-            <p className="text-gray-400 text-center py-4">No data available</p>
-          )}
-        </div>
+            ))}
+            {(!overview?.registrationsByCollege ||
+              overview.registrationsByCollege.length === 0) && (
+              <p className="text-gray-400 text-center py-4">No data available</p>
+            )}
+          </div>
+        </Card>
       </div>
 
       {/* Recent Registrations */}
-      <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Recent Registrations</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Registrations</h2>
+        <div className="overflow-x-auto admin-scrollbar">
+          <table className="admin-table">
             <thead>
-              <tr className="text-left text-gray-400 text-sm">
-                <th className="pb-4 font-medium">Name</th>
-                <th className="pb-4 font-medium">Email</th>
-                <th className="pb-4 font-medium">Event</th>
-                <th className="pb-4 font-medium">College</th>
-                <th className="pb-4 font-medium">Date</th>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Event</th>
+                <th>College</th>
+                <th>Date</th>
               </tr>
             </thead>
-            <tbody className="text-gray-300">
+            <tbody>
               {recentRegistrations.map((reg) => (
-                <tr key={reg.id} className="border-t border-gray-700">
-                  <td className="py-3 font-medium text-white">{reg.name}</td>
-                  <td className="py-3">{reg.email}</td>
-                  <td className="py-3">
-                    <span className="px-2 py-1 bg-primary-500/20 text-primary-400 rounded-lg text-sm">
-                      {reg.event}
-                    </span>
+                <tr key={reg.id}>
+                  <td className="font-medium text-gray-900">{reg.name}</td>
+                  <td>{reg.email}</td>
+                  <td>
+                    <Badge variant="purple">{reg.event}</Badge>
                   </td>
-                  <td className="py-3 max-w-[150px] truncate">{reg.college}</td>
-                  <td className="py-3 text-gray-400">
-                    {new Date(reg.createdAt).toLocaleDateString()}
-                  </td>
+                  <td className="max-w-[150px] truncate">{reg.college}</td>
+                  <td className="text-gray-400">{new Date(reg.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
               {recentRegistrations.length === 0 && (
@@ -310,7 +288,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

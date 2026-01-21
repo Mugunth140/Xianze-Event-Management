@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import {
   sanitizeInput,
   validateCollege,
@@ -11,8 +12,9 @@ import {
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useEffect, useRef, useState } from 'react';
+import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -28,6 +30,7 @@ interface FormData {
   event: string;
   otherCourse: string;
   otherBranch: string;
+  transactionId: string;
 }
 
 interface DropdownProps {
@@ -93,36 +96,8 @@ const CustomDropdown = ({ label, options, selected, setSelected, placeholder }: 
   );
 };
 
-const triggerConfetti = () => {
-  const duration = 3000;
-  const animationEnd = Date.now() + duration;
-  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
-
-  const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-  const interval = window.setInterval(() => {
-    const timeLeft = animationEnd - Date.now();
-
-    if (timeLeft <= 0) {
-      return clearInterval(interval);
-    }
-
-    const particleCount = 50 * (timeLeft / duration);
-
-    confetti({
-      ...defaults,
-      particleCount,
-      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-      colors: ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
-    });
-    confetti({
-      ...defaults,
-      particleCount,
-      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-      colors: ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
-    });
-  }, 250);
-};
+// Debounce for preventing double submissions
+const submitDebounce = createSubmitDebounce(3000);
 
 const Register = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -135,12 +110,15 @@ const Register = () => {
     event: '',
     otherCourse: '',
     otherBranch: '',
+    transactionId: '',
   });
 
+  const [screenshot, setScreenshot] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [retryCount, setRetryCount] = useState(0);
 
   const router = useRouter();
 
@@ -192,13 +170,13 @@ const Register = () => {
   }, []);
 
   const eventsList = [
-    'BuildAThon',
+    'Buildathon',
     'Bug Smash',
     'Paper Presentation',
-    'Ctrl+ Quiz',
-    'Code Hunt: Word Edition',
+    'Ctrl + Quiz',
     'Think & Link',
     'Gaming',
+    'Code Hunt : Word Edition',
   ];
 
   const courses: Record<string, string[]> = {
@@ -385,6 +363,37 @@ const Register = () => {
     Others: [],
   };
 
+  const triggerConfetti = () => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval = window.setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
+      });
+    }, 250);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -408,14 +417,34 @@ const Register = () => {
     }
   };
 
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage('File size must be less than 5MB');
+        return;
+      }
+      setScreenshot(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Prevent double submissions with debounce
+    if (!submitDebounce()) {
+      setErrorMessage('Please wait before submitting again.');
+      return;
+    }
+
+    // Prevent submission while already loading
+    if (loading) return;
+
     setLoading(true);
     setSubmitStatus('idle');
     setErrorMessage('');
-
-    // Clear previous errors
     setFieldErrors({});
+    setRetryCount(0);
 
     // Validate all fields
     const errors: Partial<Record<keyof FormData, string>> = {};
@@ -443,6 +472,13 @@ const Register = () => {
     const eventResult = validateSelection(formData.event, 'event');
     if (!eventResult.isValid) errors.event = eventResult.error!;
 
+    if (!formData.transactionId.trim()) errors.transactionId = 'Transaction ID is required';
+    if (!screenshot) {
+      setErrorMessage('Payment screenshot is required');
+      setLoading(false);
+      return;
+    }
+
     // Check if there are validation errors
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -452,28 +488,37 @@ const Register = () => {
       return;
     }
 
-    const submittedData = {
-      name: sanitizeInput(formData.name),
-      email: formData.email.trim().toLowerCase(),
-      course: sanitizeInput(formData.course === 'Others' ? formData.otherCourse : formData.course),
-      branch: sanitizeInput(
+    const data = new FormData();
+    data.append('name', sanitizeInput(formData.name));
+    data.append('email', formData.email.trim().toLowerCase());
+    data.append(
+      'course',
+      sanitizeInput(formData.course === 'Others' ? formData.otherCourse : formData.course)
+    );
+    data.append(
+      'branch',
+      sanitizeInput(
         formData.course === 'Others' || formData.branch === 'Others'
           ? formData.otherBranch
           : formData.branch
-      ),
-      college: sanitizeInput(formData.college),
-      contact: formData.contact.replace(/[^\d]/g, ''),
-      event: formData.event,
-    };
+      )
+    );
+    data.append('college', sanitizeInput(formData.college));
+    data.append('contact', formData.contact.replace(/[^\d]/g, ''));
+    data.append('event', formData.event);
+    data.append('transactionId', sanitizeInput(formData.transactionId));
+    if (screenshot) {
+      data.append('screenshot', screenshot);
+    }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/register`, {
+      // Use fetchWithRetry for automatic retry on network/server errors
+      const res = await fetchWithRetry(getApiUrl('/register'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submittedData),
+        body: data,
       });
 
-      const data = await res.json();
+      const dataRes = await res.json().catch(() => ({}));
 
       if (res.ok) {
         setSubmitStatus('success');
@@ -500,7 +545,9 @@ const Register = () => {
           event: '',
           otherCourse: '',
           otherBranch: '',
+          transactionId: '',
         });
+        setScreenshot(null);
       } else {
         setSubmitStatus('error');
         // Parse meaningful error messages
@@ -508,20 +555,36 @@ const Register = () => {
 
         if (res.status === 409) {
           friendlyMessage =
-            data.message ||
-            data.error ||
+            dataRes.message ||
+            dataRes.error ||
             'This email is already registered. Please use a different email.';
-        } else if (data.message) {
-          friendlyMessage = Array.isArray(data.message) ? data.message.join(', ') : data.message;
-        } else if (data.error) {
-          friendlyMessage = data.error;
+        } else if (res.status === 429) {
+          friendlyMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (res.status >= 500) {
+          friendlyMessage = 'Server is busy. Please try again in a few moments.';
+        } else if (dataRes.message) {
+          friendlyMessage = Array.isArray(dataRes.message)
+            ? dataRes.message.join(', ')
+            : dataRes.message;
+        } else if (dataRes.error) {
+          friendlyMessage = dataRes.error;
         }
 
         setErrorMessage(friendlyMessage);
       }
-    } catch {
+    } catch (error) {
       setSubmitStatus('error');
-      setErrorMessage('Network error. Please check your connection and try again.');
+      if (error instanceof ApiError) {
+        if (error.code === 'TIMEOUT') {
+          setErrorMessage('Request timed out. Please check your connection and try again.');
+        } else if (error.code === 'NETWORK_ERROR') {
+          setErrorMessage('Network error. Please check your internet connection.');
+        } else {
+          setErrorMessage(error.message);
+        }
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
     }
 
     setLoading(false);
@@ -541,6 +604,9 @@ const Register = () => {
       : formData.course === 'B.Tech' || formData.course === 'M.Tech'
         ? formData.branch !== ''
         : true);
+
+  const upiId = 'gomathichandramohan2010@okhdfcbank';
+  const upiLink = `upi://pay?pa=${upiId}&pn=Xianze2K26&am=100&cu=INR`;
 
   return (
     <section
@@ -597,21 +663,95 @@ const Register = () => {
           {/* Success State */}
           {submitStatus === 'success' && (
             <div className="rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 shadow-xl shadow-primary-500/5 text-center overflow-hidden">
-              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6 text-5xl">
-                🎉
+              {/* Success Icon */}
+              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-500/20">
+                <svg
+                  className="w-12 h-12 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
               </div>
+
+              {/* Success Title */}
               <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3">
-                Registration Successfull!
+                Payment Submitted! 🎉
               </h3>
-              <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-                You&apos;re all set for XIANZE 2K26! We&apos;ve sent a confirmation to your email.
-                See you there! 🎊
+
+              {/* Status Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 mb-6">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+                <span className="text-sm font-semibold text-amber-700">Verification in Progress</span>
+              </div>
+
+              {/* Description */}
+              <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
+                We&apos;ve received your registration and payment details. Our team will verify your
+                payment within <strong className="text-primary-600">8 hours</strong>.
               </p>
+
+              {/* What&apos;s Next Card */}
+              <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-2xl p-6 mb-8 text-left border border-primary-100">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📧</span> What happens next?
+                </h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span>Confirmation email sent to your inbox</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-500 mt-0.5">⏳</span>
+                    <span>Payment verification within 8 hours</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary-500 mt-0.5">🎟️</span>
+                    <span>Event pass with QR code will be emailed after verification</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Single CTA Button */}
               <button
                 onClick={() => router.push('/events')}
-                className="liquid-glass-btn inline-flex items-center justify-center px-8 py-4 text-white font-semibold rounded-xl"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-300"
               >
-                Explore Events
+                <span>Explore Events</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {submitStatus === 'error' && errorMessage && (
+            <div className="rounded-2xl bg-red-50 border border-red-200 p-4 mb-6 flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-red-800 mb-1">Registration Failed</h4>
+                <p className="text-sm text-red-700">{errorMessage}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setSubmitStatus('idle');
+                  setErrorMessage('');
+                }}
+                className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           )}
@@ -637,7 +777,7 @@ const Register = () => {
                       id="name"
                       type="text"
                       name="name"
-                      placeholder="John Doe"
+                      placeholder="e.g. John Doe"
                       value={formData.name}
                       onChange={handleChange}
                       required
@@ -647,15 +787,16 @@ const Register = () => {
                       <p className="mt-1 text-sm text-red-500">{fieldErrors.name}</p>
                     )}
                   </div>
+
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                     Email
                     </label>
                     <input
                       id="email"
                       type="email"
                       name="email"
-                      placeholder="john@example.com"
+                      placeholder="e.g. john.doe@gmail.com"
                       value={formData.email}
                       onChange={handleChange}
                       required
@@ -665,6 +806,7 @@ const Register = () => {
                       <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
                     )}
                   </div>
+
                   <div>
                     <label
                       htmlFor="contact"
@@ -676,7 +818,7 @@ const Register = () => {
                       id="contact"
                       type="tel"
                       name="contact"
-                      placeholder="10-digit mobile number"
+                      placeholder="e.g. 9876543210"
                       value={formData.contact}
                       onChange={handleChange}
                       required
@@ -689,103 +831,99 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* SECTION 2: Academic Info */}
+              {/* SECTION 2: Academic Details */}
               <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-20">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl">
                     🎓
                   </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Academic Info</h3>
+                  <h3 className="text-xl font-display font-bold text-gray-900">Academic Details</h3>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div>
-                    <label
-                      htmlFor="college"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      College Name
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">College</label>
                     <input
-                      id="college"
-                      type="text"
                       name="college"
-                      placeholder="Your college name"
+                      placeholder="Search or enter college name..."
                       value={formData.college}
                       onChange={handleChange}
-                      required
-                      className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.college ? 'border-red-400' : 'border-gray-100'}`}
                     />
+                    {fieldErrors.college && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.college}</p>
+                    )}
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Degree / Course</label>
                     <CustomDropdown
                       label="Course"
                       options={Object.keys(courses)}
                       selected={formData.course}
-                      setSelected={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          course: value,
-                          branch: '',
-                          otherBranch: '',
-                        }))
+                      setSelected={(val) =>
+                        handleChange({
+                          target: { name: 'course', value: val },
+                        } as any)
                       }
-                      placeholder="Select your course"
                     />
+                    {fieldErrors.course && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.course}</p>
+                    )}
                   </div>
+
                   {formData.course === 'Others' && (
-                    <div>
-                      <label
-                        htmlFor="otherCourse"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Specify Course
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specific Course Name
                       </label>
                       <input
-                        id="otherCourse"
-                        type="text"
                         name="otherCourse"
-                        placeholder="Enter your course"
+                        placeholder="e.g. B.Arch"
                         value={formData.otherCourse}
                         onChange={handleChange}
-                        required
-                        className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                        className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.otherCourse ? 'border-red-400' : 'border-gray-100'}`}
                       />
+                      {fieldErrors.otherCourse && (
+                        <p className="mt-1 text-sm text-red-500">{fieldErrors.otherCourse}</p>
+                      )}
                     </div>
                   )}
 
-                  {formData.course && formData.course !== 'Others' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Branch</label>
-                      <CustomDropdown
-                        label="Branch"
-                        options={courses[formData.course] || []}
-                        selected={formData.branch}
-                        setSelected={(value) => setFormData((prev) => ({ ...prev, branch: value }))}
-                        placeholder="Select your branch"
-                      />
-                    </div>
-                  )}
+                  {!['Others', 'BDS', 'MS', 'B.Ed'].includes(formData.course) &&
+                    formData.course !== '' && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Branch / Specialization
+                        </label>
+                        <CustomDropdown
+                          label="Branch"
+                          options={courses[formData.course] || []}
+                          selected={formData.branch}
+                          setSelected={(val) =>
+                            handleChange({
+                              target: { name: 'branch', value: val },
+                            } as any)
+                          }
+                        />
+                      </div>
+                    )}
 
-                  {(formData.course === 'Others' || formData.branch === 'Others') && (
-                    <div>
-                      <label
-                        htmlFor="otherBranch"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Specify Branch
+                  {formData.branch === 'Others' && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specific Branch Name
                       </label>
                       <input
-                        id="otherBranch"
-                        type="text"
                         name="otherBranch"
-                        placeholder="Enter your branch"
+                        placeholder="e.g. Marine Engineering"
                         value={formData.otherBranch}
                         onChange={handleChange}
-                        required
-                        className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-gray-100 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none"
+                        className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.otherBranch ? 'border-red-400' : 'border-gray-100'}`}
                       />
+                      {fieldErrors.otherBranch && (
+                        <p className="mt-1 text-sm text-red-500">{fieldErrors.otherBranch}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -794,51 +932,199 @@ const Register = () => {
               {/* SECTION 3: Event Selection */}
               <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center text-2xl">
-                    🚀
+                  <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">
+                    🏆
                   </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Select Event</h3>
+                  <h3 className="text-xl font-display font-bold text-gray-900">Event Selection</h3>
                 </div>
+
                 <div>
-                  <CustomDropdown
-                    label="Event"
-                    options={eventsList}
-                    selected={formData.event}
-                    setSelected={(value) => setFormData((prev) => ({ ...prev, event: value }))}
-                    placeholder="Choose an event to participate"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Choose an Event
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {eventsList.map((event) => (
+                      <div
+                        key={event}
+                        onClick={() =>
+                          handleChange({
+                            target: { name: 'event', value: event },
+                          } as any)
+                        }
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.event === event
+                          ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                          : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-medium ${formData.event === event ? 'text-primary-700' : 'text-gray-700'}`}
+                          >
+                            {event}
+                          </span>
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${formData.event === event
+                              ? 'border-primary-500 bg-primary-500'
+                              : 'border-gray-300'
+                              }`}
+                          >
+                            {formData.event === event && (
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {fieldErrors.event && (
+                    <p className="mt-2 text-sm text-red-500">{fieldErrors.event}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* SECTION 4: Payment Details */}
+              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl">
+                    ₹
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-gray-900">Payment Details</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
+                    <p className="text-sm text-primary-800 mb-2 font-medium">Registration Fee: ₹100</p>
+
+                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                      {/* Mobile Button */}
+                      <a
+                        href={upiLink}
+                        className="md:hidden w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-primary-500/20 active:scale-95 transition-transform"
+                      >
+                        <span>Pay via UPI App</span>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </a>
+
+                      {/* Desktop QR */}
+                      <div className="hidden md:flex flex-row items-start gap-6 bg-white p-6 rounded-2xl border border-gray-200 w-full">
+                        <div className="flex flex-col items-center gap-3 shrink-0">
+                          <div className="p-2 bg-white rounded-xl border border-gray-100 shadow-sm relative w-[140px] h-[140px]">
+                            <NextImage
+                              src="/upi_qr.jpeg"
+                              alt="UPI QR Code"
+                              fill
+                              className="object-contain rounded-lg"
+                            />
+                          </div>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Scan to Pay</p>
+                        </div>
+
+                        <div className="flex-1 space-y-4">
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">UPI ID</p>
+                            <div className="relative group">
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 font-mono text-sm text-gray-700 break-all pr-10">
+                                {upiId}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(upiId);
+                                  const btn = document.getElementById('copy-btn');
+                                  if (btn) {
+                                    btn.innerHTML = '✓';
+                                    setTimeout(() => (btn.innerHTML = '📋'), 2000);
+                                  }
+                                }}
+                                id="copy-btn"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary-600 hover:bg-white rounded-lg transition-all"
+                                title="Copy UPI ID"
+                              >
+                                📋
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="text-sm text-gray-600 leading-relaxed">
+                            <p>1. Scan the QR code or copy the UPI ID.</p>
+                            <p>2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).</p>
+                            <p>3. Enter the <strong>Transaction ID (UTR)</strong> below and upload a screenshot.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="md:hidden text-sm text-gray-600 text-center">
+                        <p>Pay via button above, then enter details below.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="transactionId" className="block text-sm font-medium text-gray-700 mb-2">
+                      Transaction ID (UTR)
+                    </label>
+                    <input
+                      id="transactionId"
+                      type="text"
+                      name="transactionId"
+                      placeholder="e.g. 123456789012"
+                      value={formData.transactionId}
+                      onChange={handleChange}
+                      required
+                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.transactionId ? 'border-red-400' : 'border-gray-100'}`}
+                    />
+                    {fieldErrors.transactionId && (
+                      <p className="mt-1 text-sm text-red-500">{fieldErrors.transactionId}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="screenshot" className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Screenshot
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="screenshot"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleScreenshotChange}
+                        required
+                        className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed border-gray-300 hover:border-primary-400 transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">Max size: 5MB. Formats: JPG, PNG.</p>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading || !isFormValid}
-                className="form-section-item opacity-0 w-full liquid-glass-btn inline-flex items-center justify-center px-8 py-5 text-white text-lg font-semibold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300"
+                disabled={loading}
+                className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Registering...
                   </>
                 ) : (
-                  <>Register</>
+                  'Complete Registration'
                 )}
               </button>
-
-              {/* Validation / Error Message */}
-              {!isFormValid && (
-                <div className="text-center text-sm text-gray-500 animate-pulse">
-                  * Please fill all the fields to complete registration.
-                </div>
-              )}
-
-              {/* Error Message - Below Submit Button */}
-              {submitStatus === 'error' && errorMessage && (
-                <div className="bg-red-50 text-red-700 border border-red-200 rounded-2xl p-4 text-center font-medium">
-                  ❌ {errorMessage}
-                </div>
-              )}
             </form>
           )}
         </div>

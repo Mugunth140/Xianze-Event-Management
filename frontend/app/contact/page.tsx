@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import { sanitizeInput, validateEmail, validateMessage, validateName } from '@/lib/validation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -23,9 +24,13 @@ const coordinators: Coordinator[] = [
   { name: 'Mugunth', phone: '6384761234', role: 'Student Coordinator' },
 ];
 
+// Debounce for preventing double submissions
+const submitDebounce = createSubmitDebounce(3000);
+
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusType, setStatusType] = useState<'success' | 'error' | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
@@ -126,8 +131,21 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submissions with debounce
+    if (!submitDebounce()) {
+      setStatusMessage('Please wait before submitting again.');
+      setStatusType('error');
+      return;
+    }
+
+    // Prevent submission while already loading
+    if (isLoading) return;
+
     setIsLoading(true);
     setFieldErrors({});
+    setStatusMessage('');
+    setStatusType('');
 
     // Validate fields
     const errors: { name?: string; email?: string; message?: string } = {};
@@ -144,6 +162,7 @@ const Contact = () => {
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setStatusMessage('Please fix the errors below.');
+      setStatusType('error');
       setIsLoading(false);
       return;
     }
@@ -156,7 +175,8 @@ const Contact = () => {
     };
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact`, {
+      // Use fetchWithRetry for automatic retry on network/server errors
+      const response = await fetchWithRetry(getApiUrl('/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sanitizedData),
@@ -164,18 +184,46 @@ const Contact = () => {
 
       if (response.ok) {
         setStatusMessage('Message sent! A confirmation email has been sent to your inbox.');
+        setStatusType('success');
         setFormData({ name: '', email: '', message: '' });
+      } else if (response.status === 429) {
+        setStatusMessage('Too many requests. Please wait a moment and try again.');
+        setStatusType('error');
+      } else if (response.status >= 500) {
+        setStatusMessage('Server is busy. Please try again in a few moments.');
+        setStatusType('error');
       } else {
         setStatusMessage('Failed to send message. Please try again.');
+        setStatusType('error');
       }
-    } catch {
-      setStatusMessage('An error occurred. Please try again later.');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'TIMEOUT') {
+          setStatusMessage('Request timed out. Please check your connection and try again.');
+        } else if (error.code === 'NETWORK_ERROR') {
+          setStatusMessage('Network error. Please check your internet connection.');
+        } else {
+          setStatusMessage(error.message);
+        }
+      } else {
+        setStatusMessage('An unexpected error occurred. Please try again later.');
+      }
+      setStatusType('error');
     } finally {
       setIsLoading(false);
     }
-
-    setTimeout(() => setStatusMessage(''), 5000);
   };
+
+  // Auto-clear success messages
+  useEffect(() => {
+    if (statusType === 'success' && statusMessage) {
+      const timer = setTimeout(() => {
+        setStatusMessage('');
+        setStatusType('');
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusType, statusMessage]);
 
   return (
     <section
@@ -232,7 +280,7 @@ const Contact = () => {
         <div ref={cardsRef} className="grid sm:grid-cols-2 gap-4 mb-12">
           {/* WhatsApp Community Card */}
           <Link
-            href="https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp"
+            href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '#'}
             target="_blank"
             className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 opacity-0"
           >
@@ -325,10 +373,11 @@ const Contact = () => {
             {/* Status Message */}
             {statusMessage && (
               <div
-                className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${statusMessage.includes('sent')
+                className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${
+                  statusMessage.includes('sent')
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}
+                }`}
               >
                 {statusMessage.includes('sent') ? '✅' : '❌'} {statusMessage}
               </div>

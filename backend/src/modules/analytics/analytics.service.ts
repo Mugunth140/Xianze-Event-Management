@@ -41,6 +41,31 @@ export class AnalyticsService {
     };
   }
 
+  async getPaymentStats() {
+    const stats = await this.registrationRepository
+      .createQueryBuilder('r')
+      .select('r.paymentStatus', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('r.paymentStatus')
+      .getRawMany();
+
+    // Ensure all statuses are represented even if count is 0
+    const formattedStats = [
+      { status: 'verified', count: 0 },
+      { status: 'pending', count: 0 },
+      { status: 'rejected', count: 0 },
+    ];
+
+    stats.forEach((item) => {
+      const index = formattedStats.findIndex((s) => s.status === item.status);
+      if (index !== -1) {
+        formattedStats[index].count = parseInt(item.count);
+      }
+    });
+
+    return formattedStats;
+  }
+
   async getRegistrationTrends() {
     const trends = await this.registrationRepository
       .createQueryBuilder('r')
@@ -61,17 +86,7 @@ export class AnalyticsService {
     }
 
     const registrations = await query
-      .select([
-        'r.id',
-        'r.name',
-        'r.email',
-        'r.college',
-        'r.course',
-        'r.branch',
-        'r.contact',
-        'r.event',
-        'r.createdAt',
-      ])
+      .select(['r.id', 'r.name', 'r.email', 'r.college', 'r.event'])
       .orderBy('r.createdAt', 'DESC')
       .getMany();
 

@@ -40,4 +40,10 @@ export class AnalyticsController {
   getRecentRegistrations(@Query('limit') limit?: string) {
     return this.analyticsService.getRecentRegistrations(limit ? parseInt(limit) : 10);
   }
+
+  @Get('payment-stats')
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+  getPaymentStats() {
+    return this.analyticsService.getPaymentStats();
+  }
 }

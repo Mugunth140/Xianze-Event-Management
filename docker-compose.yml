@@ -19,6 +19,8 @@ services:
       - CORS_ORIGIN=http://localhost:3000
       # Auth
       - JWT_SECRET=xianze-dev-secret-2026
+      # QR Code Hash Salt
+      - QR_HASH_SALT=xianze2026-dev-qr-salt
       # Mail (optional for dev)
       - MAIL_HOST=localhost
       - MAIL_USER=dev@xianze.tech
@@ -26,6 +28,7 @@ services:
       - MAIL_FROM=dev@xianze.tech
     volumes:
       - sqlite-data:/data
+      - ./uploads:/data/transactions
     networks:
       - xianze-network
     healthcheck:
