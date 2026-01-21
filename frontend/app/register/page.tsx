@@ -417,14 +417,22 @@ const Register = () => {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // Strict Size Check (5MB)
       if (file.size > 5 * 1024 * 1024) {
         setErrorMessage('File size must be less than 5MB');
+        if (fileInputRef.current) fileInputRef.current.value = ''; // Clear input
         return;
       }
+
       setScreenshot(file);
+      // Clear any previous file-related errors
+      if (errorMessage.includes('File')) setErrorMessage('');
     }
   };
 
@@ -548,6 +556,9 @@ const Register = () => {
           transactionId: '',
         });
         setScreenshot(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       } else {
         setSubmitStatus('error');
         // Parse meaningful error messages
@@ -1116,6 +1127,7 @@ const Register = () => {
                     </label>
                     <div className="relative">
                       <input
+                        ref={fileInputRef}
                         id="screenshot"
                         type="file"
                         accept="image/*"
