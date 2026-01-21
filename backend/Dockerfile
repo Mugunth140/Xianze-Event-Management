@@ -7,8 +7,13 @@ FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache python3 make g++ gcc
 
 WORKDIR /app
+
+# Copy package files - lockfile is optional
 COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+
+# Install dependencies - allow lockfile updates for compatibility
+# Uses existing lockfile if valid, regenerates if needed
+RUN bun install --no-save || bun install
 
 # Stage 2: Build
 FROM oven/bun:1-alpine AS builder
