@@ -83,7 +83,7 @@ const Footer = () => {
             <h4 className="font-display font-bold text-lg mb-6 text-white">Socials</h4>
             <div className="flex flex-col gap-4 text-left">
               <a
-                href="https://chat.whatsapp.com/your-link"
+                href={process.env.NEXT_PUBLIC_WHATSAPP_URL!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 transition-all duration-300"

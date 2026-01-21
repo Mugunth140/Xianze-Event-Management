@@ -62,7 +62,7 @@ export default function WhatsAppCTA() {
   }, []);
 
   // Replace with actual WhatsApp community link
-  const whatsappLink = 'https://chat.whatsapp.com/your-community-link';
+  const whatsappLink = process.env.NEXT_PUBLIC_WHATSAPP_URL;
 
   return (
     <section ref={sectionRef} className="py-12 lg:py-20 bg-transparent relative overflow-hidden">
