@@ -1,6 +1,7 @@
 // API utility for making requests to backend
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-const API_URL = `${API_BASE}/api`;
+// Avoid double /api - if API_BASE already ends with /api, don't add it again
+const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 // Retry configuration
 const MAX_RETRIES = 3;
