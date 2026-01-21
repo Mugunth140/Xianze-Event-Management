@@ -280,7 +280,7 @@ const Contact = () => {
         <div ref={cardsRef} className="grid sm:grid-cols-2 gap-4 mb-12">
           {/* WhatsApp Community Card */}
           <Link
-            href={process.env.NEXT_PUBLIC_WHATSAPP_URL!}
+            href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '#'}
             target="_blank"
             className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 opacity-0"
           >
