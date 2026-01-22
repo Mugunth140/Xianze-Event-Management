@@ -479,6 +479,7 @@ export default function PaymentsPage() {
                   <p className="text-sm text-gray-500">Loading image...</p>
                 </div>
               ) : screenshotUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={screenshotUrl}
                   alt="Payment Screenshot"

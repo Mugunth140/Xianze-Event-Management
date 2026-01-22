@@ -128,6 +128,36 @@ const navItems = [
     requiresTask: 'check_in_participant',
   },
   {
+    href: '/admin/think-link',
+    label: 'Think & Link',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.102"
+        />
+      </svg>
+    ),
+    coordinatorAndAbove: true,
+  },
+  {
+    href: '/admin/bug-smash',
+    label: 'Bug Smash',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    coordinatorAndAbove: true,
+  },
+  {
     href: '/admin/leaderboards',
     label: 'Leaderboards',
     icon: (

@@ -39,7 +39,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
-RUN mkdir -p /data/transactions && chown -R nestjs:bunjs /data
+RUN mkdir -p /data/transactions /data/presentations /data/think-link && chown -R nestjs:bunjs /data
 
 USER nestjs
 EXPOSE 5000

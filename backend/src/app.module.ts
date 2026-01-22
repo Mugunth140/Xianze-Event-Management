@@ -9,7 +9,9 @@ import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { BugSmashModule } from './modules/events/bug-smash/bug-smash.module';
 import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
+import { ThinkLinkModule } from './modules/events/think-link/think-link.module';
 import { RegistrationModule } from './modules/registration/registration.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -54,6 +56,8 @@ import { UsersModule } from './modules/users/users.module';
     RegistrationModule,
     AnalyticsModule,
     PaperPresentationModule,
+    ThinkLinkModule,
+    BugSmashModule,
   ],
   controllers: [AppController],
   providers: [
