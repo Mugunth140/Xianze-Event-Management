@@ -1,7 +1,7 @@
 'use client';
 
 import { Html5Qrcode } from 'html5-qrcode';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useAuth from '../hooks/useAuth';
 
 interface CheckInResult {
@@ -23,14 +23,69 @@ export default function QRCheckInPage() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const isProcessingRef = useRef(false);
 
-  const startScanner = async () => {
-    if (!containerRef.current) return;
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current = null;
+      } catch {
+        // Scanner may already be stopped
+      }
+    }
+    setIsScanning(false);
+  }, []);
 
+  const handleQRCodeSuccess = useCallback(
+    async (decodedText: string) => {
+      // Use ref to prevent race conditions
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+
+      // Vibrate on scan (if supported)
+      if (navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+
+      // Stop scanner while processing
+      await stopScanner();
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendance/qr-check-in`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ qrHash: decodedText }),
+        });
+
+        const data: CheckInResult = await response.json();
+        setResult(data);
+
+        if (data.success && navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]); // Success pattern
+        }
+      } catch {
+        setError('Network error. Please try again.');
+      } finally {
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+      }
+    },
+    [token, stopScanner]
+  );
+
+  const startScanner = useCallback(async () => {
     try {
       setError(null);
       setResult(null);
+      setIsScanning(true);
+
+      // Small delay to ensure DOM is ready
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
@@ -44,68 +99,17 @@ export default function QRCheckInPage() {
         handleQRCodeSuccess,
         () => {} // Ignore scan failures
       );
-
-      setIsScanning(true);
-    } catch (err) {
-      console.error('Failed to start scanner:', err);
+    } catch {
       setError('Failed to access camera. Please ensure camera permissions are granted.');
+      setIsScanning(false);
     }
-  };
+  }, [handleQRCodeSuccess]);
 
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current = null;
-      } catch (err) {
-        console.error('Failed to stop scanner:', err);
-      }
-    }
-    setIsScanning(false);
-  };
-
-  const handleQRCodeSuccess = async (decodedText: string) => {
-    if (isProcessing) return;
-
-    setIsProcessing(true);
-
-    // Vibrate on scan (if supported)
-    if (navigator.vibrate) {
-      navigator.vibrate(100);
-    }
-
-    // Stop scanner while processing
-    await stopScanner();
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attendance/qr-check-in`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ qrHash: decodedText }),
-      });
-
-      const data: CheckInResult = await response.json();
-      setResult(data);
-
-      if (data.success && navigator.vibrate) {
-        navigator.vibrate([100, 50, 100]); // Success pattern
-      }
-    } catch (err) {
-      console.error('Check-in failed:', err);
-      setError('Network error. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const resetScanner = () => {
+  const resetScanner = useCallback(() => {
     setResult(null);
     setError(null);
     startScanner();
-  };
+  }, [startScanner]);
 
   useEffect(() => {
     return () => {
@@ -126,7 +130,7 @@ export default function QRCheckInPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        {!isScanning && !result && (
+        {!isScanning && !result && !error && !isProcessing && (
           <div className="text-center">
             <div className="w-24 h-24 mx-auto mb-6 bg-primary-100 rounded-full flex items-center justify-center">
               <svg
@@ -160,8 +164,7 @@ export default function QRCheckInPage() {
           <div className="w-full max-w-sm">
             <div
               id="qr-reader"
-              ref={containerRef}
-              className="w-full rounded-2xl overflow-hidden bg-black"
+              className="w-full rounded-2xl overflow-hidden bg-black min-h-[300px]"
             />
             <button
               onClick={stopScanner}
