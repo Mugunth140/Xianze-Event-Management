@@ -9,6 +9,7 @@ import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
 import { RegistrationModule } from './modules/registration/registration.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -52,6 +53,7 @@ import { UsersModule } from './modules/users/users.module';
     ContactModule,
     RegistrationModule,
     AnalyticsModule,
+    PaperPresentationModule,
   ],
   controllers: [AppController],
   providers: [
@@ -63,4 +65,4 @@ import { UsersModule } from './modules/users/users.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
