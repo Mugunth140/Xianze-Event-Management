@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { randomBytes } from 'crypto';
-import type { Express, Request } from 'express';
+import type { Request } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { MailService } from '../mail/mail.service';
@@ -69,8 +69,7 @@ export class RegistrationController {
         destination: '/data/transactions',
         filename: (
           _req: Request,
-          // eslint-disable-next-line no-undef
-          file: Express.Multer.File,
+          file: MulterFile,
           cb: (error: Error | null, filename: string) => void,
         ) => {
           cb(null, generateSecureFilename(file.originalname));
@@ -81,7 +80,7 @@ export class RegistrationController {
       },
       fileFilter: (
         _req: Request,
-        file: Express.Multer.File,
+        file: MulterFile,
         cb: (error: Error | null, acceptFile: boolean) => void,
       ) => {
         // Validate MIME type

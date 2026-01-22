@@ -17,7 +17,6 @@ services:
       - DATABASE_PATH=/data/xianze.db
     volumes:
       - sqlite-data:/data
-      - ./uploads:/data/transactions
     networks:
       - xianze-network
     healthcheck:
