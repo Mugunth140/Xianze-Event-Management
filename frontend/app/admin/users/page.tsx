@@ -1,13 +1,14 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge, { RoleBadge } from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { ConfirmModal } from '../components/ui/Modal';
+import Pagination from '../components/ui/Pagination';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
 import TaskCheckboxes from '../components/ui/TaskCheckboxes';
@@ -41,6 +42,11 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -190,6 +196,25 @@ export default function UsersPage() {
     }
   };
 
+  // Filter users by search query
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
   if (loading) {
     return <PageLoader message="Loading users..." />;
   }
@@ -223,9 +248,18 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Search */}
+      <Card className="p-4">
+        <Input
+          placeholder="Search users by name or username..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </Card>
+
       {/* Users Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {users.map((user) => (
+        {paginatedUsers.map((user) => (
           <Card key={user.id} className="p-5">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -295,12 +329,27 @@ export default function UsersPage() {
           </Card>
         ))}
 
-        {users.length === 0 && (
+        {paginatedUsers.length === 0 && (
           <div className="col-span-full text-center py-12 text-gray-500">
-            No users found. Create one to get started.
+            {searchQuery
+              ? 'No users match your search.'
+              : 'No users found. Create one to get started.'}
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="p-0 overflow-hidden">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredUsers.length}
+            itemsPerPage={itemsPerPage}
+          />
+        </Card>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (

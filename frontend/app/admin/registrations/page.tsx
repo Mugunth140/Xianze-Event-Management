@@ -1,13 +1,14 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Modal, { ConfirmModal } from '../components/ui/Modal';
+import Pagination from '../components/ui/Pagination';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
 
@@ -63,6 +64,10 @@ export default function RegistrationsPage() {
   const [editForm, setEditForm] = useState<Partial<Registration>>({});
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -171,6 +176,18 @@ export default function RegistrationsPage() {
       reg.college.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedEvent]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
+  const paginatedRegistrations = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRegistrations.slice(start, start + itemsPerPage);
+  }, [filteredRegistrations, currentPage, itemsPerPage]);
+
   if (loading) {
     return <PageLoader message="Loading registrations..." />;
   }
@@ -241,7 +258,7 @@ export default function RegistrationsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRegistrations.map((reg) => (
+              {paginatedRegistrations.map((reg) => (
                 <tr key={reg.id}>
                   <td className="px-6 py-4 font-medium text-[var(--admin-text-primary)]">
                     {reg.name}
@@ -267,7 +284,7 @@ export default function RegistrationsPage() {
                   )}
                 </tr>
               ))}
-              {filteredRegistrations.length === 0 && (
+              {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td
                     colSpan={isAdmin ? 5 : 4}
@@ -280,6 +297,15 @@ export default function RegistrationsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredRegistrations.length}
+          itemsPerPage={itemsPerPage}
+        />
       </Card>
 
       {/* Edit Modal */}

@@ -1,12 +1,13 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
+import Pagination from '../components/ui/Pagination';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
 
@@ -51,6 +52,10 @@ export default function AttendancePage() {
     message: string;
     registration?: Registration;
   } | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -137,6 +142,18 @@ export default function AttendancePage() {
       reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       reg.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, eventFilter]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
+  const paginatedRegistrations = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRegistrations.slice(start, start + itemsPerPage);
+  }, [filteredRegistrations, currentPage, itemsPerPage]);
 
   return (
     <div className="space-y-6">
@@ -320,7 +337,7 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRegistrations.map((reg) => (
+              {paginatedRegistrations.map((reg) => (
                 <tr key={reg.id}>
                   <td className="font-mono text-sm">{reg.id}</td>
                   <td>
@@ -369,7 +386,7 @@ export default function AttendancePage() {
                   </td>
                 </tr>
               ))}
-              {filteredRegistrations.length === 0 && (
+              {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-500">
                     No registrations found
@@ -378,6 +395,15 @@ export default function AttendancePage() {
               )}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredRegistrations.length}
+            itemsPerPage={itemsPerPage}
+          />
         </Card>
       )}
     </div>
