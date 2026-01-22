@@ -988,10 +988,11 @@ const Register = () => {
                             target: { name: 'event', value: event },
                           } as unknown as React.ChangeEvent<HTMLInputElement>)
                         }
-                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.event === event
-                          ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
-                          : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
-                          }`}
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
+                          formData.event === event
+                            ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                            : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <span
@@ -1000,10 +1001,11 @@ const Register = () => {
                             {event}
                           </span>
                           <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${formData.event === event
-                              ? 'border-primary-500 bg-primary-500'
-                              : 'border-gray-300'
-                              }`}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              formData.event === event
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-gray-300'
+                            }`}
                           >
                             {formData.event === event && (
                               <svg
@@ -1054,7 +1056,7 @@ const Register = () => {
                       >
                         <span>Pay via UPI </span>
                       </a>
-                        {/* Mobile Button 2 - Alternative */}
+                      {/* Mobile Button 2 - Alternative */}
                       <a
                         href={upiLink2}
                         className="md:hidden w-full flex items-center justify-center gap-2 bg-amber-500 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-amber-500/20 active:scale-95 transition-transform"
@@ -1128,7 +1130,7 @@ const Register = () => {
                   {/* Alternative Payment QR Code */}
                   <div className="hidden lg:block p-4 bg-amber-50 rounded-xl border border-amber-100">
                     <p className="text-sm text-amber-800 mb-4 font-medium">
-                      ⚠️ Can't register online? Try this alternative QR code:
+                      ⚠️ Can&apos;t register online? Try this alternative QR code:
                     </p>
 
                     <div className="hidden lg:flex flex-row items-start gap-6 bg-white p-6 rounded-2xl border border-gray-200 w-full">
@@ -1180,7 +1182,8 @@ const Register = () => {
                             2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).
                           </p>
                           <p>
-                            3. Enter the <strong>Transaction ID (UTR)</strong> and upload a screenshot below.
+                            3. Enter the <strong>Transaction ID (UTR)</strong> and upload a
+                            screenshot below.
                           </p>
                         </div>
                       </div>
@@ -1243,10 +1246,11 @@ const Register = () => {
                           accept="image/*"
                           onChange={handleScreenshotChange}
                           required
-                          className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${errorMessage && errorMessage.includes('File')
-                            ? 'border-red-400 bg-red-50'
-                            : 'border-gray-300 hover:border-primary-400'
-                            }`}
+                          className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
+                            errorMessage && errorMessage.includes('File')
+                              ? 'border-red-400 bg-red-50'
+                              : 'border-gray-300 hover:border-primary-400'
+                          }`}
                         />
                       </div>
                     ) : (

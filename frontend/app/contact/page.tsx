@@ -23,7 +23,7 @@ const coordinators: Coordinator[] = [
   { name: 'Karthick Raja', phone: '9944910261', role: 'Student Coordinator' },
   { name: 'Sowdhanya Laxna', phone: '9361077188', role: 'Student Coordinator' },
   { name: 'Saran', phone: '9025744404', role: 'Student Coordinator' },
-  { name: 'Kaviyadharshini', phone: '8438437557', role: 'Student Coordinator' }
+  { name: 'Kaviyadharshini', phone: '8438437557', role: 'Student Coordinator' },
 ];
 
 // Debounce for preventing double submissions

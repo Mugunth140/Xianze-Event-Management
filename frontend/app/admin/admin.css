@@ -104,10 +104,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(109, 64, 212, 0.2) 50%,
-      transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(109, 64, 212, 0.2) 50%, transparent 100%);
 }
 
 .admin-glass-card:hover {
@@ -156,9 +153,11 @@
 
 /* Primary button */
 .admin-btn-primary {
-  background: linear-gradient(135deg,
-      rgb(var(--admin-purple)) 0%,
-      rgb(var(--admin-purple-light)) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--admin-purple)) 0%,
+    rgb(var(--admin-purple-light)) 100%
+  );
   color: white;
   box-shadow:
     0 4px 14px rgba(var(--admin-purple), 0.25),
@@ -358,9 +357,7 @@
    ================================ */
 
 .admin-sidebar {
-  background: linear-gradient(180deg,
-      #ffffff 0%,
-      var(--admin-bg-tertiary) 100%);
+  background: linear-gradient(180deg, #ffffff 0%, var(--admin-bg-tertiary) 100%);
   border-right: 1px solid var(--admin-border-light);
 }
 
@@ -514,7 +511,6 @@
 }
 
 @keyframes admin-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -549,7 +545,6 @@
 }
 
 @keyframes admin-blink {
-
   0%,
   100% {
     opacity: 1;

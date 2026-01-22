@@ -7,7 +7,8 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   // WhatsApp URL with fallback
-  const whatsappUrl = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp';
+  const whatsappUrl =
+    process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp';
 
   const quickLinks = [
     { label: 'Home', href: '/' },

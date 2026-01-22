@@ -62,7 +62,8 @@ export default function WhatsAppCTA() {
   }, []);
 
   // Replace with actual WhatsApp community link
-  const whatsappLink = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp';
+  const whatsappLink =
+    process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp';
 
   return (
     <section ref={sectionRef} className="py-12 lg:py-20 bg-transparent relative overflow-hidden">
