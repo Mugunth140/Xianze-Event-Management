@@ -45,7 +45,7 @@ export default function AttendancePage() {
   const [error, setError] = useState('');
   const [eventFilter, setEventFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [manualCode, setManualCode] = useState('');
+  const [activeTab, setActiveTab] = useState<'pending' | 'checked-in'>('pending');
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkInResult, setCheckInResult] = useState<{
     success: boolean;
@@ -127,26 +127,20 @@ export default function AttendancePage() {
     }
   };
 
-  const handleManualCheckIn = async () => {
-    const id = parseInt(manualCode);
-    if (isNaN(id)) {
-      setCheckInResult({ success: false, message: 'Invalid registration ID' });
-      return;
-    }
-    await handleCheckIn(id);
-    setManualCode('');
-  };
-
-  const filteredRegistrations = registrations.filter(
-    (reg) =>
+  const filteredRegistrations = registrations.filter((reg) => {
+    const matchesSearch =
       reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      reg.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesTab = activeTab === 'checked-in' ? reg.isCheckedIn : !reg.isCheckedIn;
+
+    return matchesSearch && matchesTab;
+  });
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, eventFilter]);
+  }, [searchQuery, eventFilter, activeTab]);
 
   // Paginated data
   const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
@@ -216,109 +210,105 @@ export default function AttendancePage() {
               </svg>
             }
             value={stats.pending}
-            label="Pending"
+            label="Pending Check-in"
             iconColor="text-amber-600"
           />
         </div>
       )}
 
-      {/* Manual Check-in / QR Scanner Placeholder */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Check-in</h2>
-
-        {/* Check-in result feedback */}
-        {checkInResult && (
-          <div
-            className={`mb-4 p-4 rounded-xl ${
-              checkInResult.success
-                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                : 'bg-red-50 border border-red-200 text-red-700'
+      {/* Tabs & Filters */}
+      <div className="space-y-4">
+        {/* Tabs */}
+        <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'pending'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            <div className="flex items-center gap-3">
-              {checkInResult.success ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              )}
-              <div>
-                <p className="font-medium">{checkInResult.message}</p>
-                {checkInResult.registration && (
-                  <p className="text-sm mt-1">
-                    {checkInResult.registration.name} - {checkInResult.registration.event}
-                  </p>
-                )}
-              </div>
-            </div>
-            <button onClick={() => setCheckInResult(null)} className="mt-3 text-sm underline">
-              Dismiss
-            </button>
-          </div>
-        )}
+            Pending Check-in
+          </button>
+          <button
+            onClick={() => setActiveTab('checked-in')}
+            className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'checked-in'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Checked In
+          </button>
+        </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Enter Registration ID..."
-              value={manualCode}
-              onChange={(e) => setManualCode(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualCheckIn()}
-            />
-          </div>
-          <Button onClick={handleManualCheckIn} loading={checkingIn} size="lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        {/* Filters */}
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </svg>
-            Check In
-          </Button>
-        </div>
-
-        <p className="text-sm text-gray-500 mt-3">
-          Tip: QR scanner integration coming soon. For now, enter the registration ID manually.
-        </p>
-      </Card>
-
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            </div>
+            <div className="w-full sm:w-48">
+              <Select
+                value={eventFilter}
+                onChange={(e) => setEventFilter(e.target.value)}
+                options={[
+                  { value: '', label: 'All Events' },
+                  ...AVAILABLE_EVENTS.map((e) => ({ value: e, label: e })),
+                ]}
+              />
+            </div>
           </div>
-          <div className="w-full sm:w-48">
-            <Select
-              value={eventFilter}
-              onChange={(e) => setEventFilter(e.target.value)}
-              options={[
-                { value: '', label: 'All Events' },
-                ...AVAILABLE_EVENTS.map((e) => ({ value: e, label: e })),
-              ]}
-            />
+        </Card>
+      </div>
+
+      {/* Check-in result feedback (Global) */}
+      {checkInResult && (
+        <div
+          className={`p-4 rounded-xl flex justify-between items-center ${
+            checkInResult.success
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {checkInResult.success ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+            <div>
+              <p className="font-medium">{checkInResult.message}</p>
+              {checkInResult.registration && (
+                <p className="text-sm mt-1">
+                  {checkInResult.registration.name} - {checkInResult.registration.event}
+                </p>
+              )}
+            </div>
           </div>
+          <button onClick={() => setCheckInResult(null)} className="text-sm underline">
+            Dismiss
+          </button>
         </div>
-      </Card>
+      )}
 
       {/* Registrations List */}
       {loading ? (
@@ -389,7 +379,7 @@ export default function AttendancePage() {
               {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-500">
-                    No registrations found
+                    No registrations found in {activeTab === 'pending' ? 'Pending' : 'Checked In'}
                   </td>
                 </tr>
               )}
