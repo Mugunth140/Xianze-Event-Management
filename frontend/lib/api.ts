@@ -50,9 +50,7 @@ async function waitForRateLimit(): Promise<void> {
   const now = Date.now();
   const elapsed = now - rateLimitTracker.lastRequest;
   if (elapsed < rateLimitTracker.minInterval) {
-    await new Promise((resolve) =>
-      setTimeout(resolve, rateLimitTracker.minInterval - elapsed)
-    );
+    await new Promise((resolve) => setTimeout(resolve, rateLimitTracker.minInterval - elapsed));
   }
   rateLimitTracker.lastRequest = Date.now();
 }
@@ -138,7 +136,12 @@ export async function apiRequest<T>(
           await delay(attempt);
           continue;
         }
-        throw new ApiError('Network error. Please check your connection.', 0, 'NETWORK_ERROR', true);
+        throw new ApiError(
+          'Network error. Please check your connection.',
+          0,
+          'NETWORK_ERROR',
+          true
+        );
       }
 
       // Re-throw ApiErrors
@@ -204,7 +207,12 @@ export async function fetchWithRetry(
           await delay(attempt);
           continue;
         }
-        throw new ApiError('Network error. Please check your connection.', 0, 'NETWORK_ERROR', true);
+        throw new ApiError(
+          'Network error. Please check your connection.',
+          0,
+          'NETWORK_ERROR',
+          true
+        );
       }
 
       if (attempt < retries) {

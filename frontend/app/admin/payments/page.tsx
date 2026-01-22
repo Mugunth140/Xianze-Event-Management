@@ -1,7 +1,7 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -45,7 +45,7 @@ export default function PaymentsPage() {
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
@@ -61,11 +61,11 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, eventFilter]);
 
   useEffect(() => {
     fetchPayments();
-  }, [activeTab, eventFilter]);
+  }, [fetchPayments]);
 
   const handleVerify = async () => {
     if (!selectedReg) return;

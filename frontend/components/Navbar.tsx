@@ -87,13 +87,18 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
-          }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          isScrolled ? 'liquid-glass-navbar' : 'bg-white/60 backdrop-blur-md'
+        }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 group relative z-50">
+            <Link
+              href="/"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 group relative z-50"
+            >
               <div className="relative w-11 h-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary-600/10 to-purple-600/10 border border-primary-200/50 shadow-lg shadow-primary-500/5 group-hover:scale-105 transition-transform duration-300 overflow-hidden backdrop-blur-sm">
                 <Image
                   src="/event.png"
@@ -142,12 +147,14 @@ const Navbar = () => {
             >
               <div className="w-6 h-3 relative flex flex-col justify-between overflow-hidden">
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
-                    }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
+                    isMenuOpen ? 'rotate-45 translate-y-[5px]' : ''
+                  }`}
                 />
                 <span
-                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${isMenuOpen ? '-rotate-45 -translate-y-[5px]' : ''
-                    }`}
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 transform origin-center ${
+                    isMenuOpen ? '-rotate-45 -translate-y-[5px]' : ''
+                  }`}
                 />
               </div>
             </button>
@@ -158,8 +165,9 @@ const Navbar = () => {
       {/* Full Screen Mobile Menu Overlay */}
       <div
         ref={menuContainerRef}
-        className={`fixed inset-0 z-40 md:hidden bg-white/95 backdrop-blur-sm flex items-center justify-center pointer-events-none opacity-0 ${isMenuOpen ? 'pointer-events-auto' : ''
-          }`}
+        className={`fixed inset-0 z-40 md:hidden bg-white/95 backdrop-blur-sm flex items-center justify-center pointer-events-none opacity-0 ${
+          isMenuOpen ? 'pointer-events-auto' : ''
+        }`}
       >
         {/* Simple gradient background - no animated blobs */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary-50/50 to-white pointer-events-none" />

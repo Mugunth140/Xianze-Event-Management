@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 
 interface ChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
 }
 
 export function OverviewLineChart({ data }: ChartProps) {
@@ -101,20 +101,44 @@ export function PaymentPieChart({ data }: ChartProps) {
   };
 
   const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    return percent > 0 ? (
+  interface LabelProps {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    percent?: number;
+  }
+
+  const renderCustomizedLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: LabelProps) => {
+    const rInner = innerRadius || 0;
+    const rOuter = outerRadius || 0;
+    const mAngle = midAngle || 0;
+    const cX = cx || 0;
+    const cY = cy || 0;
+    const pct = percent || 0;
+
+    const radius = rInner + (rOuter - rInner) * 0.5;
+    const x = cX + radius * Math.cos(-mAngle * RADIAN);
+    const y = cY + radius * Math.sin(-mAngle * RADIAN);
+
+    return pct > 0 ? (
       <text
         x={x}
         y={y}
         fill="white"
-        textAnchor={x > cx ? 'start' : 'end'}
+        textAnchor={x > cX ? 'start' : 'end'}
         dominantBaseline="central"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${(pct * 100).toFixed(0)}%`}
       </text>
     ) : null;
   };

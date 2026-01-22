@@ -38,7 +38,7 @@ export default function OfflineQueue({
         setQueue(JSON.parse(stored));
       }
     } catch {
-      console.error('Failed to load offline queue');
+      // Failed to load offline queue
     }
   }, [queueKey]);
 
@@ -161,6 +161,6 @@ export function addToOfflineQueue(queueKey: string, data: unknown): void {
 
     localStorage.setItem(queueKey, JSON.stringify(queue));
   } catch (err) {
-    console.error('Failed to add to offline queue:', err);
+    // Failed to add to offline queue
   }
 }

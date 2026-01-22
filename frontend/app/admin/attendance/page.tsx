@@ -1,7 +1,7 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -52,7 +52,7 @@ export default function AttendancePage() {
     registration?: Registration;
   } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
@@ -84,11 +84,12 @@ export default function AttendancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventFilter]);
 
   useEffect(() => {
     fetchData();
-  }, [eventFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData]);
 
   const handleCheckIn = async (registrationId: number) => {
     const token = localStorage.getItem('token');
@@ -211,11 +212,10 @@ export default function AttendancePage() {
         {/* Check-in result feedback */}
         {checkInResult && (
           <div
-            className={`mb-4 p-4 rounded-xl ${
-              checkInResult.success
+            className={`mb-4 p-4 rounded-xl ${checkInResult.success
                 ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
                 : 'bg-red-50 border border-red-200 text-red-700'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3">
               {checkInResult.success ? (

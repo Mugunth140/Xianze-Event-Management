@@ -118,7 +118,6 @@ const Register = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
-  const [retryCount, setRetryCount] = useState(0);
 
   const router = useRouter();
 
@@ -452,7 +451,6 @@ const Register = () => {
     setSubmitStatus('idle');
     setErrorMessage('');
     setFieldErrors({});
-    setRetryCount(0);
 
     // Validate all fields
     const errors: Partial<Record<keyof FormData, string>> = {};
@@ -601,21 +599,6 @@ const Register = () => {
     setLoading(false);
   };
 
-  // Validation Logic
-  const isFormValid =
-    formData.name.trim() !== '' &&
-    formData.email.trim() !== '' &&
-    formData.contact.trim() !== '' &&
-    formData.college.trim() !== '' &&
-    formData.course !== '' &&
-    formData.event !== '' &&
-    (formData.course === 'Others' ? formData.otherCourse.trim() !== '' : true) &&
-    (formData.branch === 'Others'
-      ? formData.otherBranch.trim() !== ''
-      : formData.course === 'B.Tech' || formData.course === 'M.Tech'
-        ? formData.branch !== ''
-        : true);
-
   const upiId = 'gomathichandramohan2010@okhdfcbank';
   const upiLink = `upi://pay?pa=${upiId}&pn=Xianze2K26&am=100&cu=INR`;
 
@@ -698,7 +681,9 @@ const Register = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                 </span>
-                <span className="text-sm font-semibold text-amber-700">Verification in Progress</span>
+                <span className="text-sm font-semibold text-amber-700">
+                  Verification in Progress
+                </span>
               </div>
 
               {/* Description */}
@@ -777,13 +762,16 @@ const Register = () => {
               >
                 <span>Explore Events</span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
                 </svg>
               </button>
             </div>
           )}
-
-
 
           {/* Form State */}
           {submitStatus !== 'success' && (
@@ -885,7 +873,9 @@ const Register = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Degree / Course</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Degree / Course
+                    </label>
                     <CustomDropdown
                       label="Course"
                       options={Object.keys(courses)}
@@ -893,7 +883,7 @@ const Register = () => {
                       setSelected={(val) =>
                         handleChange({
                           target: { name: 'course', value: val },
-                        } as any)
+                        } as unknown as React.ChangeEvent<HTMLInputElement>)
                       }
                     />
                     {fieldErrors.course && (
@@ -932,7 +922,7 @@ const Register = () => {
                           setSelected={(val) =>
                             handleChange({
                               target: { name: 'branch', value: val },
-                            } as any)
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
                           }
                         />
                       </div>
@@ -978,12 +968,13 @@ const Register = () => {
                         onClick={() =>
                           handleChange({
                             target: { name: 'event', value: event },
-                          } as any)
+                          } as unknown as React.ChangeEvent<HTMLInputElement>)
                         }
-                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.event === event
-                          ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
-                          : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
-                          }`}
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
+                          formData.event === event
+                            ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                            : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <span
@@ -992,10 +983,11 @@ const Register = () => {
                             {event}
                           </span>
                           <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${formData.event === event
-                              ? 'border-primary-500 bg-primary-500'
-                              : 'border-gray-300'
-                              }`}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              formData.event === event
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-gray-300'
+                            }`}
                           >
                             {formData.event === event && (
                               <svg
@@ -1034,7 +1026,9 @@ const Register = () => {
 
                 <div className="space-y-6">
                   <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
-                    <p className="text-sm text-primary-800 mb-2 font-medium">Registration Fee: ₹100</p>
+                    <p className="text-sm text-primary-800 mb-2 font-medium">
+                      Registration Fee: ₹100
+                    </p>
 
                     <div className="flex flex-col md:flex-row gap-6 items-center">
                       {/* Mobile Button */}
@@ -1042,10 +1036,7 @@ const Register = () => {
                         href={upiLink}
                         className="md:hidden w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-primary-500/20 active:scale-95 transition-transform"
                       >
-                        <span>Pay via UPI App</span>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        <span>Pay via UPI </span>
                       </a>
 
                       {/* Desktop QR */}
@@ -1059,12 +1050,16 @@ const Register = () => {
                               className="object-contain rounded-lg"
                             />
                           </div>
-                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Scan to Pay</p>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+                            Scan to Pay
+                          </p>
                         </div>
 
                         <div className="flex-1 space-y-4">
                           <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">UPI ID</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                              UPI ID
+                            </p>
                             <div className="relative group">
                               <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 font-mono text-sm text-gray-700 break-all pr-10">
                                 {upiId}
@@ -1090,8 +1085,13 @@ const Register = () => {
 
                           <div className="text-sm text-gray-600 leading-relaxed">
                             <p>1. Scan the QR code or copy the UPI ID.</p>
-                            <p>2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).</p>
-                            <p>3. Enter the <strong>Transaction ID (UTR)</strong> below and upload a screenshot.</p>
+                            <p>
+                              2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).
+                            </p>
+                            <p>
+                              3. Enter the <strong>Transaction ID (UTR)</strong> below and upload a
+                              screenshot.
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -1103,7 +1103,10 @@ const Register = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="transactionId" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="transactionId"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Transaction ID (UTR)
                     </label>
                     <input
@@ -1122,21 +1125,71 @@ const Register = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="screenshot" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="screenshot"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Payment Screenshot
                     </label>
-                    <div className="relative">
-                      <input
-                        ref={fileInputRef}
-                        id="screenshot"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleScreenshotChange}
-                        required
-                        className="w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed border-gray-300 hover:border-primary-400 transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">Max size: 5MB. Formats: JPG, PNG.</p>
+
+                    {!screenshot ? (
+                      <div className="relative">
+                        <input
+                          ref={fileInputRef}
+                          id="screenshot"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleScreenshotChange}
+                          required
+                          className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
+                            errorMessage && errorMessage.includes('File')
+                              ? 'border-red-400 bg-red-50'
+                              : 'border-gray-300 hover:border-primary-400'
+                          }`}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-4 bg-primary-50 border border-primary-200 rounded-xl">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-xl shrink-0">
+                            🖼️
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {screenshot.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(screenshot.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScreenshot(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                            setErrorMessage('');
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Remove file"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    {errorMessage && errorMessage.includes('File') && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+                        <span className="text-red-500 mt-0.5">⚠️</span>
+                        <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+                      </div>
+                    )}
+
+                    {!screenshot && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Max size: 5MB. Formats: JPG, PNG.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1160,8 +1213,18 @@ const Register = () => {
               {submitStatus === 'error' && errorMessage && (
                 <div className="rounded-2xl bg-red-50 border border-red-200 p-4 mt-4 flex items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      className="w-5 h-5 text-red-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1">
@@ -1176,7 +1239,12 @@ const Register = () => {
                     className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>

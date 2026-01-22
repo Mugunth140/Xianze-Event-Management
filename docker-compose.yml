@@ -10,29 +10,18 @@ services:
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-5000}:5000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
-      - PORT=5000
       - DATABASE_PATH=/data/xianze.db
-      - DATABASE_SYNCHRONIZE=true
-      - DATABASE_LOGGING=true
-      - CORS_ORIGIN=http://localhost:3000
-      # Auth
-      - JWT_SECRET=xianze-dev-secret-2026
-      # QR Code Hash Salt
-      - QR_HASH_SALT=xianze2026-dev-qr-salt
-      # Mail (optional for dev)
-      - MAIL_HOST=localhost
-      - MAIL_USER=dev@xianze.tech
-      - MAIL_PASSWORD=dev
-      - MAIL_FROM=dev@xianze.tech
     volumes:
       - sqlite-data:/data
       - ./uploads:/data/transactions
     networks:
       - xianze-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
