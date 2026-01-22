@@ -1,5 +1,6 @@
 'use client';
 
+import PaymentModal from '@/components/PaymentModal';
 import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import {
   sanitizeInput,
@@ -100,6 +101,8 @@ const CustomDropdown = ({ label, options, selected, setSelected, placeholder }: 
 const submitDebounce = createSubmitDebounce(3000);
 
 const Register = () => {
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showAlternativeQR, setShowAlternativeQR] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -644,7 +647,7 @@ const Register = () => {
         }}
       />
 
-      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div ref={headerRef} className="text-center mb-12">
           {/* Badge */}
@@ -988,11 +991,10 @@ const Register = () => {
                             target: { name: 'event', value: event },
                           } as unknown as React.ChangeEvent<HTMLInputElement>)
                         }
-                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
-                          formData.event === event
-                            ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
-                            : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
-                        }`}
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.event === event
+                          ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                          : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <span
@@ -1001,11 +1003,10 @@ const Register = () => {
                             {event}
                           </span>
                           <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              formData.event === event
-                                ? 'border-primary-500 bg-primary-500'
-                                : 'border-gray-300'
-                            }`}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${formData.event === event
+                              ? 'border-primary-500 bg-primary-500'
+                              : 'border-gray-300'
+                              }`}
                           >
                             {formData.event === event && (
                               <svg
@@ -1044,82 +1045,103 @@ const Register = () => {
 
                 <div className="space-y-6">
                   <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
-                    <p className="text-sm text-primary-800 mb-2 font-medium">
-                      Registration Fee: ₹100
+                    <p className="text-center text-sm text-primary-800 mb-2 font-medium">
+                      Registration Fee: ₹100 per participant
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-6 items-center">
                       {/* Mobile Button 1*/}
-                      <a
-                        href={upiLink1}
-                        className="md:hidden w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-primary-500/20 active:scale-95 transition-transform"
+                      {/* Mobile Payment Options - Opens Modal */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentModal(true)}
+                        className="md:hidden w-full bg-black text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-xl shadow-gray-200 active:scale-95 transition-transform"
                       >
-                        <span>Pay via UPI </span>
-                      </a>
-                      {/* Mobile Button 2 - Alternative */}
-                      <a
-                        href={upiLink2}
-                        className="md:hidden w-full flex items-center justify-center gap-2 bg-amber-500 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-amber-500/20 active:scale-95 transition-transform"
-                      >
-                        <span>Pay via UPI (Alternative) </span>
-                      </a>
+                        Pay with UPI
+                      </button>
 
-                      {/* Desktop QR */}
-                      <div className="hidden lg:flex flex-row items-start gap-6 bg-white p-6 rounded-2xl border border-gray-200 w-full">
-                        <div className="flex flex-col items-center gap-3 shrink-0">
-                          <div className="p-2 bg-white rounded-xl border border-gray-100 shadow-sm relative w-[140px] h-[140px]">
-                            <NextImage
-                              src="/upi_qr.jpeg"
-                              alt="UPI QR Code"
-                              fill
-                              className="object-contain rounded-lg"
-                            />
-                          </div>
-                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                            Scan to Pay
-                          </p>
-                        </div>
+                      <PaymentModal
+                        isOpen={showPaymentModal}
+                        onClose={() => setShowPaymentModal(false)}
+                        upiId1={upiId1}
+                        upiId2={upiId2}
+                        amount="100"
+                        name="Xianze2K26"
+                      />
 
-                        <div className="flex-1 space-y-4">
-                          <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                              UPI ID
-                            </p>
-                            <div className="relative group">
-                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 font-mono text-sm text-gray-700 break-all pr-10">
-                                {upiId1}
+
+
+                      {/* Desktop QR - Clean Centered Layout */}
+                      <div className="hidden lg:block w-full">
+                        <div className={`rounded-2xl border shadow-sm p-8 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
+
+                          {/* Main Content - Two Column on XL */}
+                          <div className="flex flex-col gap-8 ">
+
+                            {/* QR Code Section */}
+                            <div className="flex flex-col items-center flex-shrink-0">
+                              <div className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-4 transition-transform hover:scale-105 ${showAlternativeQR ? 'border-amber-200' : 'border-gray-200'}`}>
+                                <NextImage
+                                  src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
+                                  alt="Scan to Pay"
+                                  fill
+                                  className="object-contain rounded-xl"
+                                />
                               </div>
+                              <div className={`px-4 py-2 rounded-full border ${showAlternativeQR ? 'bg-amber-100 border-amber-200' : 'bg-primary-50 border-primary-100'}`}>
+                                <p className={`text-xs font-bold uppercase tracking-widest ${showAlternativeQR ? 'text-amber-800' : 'text-primary-700'}`}>
+                                  Scan with any UPI App
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Instructions Section */}
+                            <div className="flex-1 w-full max-w-lg">
+                              {/* UPI ID - Full Width */}
+                              <div className="mb-6">
+                                <div className="flex items-center gap-3">
+                                  <code className={`flex-1 px-4 py-3 rounded-xl text-sm font-mono border ${showAlternativeQR ? 'bg-amber-100 border-amber-200 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-700'}`}>
+                                    {showAlternativeQR ? upiId2 : upiId1}
+                                  </code>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(showAlternativeQR ? upiId2 : upiId1);
+                                      const btn = document.getElementById('copy-btn-desktop');
+                                      if (btn) {
+                                        const originalHTML = btn.innerHTML;
+                                        btn.innerHTML = '<span class="text-green-600 font-bold">✓ Copied</span>';
+                                        setTimeout(() => (btn.innerHTML = originalHTML), 2000);
+                                      }
+                                    }}
+                                    id="copy-btn-desktop"
+                                    className={`px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap ${showAlternativeQR
+                                      ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                      : 'bg-primary-600 text-white hover:bg-primary-700'
+                                      }`}
+                                  >
+                                    Copy ID
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Toggle Button */}
+                              <div className="flex justify-center border border-amber-200 p-2 rounded-xl bg-amber-50">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(upiId1);
-                                  const btn = document.getElementById('copy-btn');
-                                  if (btn) {
-                                    btn.innerHTML = '✓';
-                                    setTimeout(() => (btn.innerHTML = '📋'), 2000);
-                                  }
-                                }}
-                                id="copy-btn"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary-600 hover:bg-white rounded-lg transition-all"
-                                title="Copy UPI ID"
+                                onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                                className="text-sm font-medium text-amber-700 hover:text-amber-800 flex items-center justify-center gap-2 group transition-colors"
                               >
-                                📋
+                                <span className="bg-amber-100 p-1.5 rounded-lg group-hover:bg-amber-200 transition-colors">
+                                  {showAlternativeQR ? '↺' : '⚠️'}
+                                </span>
+                                {showAlternativeQR ? 'Go back to Primary UPI ID' : 'Payment Failing? Try Alternative ID'}
                               </button>
                             </div>
                           </div>
-
-                          <div className="text-sm text-gray-600 leading-relaxed">
-                            <p>1. Scan the QR code or copy the UPI ID.</p>
-                            <p>
-                              2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).
-                            </p>
-                            <p>
-                              3. Enter the <strong>Transaction ID (UTR)</strong> below and upload a
-                              screenshot.
-                            </p>
-                          </div>
                         </div>
                       </div>
+                    </div>
 
                       <div className="lg:hidden text-sm text-gray-600 text-center">
                         <p>Pay via button above, then enter details below.</p>
@@ -1127,174 +1149,106 @@ const Register = () => {
                     </div>
                   </div>
 
-                  {/* Alternative Payment QR Code */}
-                  <div className="hidden lg:block p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p className="text-sm text-amber-800 mb-4 font-medium">
-                      ⚠️ Can&apos;t register online? Try this alternative QR code:
-                    </p>
-
-                    <div className="hidden lg:flex flex-row items-start gap-6 bg-white p-6 rounded-2xl border border-gray-200 w-full">
-                      <div className="flex flex-col items-center gap-3 shrink-0">
-                        <div className="p-2 bg-white rounded-xl border border-gray-100 shadow-sm relative w-[140px] h-[140px]">
-                          <NextImage
-                            src="/qr2.png"
-                            alt="Alternative UPI QR Code"
-                            fill
-                            className="object-contain rounded-lg"
-                          />
-                        </div>
-                        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                          Scan to Pay
+                  {/* Transaction Details - Desktop Grid Layout */}
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Transaction ID */}
+                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                      <label
+                        htmlFor="transactionId"
+                        className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
+                      >
+                        <span className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-xs">🔢</span>
+                        Transaction ID (UTR)
+                      </label>
+                      <input
+                        id="transactionId"
+                        type="text"
+                        name="transactionId"
+                        placeholder="e.g. 123456789012"
+                        value={formData.transactionId}
+                        onChange={handleChange}
+                        onBlur={handleTransactionIdBlur}
+                        maxLength={12}
+                        pattern="\d{12}"
+                        inputMode="numeric"
+                        required
+                        className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.transactionId ? 'border-red-400' : 'border-gray-200'}`}
+                      />
+                      <div className="flex justify-between mt-2">
+                        <p className="text-xs text-gray-500">
+                          {formData.transactionId.length}/12 digits
                         </p>
-                      </div>
-
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            UPI ID
-                          </p>
-                          <div className="relative group">
-                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 font-mono text-sm text-gray-700 break-all pr-10">
-                              {upiId2}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(upiId2);
-                                const btn = document.getElementById('copy-btn-alt');
-                                if (btn) {
-                                  btn.innerHTML = '✓';
-                                  setTimeout(() => (btn.innerHTML = '📋'), 2000);
-                                }
-                              }}
-                              id="copy-btn-alt"
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary-600 hover:bg-white rounded-lg transition-all"
-                              title="Copy UPI ID"
-                            >
-                              📋
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="text-sm text-gray-600 leading-relaxed">
-                          <p>1. Scan the QR code or copy the UPI ID.</p>
-                          <p>
-                            2. Pay <strong>₹100</strong> via any UPI app (GPay, PhonePe, Paytm).
-                          </p>
-                          <p>
-                            3. Enter the <strong>Transaction ID (UTR)</strong> and upload a
-                            screenshot below.
-                          </p>
-                        </div>
+                        {fieldErrors.transactionId && (
+                          <p className="text-xs text-red-500">{fieldErrors.transactionId}</p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="md:hidden text-sm text-gray-600 text-center">
-                      <p>Try using the alternative UPI ID below then enter details further down.</p>
-                      <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                          Alternative UPI ID
-                        </p>
-                        <p className="font-mono text-sm text-gray-700">{upiId2}</p>
-                      </div>
-                    </div>
-                  </div>
+                    {/* Screenshot */}
+                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                      <label
+                        htmlFor="screenshot"
+                        className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
+                      >
+                        <span className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-xs">📸</span>
+                        Payment Screenshot
+                      </label>
 
-                  <div>
-                    <label
-                      htmlFor="transactionId"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Transaction ID (UTR)
-                    </label>
-                    <input
-                      id="transactionId"
-                      type="text"
-                      name="transactionId"
-                      placeholder="e.g. 123456789012"
-                      value={formData.transactionId}
-                      onChange={handleChange}
-                      onBlur={handleTransactionIdBlur}
-                      maxLength={12}
-                      pattern="\d{12}"
-                      inputMode="numeric"
-                      required
-                      className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.transactionId ? 'border-red-400' : 'border-gray-100'}`}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      {formData.transactionId.length}/12 digits
-                    </p>
-                    {fieldErrors.transactionId && (
-                      <p className="mt-1 text-sm text-red-500">{fieldErrors.transactionId}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="screenshot"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Payment Screenshot
-                    </label>
-
-                    {!screenshot ? (
-                      <div className="relative">
-                        <input
-                          ref={fileInputRef}
-                          id="screenshot"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleScreenshotChange}
-                          required
-                          className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
-                            errorMessage && errorMessage.includes('File')
+                      {!screenshot ? (
+                        <div className="relative">
+                          <input
+                            ref={fileInputRef}
+                            id="screenshot"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleScreenshotChange}
+                            required
+                            className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${errorMessage && errorMessage.includes('File')
                               ? 'border-red-400 bg-red-50'
                               : 'border-gray-300 hover:border-primary-400'
-                          }`}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between p-4 bg-primary-50 border border-primary-200 rounded-xl">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-xl shrink-0">
-                            🖼️
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {screenshot.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {(screenshot.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          </div>
+                              }`}
+                          />
+                          <p className="mt-2 text-xs text-gray-500">
+                            Max size: 5MB. Formats: JPG, PNG.
+                          </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setScreenshot(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                            setErrorMessage('');
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Remove file"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex items-center justify-between p-4 bg-white border border-primary-200 rounded-xl">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-xl shrink-0">
+                              🖼️
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {screenshot.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(screenshot.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setScreenshot(null);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                              setErrorMessage('');
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove file"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
 
-                    {errorMessage && errorMessage.includes('File') && (
-                      <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-                        <span className="text-red-500 mt-0.5">⚠️</span>
-                        <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
-                      </div>
-                    )}
-
-                    {!screenshot && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Max size: 5MB. Formats: JPG, PNG.
-                      </p>
-                    )}
+                      {errorMessage && errorMessage.includes('File') && (
+                        <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">⚠️</span>
+                          <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1358,7 +1312,7 @@ const Register = () => {
           )}
         </div>
       </div>
-    </section>
+    </section >
   );
 };
 
