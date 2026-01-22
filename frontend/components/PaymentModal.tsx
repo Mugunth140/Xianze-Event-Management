@@ -53,14 +53,34 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
     if (!isOpen) return null;
 
     const currentUpiId = useAlternative ? upiId2 : upiId1;
-    const note = 'Xianze Registration';
-    const getLink = (scheme: string) =>
-        `${scheme}://pay?pa=${currentUpiId}&pn=${name}&am=${amount}&cu=INR&tn=${note}`;
+    const note = 'Xianze 2K26 Registration';
+
+    // Standard UPI URL format (works as fallback)
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(currentUpiId)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+    // App-specific deep links
+    const getAppLink = (appName: string) => {
+        const params = `pa=${encodeURIComponent(currentUpiId)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+        switch (appName) {
+            case 'Google Pay':
+                // GPay uses tez:// or intent scheme
+                return `tez://upi/pay?${params}`;
+            case 'PhonePe':
+                // PhonePe uses its custom scheme with /pay path
+                return `phonepe://pay?${params}`;
+            case 'Paytm':
+                // Paytm uses paytmmp:// scheme
+                return `paytmmp://pay?${params}`;
+            default:
+                // Standard UPI for other apps
+                return upiUrl;
+        }
+    };
 
     const apps = [
         {
             name: 'Google Pay',
-            scheme: 'gpay',
             bg: 'bg-white hover:bg-gray-50',
             border: 'border-gray-200',
             text: 'text-gray-800',
@@ -68,7 +88,6 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
         },
         {
             name: 'PhonePe',
-            scheme: 'phonepe',
             bg: 'bg-white hover:bg-gray-50',
             border: 'border-gray-200',
             text: 'text-gray-800',
@@ -76,7 +95,6 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
         },
         {
             name: 'Paytm',
-            scheme: 'paytmmp',
             bg: 'bg-white hover:bg-gray-50',
             border: 'border-gray-200',
             text: 'text-gray-800',
@@ -84,7 +102,6 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
         },
         {
             name: 'Other App',
-            scheme: 'upi',
             bg: 'bg-gray-50 hover:bg-gray-100',
             border: 'border-transparent',
             text: 'text-gray-600',
@@ -100,23 +117,23 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
 
     return (
         <div className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none sm:items-center">
-            {/* Overlay */}
+            {/* Overlay - Light/Transparent */}
             <div
                 ref={overlayRef}
                 onClick={handleClose}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity"
+                className="absolute inset-0 bg-white/80 backdrop-blur-sm pointer-events-auto transition-opacity"
             />
 
             {/* Modal - Modern Card Design */}
             <div
                 ref={modalRef}
-                className="relative w-full sm:max-w-sm bg-white rounded-t-[2rem] sm:rounded-[2rem] p-6 pb-2 shadow-2xl pointer-events-auto transform transition-transform"
+                className="relative w-full sm:max-w-sm max-h-[90vh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] p-6 pb-2 shadow-2xl pointer-events-auto transform transition-transform border border-gray-200"
             >
                 {/* Handle for mobile feel */}
-                <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8" />
+                <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
 
-                <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">Select Payment App</h3>
+                <div className="text-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">Select Payment App</h3>
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-full text-primary-700 font-medium text-sm">
                         <span>₹{amount} per head</span>
                     </div>
@@ -131,11 +148,11 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
                 </div>
 
                 {/* Apps Grid - Clean and Minimal */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-2 gap-3 mb-6">
                     {apps.map((app) => (
                         <a
                             key={app.name}
-                            href={getLink(app.scheme)}
+                            href={getAppLink(app.name)}
                             className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all active:scale-95 ${app.bg} ${app.border} shadow-sm group`}
                         >
                             <div className="mb-3 transform transition-transform group-hover:scale-110">

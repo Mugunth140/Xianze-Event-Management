@@ -68,7 +68,7 @@ export class MailService {
 
       await this.mailerService.sendMail({
         to: data.email,
-        subject: '🎟️ Your Event Pass - XIANZE 2026',
+        subject: "🎟️ Your Event Pass - Xianze'26",
         template: './event-pass',
         context: {
           name: data.name,
