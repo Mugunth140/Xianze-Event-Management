@@ -27,7 +27,7 @@ interface AuthRequest {
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, TasksGuard)
 export class AttendanceController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  constructor(private readonly registrationService: RegistrationService) { }
 
   /**
    * Validate a participant for check-in (QR scan)
@@ -56,6 +56,31 @@ export class AttendanceController {
 
     // Perform check-in
     const updated = await this.registrationService.checkIn(registrationId, req.user.id);
+    return {
+      success: true,
+      message: 'Check-in successful',
+      registration: updated,
+    };
+  }
+
+  /**
+   * Check in a participant by QR code hash (for mobile QR scanner)
+   */
+  @Post('qr-check-in')
+  @RequireTasks(UserTask.CHECK_IN_PARTICIPANT)
+  async qrCheckIn(@Body('qrHash') qrHash: string, @Request() req: AuthRequest) {
+    // Validate the QR hash first
+    const validation = await this.registrationService.validateForCheckInByQR(qrHash);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: validation.reason,
+        registration: validation.registration,
+      };
+    }
+
+    // Perform check-in using the QR hash
+    const updated = await this.registrationService.checkInByQRHash(qrHash, req.user.id);
     return {
       success: true,
       message: 'Check-in successful',

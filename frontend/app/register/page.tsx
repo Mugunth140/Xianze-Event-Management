@@ -620,8 +620,6 @@ const Register = () => {
 
   const upiId1 = 'gomathichandramohan2010@okhdfcbank';
   const upiId2 = 'klganesh78@okicici';
-  const upiLink1 = `upi://pay?pa=${upiId1}&pn=Xianze2K26&am=100&cu=INR`;
-  const upiLink2 = `upi://pay?pa=${upiId2}&pn=Xianze2K26&am=100&cu=INR`;
 
   return (
     <section
@@ -991,10 +989,11 @@ const Register = () => {
                             target: { name: 'event', value: event },
                           } as unknown as React.ChangeEvent<HTMLInputElement>)
                         }
-                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${formData.event === event
-                          ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
-                          : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
-                          }`}
+                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
+                          formData.event === event
+                            ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                            : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <span
@@ -1003,10 +1002,11 @@ const Register = () => {
                             {event}
                           </span>
                           <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${formData.event === event
-                              ? 'border-primary-500 bg-primary-500'
-                              : 'border-gray-300'
-                              }`}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              formData.event === event
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-gray-300'
+                            }`}
                           >
                             {formData.event === event && (
                               <svg
@@ -1069,18 +1069,18 @@ const Register = () => {
                         name="Xianze2K26"
                       />
 
-
-
                       {/* Desktop QR - Clean Centered Layout */}
                       <div className="hidden lg:block w-full">
-                        <div className={`rounded-2xl border shadow-sm p-8 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
-
+                        <div
+                          className={`rounded-2xl border shadow-sm p-8 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
+                        >
                           {/* Main Content - Two Column on XL */}
                           <div className="flex flex-col gap-8 ">
-
                             {/* QR Code Section */}
                             <div className="flex flex-col items-center flex-shrink-0">
-                              <div className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-4 transition-transform hover:scale-105 ${showAlternativeQR ? 'border-amber-200' : 'border-gray-200'}`}>
+                              <div
+                                className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-4 transition-transform hover:scale-105 ${showAlternativeQR ? 'border-amber-200' : 'border-gray-200'}`}
+                              >
                                 <NextImage
                                   src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
                                   alt="Scan to Pay"
@@ -1088,8 +1088,12 @@ const Register = () => {
                                   className="object-contain rounded-xl"
                                 />
                               </div>
-                              <div className={`px-4 py-2 rounded-full border ${showAlternativeQR ? 'bg-amber-100 border-amber-200' : 'bg-primary-50 border-primary-100'}`}>
-                                <p className={`text-xs font-bold uppercase tracking-widest ${showAlternativeQR ? 'text-amber-800' : 'text-primary-700'}`}>
+                              <div
+                                className={`px-4 py-2 rounded-full border ${showAlternativeQR ? 'bg-amber-100 border-amber-200' : 'bg-primary-50 border-primary-100'}`}
+                              >
+                                <p
+                                  className={`text-xs font-bold uppercase tracking-widest ${showAlternativeQR ? 'text-amber-800' : 'text-primary-700'}`}
+                                >
                                   Scan with any UPI App
                                 </p>
                               </div>
@@ -1100,25 +1104,31 @@ const Register = () => {
                               {/* UPI ID - Full Width */}
                               <div className="mb-6">
                                 <div className="flex items-center gap-3">
-                                  <code className={`flex-1 px-4 py-3 rounded-xl text-sm font-mono border ${showAlternativeQR ? 'bg-amber-100 border-amber-200 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-700'}`}>
+                                  <code
+                                    className={`flex-1 px-4 py-3 rounded-xl text-sm font-mono border ${showAlternativeQR ? 'bg-amber-100 border-amber-200 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-700'}`}
+                                  >
                                     {showAlternativeQR ? upiId2 : upiId1}
                                   </code>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      navigator.clipboard.writeText(showAlternativeQR ? upiId2 : upiId1);
+                                      navigator.clipboard.writeText(
+                                        showAlternativeQR ? upiId2 : upiId1
+                                      );
                                       const btn = document.getElementById('copy-btn-desktop');
                                       if (btn) {
                                         const originalHTML = btn.innerHTML;
-                                        btn.innerHTML = '<span class="text-green-600 font-bold">✓ Copied</span>';
+                                        btn.innerHTML =
+                                          '<span class="text-green-600 font-bold">✓ Copied</span>';
                                         setTimeout(() => (btn.innerHTML = originalHTML), 2000);
                                       }
                                     }}
                                     id="copy-btn-desktop"
-                                    className={`px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap ${showAlternativeQR
-                                      ? 'bg-amber-600 text-white hover:bg-amber-700'
-                                      : 'bg-primary-600 text-white hover:bg-primary-700'
-                                      }`}
+                                    className={`px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap ${
+                                      showAlternativeQR
+                                        ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                                    }`}
                                   >
                                     Copy ID
                                   </button>
@@ -1127,21 +1137,23 @@ const Register = () => {
 
                               {/* Toggle Button */}
                               <div className="flex justify-center border border-amber-200 p-2 rounded-xl bg-amber-50">
-                              <button
-                                type="button"
-                                onClick={() => setShowAlternativeQR(!showAlternativeQR)}
-                                className="text-sm font-medium text-amber-700 hover:text-amber-800 flex items-center justify-center gap-2 group transition-colors"
-                              >
-                                <span className="bg-amber-100 p-1.5 rounded-lg group-hover:bg-amber-200 transition-colors">
-                                  {showAlternativeQR ? '↺' : '⚠️'}
-                                </span>
-                                {showAlternativeQR ? 'Go back to Primary UPI ID' : 'Payment Failing? Try Alternative ID'}
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                                  className="text-sm font-medium text-amber-700 hover:text-amber-800 flex items-center justify-center gap-2 group transition-colors"
+                                >
+                                  <span className="bg-amber-100 p-1.5 rounded-lg group-hover:bg-amber-200 transition-colors">
+                                    {showAlternativeQR ? '↺' : '⚠️'}
+                                  </span>
+                                  {showAlternativeQR
+                                    ? 'Go back to Primary UPI ID'
+                                    : 'Payment Failing? Try Alternative ID'}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
                       <div className="lg:hidden text-sm text-gray-600 text-center">
                         <p>Pay via button above, then enter details below.</p>
@@ -1157,7 +1169,9 @@ const Register = () => {
                         htmlFor="transactionId"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
                       >
-                        <span className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-xs">🔢</span>
+                        <span className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-xs">
+                          🔢
+                        </span>
                         Transaction ID (UTR)
                       </label>
                       <input
@@ -1190,7 +1204,9 @@ const Register = () => {
                         htmlFor="screenshot"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
                       >
-                        <span className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-xs">📸</span>
+                        <span className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-xs">
+                          📸
+                        </span>
                         Payment Screenshot
                       </label>
 
@@ -1203,10 +1219,11 @@ const Register = () => {
                             accept="image/*"
                             onChange={handleScreenshotChange}
                             required
-                            className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${errorMessage && errorMessage.includes('File')
-                              ? 'border-red-400 bg-red-50'
-                              : 'border-gray-300 hover:border-primary-400'
-                              }`}
+                            className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
+                              errorMessage && errorMessage.includes('File')
+                                ? 'border-red-400 bg-red-50'
+                                : 'border-gray-300 hover:border-primary-400'
+                            }`}
                           />
                           <p className="mt-2 text-xs text-gray-500">
                             Max size: 5MB. Formats: JPG, PNG.
@@ -1312,7 +1329,7 @@ const Register = () => {
           )}
         </div>
       </div>
-    </section >
+    </section>
   );
 };
 

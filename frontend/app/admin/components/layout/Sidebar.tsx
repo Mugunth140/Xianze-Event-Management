@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Badge from '../ui/Badge';
 
 interface User {
@@ -92,6 +93,21 @@ const navItems = [
     ),
   },
   {
+    href: '/admin/qr-checkin',
+    label: 'QR Check-in',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+        />
+      </svg>
+    ),
+    mobileOnly: true, // Only show on mobile devices
+  },
+  {
     href: '/admin/leaderboards',
     label: 'Leaderboards',
     icon: (
@@ -130,9 +146,22 @@ const navItems = [
 
 export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Filter nav items based on role
-  const filteredNavItems = navItems.filter((item) => !item.adminOnly || user.role === 'admin');
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Filter nav items based on role and mobile status
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.adminOnly && user.role !== 'admin') return false;
+    if (item.mobileOnly && !isMobile) return false;
+    return true;
+  });
 
   return (
     <>
