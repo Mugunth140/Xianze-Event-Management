@@ -8,12 +8,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=/api
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
         - NEXT_PUBLIC_WHATSAPP_URL=${NEXT_PUBLIC_WHATSAPP_URL}
     container_name: xianze-frontend-builder
     volumes:
       - frontend-static:/app/out
-    command: [ "echo", "Build complete" ]
+    command: ["echo", "Build complete"]
 
   nginx:
     build:
@@ -59,12 +59,15 @@ services:
       - DATABASE_SYNCHRONIZE=false
       - DATABASE_LOGGING=false
       - CORS_ORIGIN=${CORS_ORIGIN:-https://xianze.tech}
+      # Mail configuration - MUST use Docker service name, not localhost
+      - MAIL_HOST=mailserver
+      - MAIL_PORT=587
     volumes:
       - sqlite-data:/data
     networks:
       - xianze-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
