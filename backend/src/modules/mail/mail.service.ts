@@ -55,8 +55,8 @@ export class MailService {
    */
   async sendEventPass(data: EventPassEmailData): Promise<boolean> {
     try {
-      // Generate QR code as base64 data URL
-      const qrCodeDataUrl = await QRCode.toDataURL(data.qrCodeHash, {
+      // Generate QR code as buffer for attachment
+      const qrCodeBuffer = await QRCode.toBuffer(data.qrCodeHash, {
         width: 300,
         margin: 2,
         color: {
@@ -75,9 +75,15 @@ export class MailService {
           event: data.event,
           passId: data.passId,
           college: data.college,
-          qrCodeDataUrl,
           year: new Date().getFullYear(),
         },
+        attachments: [
+          {
+            filename: 'qrcode.png',
+            content: qrCodeBuffer,
+            cid: 'qrcode', // Referenced in template as src="cid:qrcode"
+          },
+        ],
       });
       this.logger.log(`Event pass email sent to ${data.email}`);
       return true;

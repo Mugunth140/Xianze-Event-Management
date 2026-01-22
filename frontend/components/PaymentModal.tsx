@@ -127,10 +127,10 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
             {/* Modal - Modern Card Design */}
             <div
                 ref={modalRef}
-                className="relative w-full sm:max-w-sm max-h-[90vh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] p-6 pb-2 shadow-2xl pointer-events-auto transform transition-transform border border-gray-200"
+                className="relative w-full sm:max-w-sm max-h-[85dvh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] p-6 pb-10 shadow-2xl pointer-events-auto transform transition-transform border border-gray-200"
             >
                 {/* Handle for mobile feel */}
-                <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+                <div className="sticky top-0 w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
 
                 <div className="text-center mb-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">Select Payment App</h3>
@@ -200,7 +200,7 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
                 {/* Explicit Cancel Button */}
                 <button
                     onClick={handleClose}
-                    className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 active:scale-95 transition-all mb-4"
+                    className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 active:scale-95 transition-all mb-8"
                 >
                     Cancel
                 </button>

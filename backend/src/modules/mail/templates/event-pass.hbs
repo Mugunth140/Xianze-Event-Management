@@ -34,7 +34,7 @@
                   <td style="text-align: right;">
                     <span
                       style="display: inline-block; background: rgba(255,255,255,0.2); color: #ffffff; padding: 6px 12px; border-radius: 16px; font-size: 10px; font-weight: 600; text-transform: uppercase;">
-                      Verified ✓
+                      Payment Verified ✓
                     </span>
                   </td>
                 </tr>
@@ -82,20 +82,14 @@
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
                 style="margin-top: 16px;">
                 <tr>
-                  <td width="60%">
+                  <td width="100%">
                     <p
                       style="margin: 0 0 2px; color: rgba(255,255,255,0.6); font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
                       College
                     </p>
-                    <p style="margin: 0; color: #ffffff; font-size: 13px;">
+                    <p style="margin: 0; color: #ffffff; font-size: 14px;">
                       {{college}}
                     </p>
-                  </td>
-                  <td width="40%" style="text-align: right;">
-                    <span
-                      style="display: inline-block; background: #ffffff; color: #6D40D4; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
-                      Admit One
-                    </span>
                   </td>
                 </tr>
               </table>
@@ -108,14 +102,7 @@
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td align="center" style="background: #ffffff; border-radius: 16px; padding: 20px;">
-                    {{#if qrCodeDataUrl}}
-                    <img src="{{qrCodeDataUrl}}" alt="QR Code" width="160" height="160" style="display: block;" />
-                    {{else}}
-                    <div
-                      style="width: 160px; height: 160px; background: #F3F0FA; border-radius: 12px; line-height: 160px; text-align: center; color: #6D40D4; font-size: 13px;">
-                      QR Not Available
-                    </div>
-                    {{/if}}
+                    <img src="cid:qrcode" alt="QR Code" width="160" height="160" style="display: block;" />
                     <p style="margin: 12px 0 0; color: #6B7280; font-size: 12px;">
                       Scan at venue for check-in
                     </p>
