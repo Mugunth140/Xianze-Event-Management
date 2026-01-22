@@ -36,6 +36,9 @@ export class PaperSubmission {
     @Column({ type: 'varchar', length: 500 })
     slidePath: string;
 
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    pdfPath: string | null;
+
     @Column({ type: 'varchar', length: 50, default: PaperSubmissionStatus.SUBMITTED })
     status: PaperSubmissionStatus;
 

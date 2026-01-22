@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(dto: LoginDto) {
     const user = await this.usersService.findByUsername(dto.username);
@@ -35,6 +35,8 @@ export class AuthService {
         name: user.name,
         role: user.role,
         assignedEvent: user.assignedEvent,
+        assignedEvents: user.assignedEvents,
+        tasks: user.tasks || [],
       },
     };
   }

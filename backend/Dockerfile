@@ -24,7 +24,8 @@ RUN bun run build
 
 # Stage 3: Production
 FROM oven/bun:1-alpine AS runner
-RUN apk add --no-cache curl
+# Install curl for health checks and LibreOffice for PPT to PDF conversion
+RUN apk add --no-cache curl libreoffice
 LABEL maintainer="XIANZE Team" description="XIANZE Backend API" runtime="bun"
 
 RUN addgroup --system --gid 1001 bunjs && \

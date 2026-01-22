@@ -7,6 +7,8 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
+    NotFoundException,
     Param,
     ParseFilePipe,
     ParseIntPipe,
@@ -19,16 +21,20 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
+import { exec } from 'child_process';
 import type { Response } from 'express';
-import { createReadStream, existsSync } from 'fs';
+import { createReadStream, existsSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import { basename, extname, join } from 'path';
+import { promisify } from 'util';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '../../users/user.entity';
 import { PaperPresentationService } from './paper-presentation.service';
 import { PaperSubmissionStatus } from './paper-submission.entity';
+
+const execAsync = promisify(exec);
 
 interface MulterFile {
     fieldname: string;
@@ -52,7 +58,45 @@ const generateFilename = (originalname: string): string => {
 
 @Controller('paper-presentation')
 export class PaperPresentationController {
+    private readonly logger = new Logger(PaperPresentationController.name);
+
     constructor(private readonly service: PaperPresentationService) { }
+
+    /**
+     * Convert PPT/PPTX to PDF using LibreOffice
+     */
+    private async convertToPdf(inputPath: string, outputDir: string): Promise<string | null> {
+        const ext = extname(inputPath).toLowerCase();
+
+        // If already PDF, no conversion needed
+        if (ext === '.pdf') {
+            return null;
+        }
+
+        try {
+            // Use LibreOffice headless mode to convert
+            const command = `libreoffice --headless --convert-to pdf --outdir "${outputDir}" "${inputPath}"`;
+            this.logger.log(`Converting PPT to PDF: ${command}`);
+
+            await execAsync(command, { timeout: 60000 }); // 60s timeout
+
+            // The output filename will be the same as input but with .pdf extension
+            const inputFilename = basename(inputPath);
+            const pdfFilename = inputFilename.replace(/\.(ppt|pptx)$/i, '.pdf');
+            const pdfPath = join(outputDir, pdfFilename);
+
+            if (existsSync(pdfPath)) {
+                this.logger.log(`PDF created: ${pdfPath}`);
+                return `/presentations/${pdfFilename}`;
+            } else {
+                this.logger.error('PDF file not created after conversion');
+                return null;
+            }
+        } catch (error) {
+            this.logger.error(`PPT to PDF conversion failed: ${error}`);
+            return null;
+        }
+    }
 
     /**
      * POST /api/paper-presentation/submit
@@ -121,9 +165,14 @@ export class PaperPresentationController {
         }
 
         const slidePath = `/presentations/${file.filename}`;
+
+        // Convert PPT/PPTX to PDF for slideshow
+        const pdfPath = await this.convertToPdf(file.path, '/data/presentations');
+
         const submission = await this.service.create(
             { teamName, teamMembers, college, topic, phone },
             slidePath,
+            pdfPath,
         );
 
         return {
@@ -190,7 +239,7 @@ export class PaperPresentationController {
 
     /**
      * GET /api/paper-presentation/slides/:id
-     * Download slides for a submission
+     * Download original slides for a submission
      */
     @Get('slides/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -212,6 +261,37 @@ export class PaperPresentationController {
     }
 
     /**
+     * GET /api/paper-presentation/slideshow/:id
+     * Get PDF for slideshow presentation
+     */
+    @Get('slideshow/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+    async getSlideshow(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+        const submission = await this.service.findById(id);
+
+        // Use PDF if available, otherwise check if original is PDF
+        let pdfPath: string;
+        if (submission.pdfPath) {
+            pdfPath = join('/data', submission.pdfPath);
+        } else if (submission.slidePath.toLowerCase().endsWith('.pdf')) {
+            pdfPath = join('/data', submission.slidePath);
+        } else {
+            throw new NotFoundException('PDF not available for this presentation. Please re-upload in PDF format.');
+        }
+
+        if (!existsSync(pdfPath)) {
+            throw new NotFoundException('PDF file not found');
+        }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline'); // Display in browser, not download
+
+        const stream = createReadStream(pdfPath);
+        stream.pipe(res);
+    }
+
+    /**
      * DELETE /api/paper-presentation/submissions/:id
      * Delete a submission (Admin only)
      */
@@ -220,6 +300,21 @@ export class PaperPresentationController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async delete(@Param('id', ParseIntPipe) id: number) {
+        const submission = await this.service.findById(id);
+
+        // Delete files
+        const slidePath = join('/data', submission.slidePath);
+        if (existsSync(slidePath)) {
+            try { unlinkSync(slidePath); } catch { /* ignore */ }
+        }
+
+        if (submission.pdfPath) {
+            const pdfPath = join('/data', submission.pdfPath);
+            if (existsSync(pdfPath)) {
+                try { unlinkSync(pdfPath); } catch { /* ignore */ }
+            }
+        }
+
         await this.service.delete(id);
         return { success: true, message: 'Submission deleted' };
     }

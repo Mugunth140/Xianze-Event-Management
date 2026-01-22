@@ -630,3 +630,114 @@
 .admin-transition-slow {
   transition: all var(--admin-transition-slow);
 }
+
+/* ================================
+   Mobile Responsive Overrides
+   ================================ */
+
+@media (max-width: 640px) {
+  /* Compact table cells on mobile */
+  .admin-table th,
+  .admin-table td {
+    padding: var(--admin-space-xs) var(--admin-space-sm);
+    font-size: 0.8125rem;
+  }
+
+  /* Smaller buttons on mobile */
+  .admin-btn {
+    min-height: 40px;
+    padding: var(--admin-space-xs) var(--admin-space-md);
+    font-size: 0.875rem;
+  }
+
+  .admin-btn-sm {
+    min-height: 28px;
+    padding: 2px var(--admin-space-xs);
+    font-size: 0.75rem;
+  }
+
+  /* Compact cards */
+  .admin-stats-card {
+    padding: var(--admin-space-md);
+  }
+
+  /* Smaller inputs */
+  .admin-input,
+  .admin-select {
+    min-height: 40px;
+    font-size: 0.875rem;
+  }
+
+  /* Sidebar adjustments */
+  .admin-sidebar {
+    width: 280px;
+  }
+
+  /* Modal full width on mobile */
+  .admin-modal {
+    width: 95%;
+    max-width: none;
+    margin: var(--admin-space-md);
+    max-height: 85vh;
+  }
+
+  /* Badge size */
+  .admin-badge {
+    font-size: 0.6875rem;
+    padding: 2px var(--admin-space-xs);
+  }
+
+  /* Compact event shell */
+  .admin-event-header,
+  .admin-event-content,
+  .admin-event-footer {
+    padding: var(--admin-space-md);
+  }
+
+  /* Timer size */
+  .admin-timer {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra compact for very small screens */
+  .admin-table th,
+  .admin-table td {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+  }
+
+  .admin-btn {
+    min-height: 36px;
+    gap: 4px;
+  }
+
+  .admin-btn-sm {
+    min-height: 26px;
+    font-size: 0.6875rem;
+  }
+
+  .admin-glass-card {
+    border-radius: var(--admin-radius-lg);
+  }
+
+  .admin-nav-item {
+    padding: var(--admin-space-xs) var(--admin-space-sm);
+    font-size: 0.9rem;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (hover: none) and (pointer: coarse) {
+  .admin-btn,
+  .admin-nav-item,
+  .admin-input,
+  .admin-select {
+    min-height: 44px;
+  }
+
+  .admin-btn-sm {
+    min-height: 36px;
+  }
+}

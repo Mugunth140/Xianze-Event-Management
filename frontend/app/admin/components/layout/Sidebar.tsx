@@ -11,6 +11,8 @@ interface User {
   name: string;
   role: 'admin' | 'coordinator' | 'member';
   assignedEvent?: string;
+  assignedEvents?: string[];
+  tasks?: string[];
 }
 
 interface SidebarProps {
@@ -47,6 +49,7 @@ const navItems = [
         />
       </svg>
     ),
+    adminOnly: true,
   },
   {
     href: '/admin/payments',
@@ -61,7 +64,7 @@ const navItems = [
         />
       </svg>
     ),
-    requiresTask: 'verify_payment', // Only show if user has this task
+    requiresTask: 'verify_payment',
   },
   {
     href: '/admin/users',
@@ -91,6 +94,7 @@ const navItems = [
         />
       </svg>
     ),
+    requiresTask: 'mark_attendance',
   },
   {
     href: '/admin/paper-presentation',
@@ -105,6 +109,7 @@ const navItems = [
         />
       </svg>
     ),
+    coordinatorAndAbove: true,
   },
   {
     href: '/admin/qr-checkin',
@@ -119,7 +124,8 @@ const navItems = [
         />
       </svg>
     ),
-    mobileOnly: true, // Only show on mobile devices
+    mobileOnly: true,
+    requiresTask: 'check_in_participant',
   },
   {
     href: '/admin/leaderboards',
@@ -134,6 +140,7 @@ const navItems = [
         />
       </svg>
     ),
+    coordinatorAndAbove: true,
   },
   {
     href: '/admin/settings',
@@ -158,6 +165,12 @@ const navItems = [
   },
 ];
 
+// Helper to check if user has a task (admin has all tasks implicitly)
+const userHasTask = (user: User, task: string): boolean => {
+  if (user.role === 'admin') return true;
+  return user.tasks?.includes(task) ?? false;
+};
+
 export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
@@ -170,10 +183,20 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Filter nav items based on role and mobile status
+  // Filter nav items based on role, tasks, and mobile status
   const filteredNavItems = navItems.filter((item) => {
+    // Admin-only check
     if (item.adminOnly && user.role !== 'admin') return false;
+
+    // Coordinator and above check
+    if (item.coordinatorAndAbove && user.role === 'member') return false;
+
+    // Task requirement check
+    if (item.requiresTask && !userHasTask(user, item.requiresTask)) return false;
+
+    // Mobile-only check
     if (item.mobileOnly && !isMobile) return false;
+
     return true;
   });
 

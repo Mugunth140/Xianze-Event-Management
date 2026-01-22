@@ -22,6 +22,7 @@ interface Registration {
   paymentStatus: 'pending' | 'verified' | 'rejected';
   verifiedAt: string | null;
   createdAt: string;
+  screenshotPath?: string;
 }
 
 const AVAILABLE_EVENTS = [
@@ -45,6 +46,13 @@ export default function PaymentsPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+
+  // Screenshot viewing state
+  const [viewingScreenshot, setViewingScreenshot] = useState<{ id: number; name: string } | null>(
+    null
+  );
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,6 +79,42 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  const handleViewScreenshot = async (reg: Registration) => {
+    if (!reg.screenshotPath) {
+      setError('No screenshot file available for this payment');
+      return;
+    }
+
+    setViewingScreenshot({ id: reg.id, name: reg.name });
+    setScreenshotLoading(true);
+    const token = localStorage.getItem('token');
+
+    try {
+      const res = await fetch(getApiUrl(`/register/screenshot/${reg.id}`), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error('Failed to load screenshot');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      setScreenshotUrl(url);
+    } catch (err) {
+      setError('Failed to load screenshot image');
+      setViewingScreenshot(null);
+    } finally {
+      setScreenshotLoading(false);
+    }
+  };
+
+  const closeScreenshotModal = () => {
+    if (screenshotUrl) {
+      window.URL.revokeObjectURL(screenshotUrl);
+    }
+    setScreenshotUrl(null);
+    setViewingScreenshot(null);
+  };
 
   const handleVerify = async () => {
     if (!selectedReg) return;
@@ -227,7 +271,7 @@ export default function PaymentsPage() {
                 <th>Transaction ID</th>
                 <th>Status</th>
                 <th>Date</th>
-                {activeTab === 'pending' && <th>Actions</th>}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -261,40 +305,69 @@ export default function PaymentsPage() {
                     </Badge>
                   </td>
                   <td className="text-gray-500">{new Date(reg.createdAt).toLocaleDateString()}</td>
-                  {activeTab === 'pending' && (
-                    <td>
-                      <div className="flex gap-2">
+                  <td>
+                    <div className="flex gap-2">
+                      {/* View Screenshot Button */}
+                      {reg.screenshotPath && (
                         <Button
-                          variant="primary-soft"
+                          variant="secondary"
                           size="sm"
-                          onClick={() => {
-                            setSelectedReg(reg);
-                            setActionType('verify');
-                          }}
+                          onClick={() => handleViewScreenshot(reg)}
+                          title="View Payment Screenshot"
                         >
-                          Verify
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
                         </Button>
-                        <Button
-                          variant="danger-soft"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedReg(reg);
-                            setActionType('reject');
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </td>
-                  )}
+                      )}
+
+                      {activeTab === 'pending' && (
+                        <>
+                          <Button
+                            variant="primary-soft"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReg(reg);
+                              setActionType('verify');
+                            }}
+                          >
+                            Verify
+                          </Button>
+                          <Button
+                            variant="danger-soft"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReg(reg);
+                              setActionType('reject');
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {paginatedRegistrations.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={activeTab === 'pending' ? 6 : 5}
-                    className="py-8 text-center text-gray-500"
-                  >
+                  <td colSpan={6} className="py-8 text-center text-gray-500">
                     {activeTab === 'pending' ? 'No pending payments' : 'No payment history'}
                   </td>
                 </tr>
@@ -367,6 +440,63 @@ export default function PaymentsPage() {
               >
                 Reject
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screenshot Viewer Modal */}
+      {viewingScreenshot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm"
+            onClick={closeScreenshotModal}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-auto max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-bold text-lg">
+                Transaction Screenshot: {viewingScreenshot.name}
+              </h3>
+              <button
+                onClick={closeScreenshotModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-gray-50 min-h-[300px]">
+              {screenshotLoading ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                  <p className="text-sm text-gray-500">Loading image...</p>
+                </div>
+              ) : screenshotUrl ? (
+                <img
+                  src={screenshotUrl}
+                  alt="Payment Screenshot"
+                  className="max-w-full max-h-[70vh] object-contain rounded shadow-sm"
+                />
+              ) : (
+                <p className="text-red-500">Failed to load image</p>
+              )}
+            </div>
+
+            <div className="p-4 border-t flex justify-end">
+              <a
+                href={screenshotUrl || '#'}
+                download={`payment-screenshot-${viewingScreenshot.id}.jpg`}
+                className={`px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors ${!screenshotUrl ? 'opacity-50 pointer-events-none' : ''}`}
+              >
+                Download Image
+              </a>
             </div>
           </div>
         </div>

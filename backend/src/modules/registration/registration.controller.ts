@@ -8,11 +8,13 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  NotFoundException,
   Param,
   ParseFilePipe,
   ParseIntPipe,
   Patch,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -20,9 +22,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { randomBytes } from 'crypto';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import { createReadStream, existsSync } from 'fs';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { basename, extname, join } from 'path';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -59,7 +62,7 @@ export class RegistrationController {
   constructor(
     private readonly registrationService: RegistrationService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   /**
    * POST /api/register
@@ -202,6 +205,46 @@ export class RegistrationController {
       success: true,
       data: registration,
     };
+  }
+
+  /**
+   * GET /api/register/screenshot/:id
+   *
+   * Get payment screenshot for a registration.
+   */
+  @Get('screenshot/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR, UserRole.MEMBER)
+  async getScreenshot(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const registration = await this.registrationService.findOne(id);
+    if (!registration) throw new NotFoundException('Registration not found');
+    if (!registration.screenshotPath) throw new NotFoundException('No screenshot available');
+
+    // Remove leading slash if present
+    const cleanPath = registration.screenshotPath.startsWith('/')
+      ? registration.screenshotPath.substring(1)
+      : registration.screenshotPath;
+
+    // Full path: /data/transactions/filename
+    // registration.screenshotPath is stored as '/transactions/filename'
+    // So we need to join '/data' with the path
+    // Actually, registration.controller.ts line 79 stores it in '/data/transactions'
+    // And line 141 saves it as `/transactions/${file.filename}`
+    // so we need to map /transactions/ -> /data/transactions/
+
+    const filename = basename(registration.screenshotPath);
+    const filePath = join('/data/transactions', filename);
+
+    if (!existsSync(filePath)) {
+      throw new NotFoundException('Screenshot file not found');
+    }
+
+    const stream = createReadStream(filePath);
+    res.set({
+      'Content-Type': 'image/jpeg', // approximate, browser will detect
+      'Content-Disposition': `inline; filename="${filename}"`,
+    });
+    stream.pipe(res);
   }
 
   /**

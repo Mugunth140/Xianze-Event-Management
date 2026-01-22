@@ -9,7 +9,7 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'full';
 }
 
 export default function Modal({
@@ -24,6 +24,7 @@ export default function Modal({
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-2xl',
+    full: 'max-w-[95vw] w-full',
   };
 
   const handleEscape = useCallback(

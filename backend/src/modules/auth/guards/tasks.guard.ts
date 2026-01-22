@@ -5,7 +5,7 @@ import { TASKS_KEY } from '../decorators/tasks.decorator';
 
 @Injectable()
 export class TasksGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const requiredTasks = this.reflector.getAllAndOverride<UserTask[]>(TASKS_KEY, [
@@ -23,6 +23,9 @@ export class TasksGuard implements CanActivate {
     if (!user) {
       throw new ForbiddenException('User not authenticated');
     }
+
+    console.log(`TasksGuard Debug: User ${user.username} (${user.role}) trying to access. Required: ${requiredTasks}`);
+    console.log(`Is Admin? ${user.role} === ${UserRole.ADMIN} -> ${user.role === UserRole.ADMIN}`);
 
     // Admin bypasses all task checks
     if (user.role === UserRole.ADMIN) {

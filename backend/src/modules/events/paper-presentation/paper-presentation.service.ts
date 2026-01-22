@@ -29,10 +29,11 @@ export class PaperPresentationService {
     /**
      * Create a new paper submission
      */
-    async create(dto: CreateSubmissionDto, slidePath: string): Promise<PaperSubmission> {
+    async create(dto: CreateSubmissionDto, slidePath: string, pdfPath: string | null): Promise<PaperSubmission> {
         const submission = this.submissionRepository.create({
             ...dto,
             slidePath,
+            pdfPath,
             status: PaperSubmissionStatus.SUBMITTED,
         });
         return this.submissionRepository.save(submission);

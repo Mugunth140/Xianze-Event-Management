@@ -1,6 +1,7 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { PageHeader } from './components/layout';
@@ -36,8 +37,11 @@ interface TrendData {
 }
 
 interface User {
+  name: string;
   role: 'admin' | 'coordinator' | 'member';
   assignedEvent?: string;
+  assignedEvents?: string[];
+  tasks?: string[];
 }
 
 export default function AdminDashboard() {
@@ -49,6 +53,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [hasAnalyticsAccess, setHasAnalyticsAccess] = useState(true);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -85,6 +90,13 @@ export default function AdminDashboard() {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           router.push('/admin/login');
+          return;
+        }
+
+        // Handle 403 for members/coordinators without analytics access
+        if (overviewRes.status === 403) {
+          setHasAnalyticsAccess(false);
+          setLoading(false);
           return;
         }
 
@@ -126,6 +138,141 @@ export default function AdminDashboard() {
     );
   }
 
+  // Show restricted dashboard for members/coordinators without analytics access
+  if (!hasAnalyticsAccess) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={`Welcome, ${user?.name || 'Team Member'}`}
+          subtitle={
+            user?.role === 'coordinator' && user.assignedEvent
+              ? `Assigned Event: ${user.assignedEvent}`
+              : user?.role === 'member' && user.assignedEvents?.length
+                ? `Your Events: ${user.assignedEvents.join(', ')}`
+                : 'Your assigned tasks are shown in the sidebar'
+          }
+        />
+
+        {/* Quick Actions for Members */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {user?.tasks?.includes('mark_attendance') && (
+            <Link href="/admin/attendance">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                    <svg
+                      className="w-6 h-6 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Mark Attendance</h3>
+                    <p className="text-sm text-gray-500">Check in participants</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          )}
+
+          {user?.tasks?.includes('verify_payment') && (
+            <Link href="/admin/payments">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
+                    <svg
+                      className="w-6 h-6 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Verify Payments</h3>
+                    <p className="text-sm text-gray-500">Review pending payments</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          )}
+
+          {user?.tasks?.includes('check_in_participant') && (
+            <Link href="/admin/qr-checkin">
+              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                    <svg
+                      className="w-6 h-6 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">QR Check-in</h3>
+                    <p className="text-sm text-gray-500">Scan participant passes</p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          )}
+        </div>
+
+        {/* Info Card */}
+        <Card className="p-6 bg-gradient-to-br from-primary-50 to-purple-50 border-primary-100">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Your Access Level</h3>
+              <p className="text-sm text-gray-600">
+                You have <Badge variant={user?.role || 'member'}>{user?.role}</Badge> access. Use
+                the sidebar to navigate to your assigned tasks. Contact an administrator if you need
+                additional permissions.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Full analytics dashboard for admins
   return (
     <div className="space-y-6">
       <PageHeader
@@ -138,10 +285,15 @@ export default function AdminDashboard() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -157,7 +309,12 @@ export default function AdminDashboard() {
 
         <StatCard
           icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -167,13 +324,18 @@ export default function AdminDashboard() {
             </svg>
           }
           value={overview?.totalContacts || 0}
-          label="Contact Inquiries"
+          label="Inquiries"
           iconColor="text-emerald-600"
         />
 
         <StatCard
           icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -189,7 +351,12 @@ export default function AdminDashboard() {
 
         <StatCard
           icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -205,28 +372,32 @@ export default function AdminDashboard() {
       </div>
 
       {/* Analytics Charts */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Registration Trends</h2>
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+            Registration Trends
+          </h2>
           <OverviewLineChart data={trends} />
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h2>
+        <Card className="p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Payment Status</h2>
           <PaymentPieChart data={paymentStats} />
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Event Breakdown */}
-        <Card className="p-6 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Registrations by Event</h2>
+        <Card className="p-4 sm:p-6 lg:col-span-2">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+            Registrations by Event
+          </h2>
           <EventBarChart data={overview?.registrationsByEvent || []} />
         </Card>
 
         {/* Top Colleges */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Colleges</h2>
+        <Card className="p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Top Colleges</h2>
           <div className="space-y-3">
             {overview?.registrationsByCollege?.slice(0, 5).map((item, index) => (
               <div
@@ -237,7 +408,10 @@ export default function AdminDashboard() {
                   <span className="w-6 h-6 flex items-center justify-center bg-primary-50 text-primary-600 text-xs font-bold rounded-full">
                     {index + 1}
                   </span>
-                  <span className="text-gray-600 truncate max-w-[150px]" title={item.college}>
+                  <span
+                    className="text-gray-600 truncate max-w-[120px] sm:max-w-[150px]"
+                    title={item.college}
+                  >
                     {item.college}
                   </span>
                 </div>
@@ -253,16 +427,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Registrations */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Registrations</h2>
-        <div className="overflow-x-auto admin-scrollbar">
-          <table className="admin-table">
+      <Card className="p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+          Recent Registrations
+        </h2>
+        <div className="overflow-x-auto admin-scrollbar -mx-4 sm:mx-0">
+          <table className="admin-table min-w-[600px] sm:min-w-0">
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Email</th>
+                <th className="hidden sm:table-cell">Email</th>
                 <th>Event</th>
-                <th>College</th>
+                <th className="hidden md:table-cell">College</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -270,11 +446,11 @@ export default function AdminDashboard() {
               {recentRegistrations.map((reg) => (
                 <tr key={reg.id}>
                   <td className="font-medium text-gray-900">{reg.name}</td>
-                  <td>{reg.email}</td>
+                  <td className="hidden sm:table-cell">{reg.email}</td>
                   <td>
                     <Badge variant="purple">{reg.event}</Badge>
                   </td>
-                  <td className="max-w-[150px] truncate">{reg.college}</td>
+                  <td className="hidden md:table-cell max-w-[150px] truncate">{reg.college}</td>
                   <td className="text-gray-400">{new Date(reg.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
