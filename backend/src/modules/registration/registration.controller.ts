@@ -3,23 +3,33 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   ParseFilePipe,
+  ParseIntPipe,
+  Patch,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { randomBytes } from 'crypto';
-import type { Express, Request } from 'express';
+import type { Request } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { MailService } from '../mail/mail.service';
+import { UserRole } from '../users/user.entity';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { Registration } from './registration.entity';
 import { RegistrationService } from './registration.service';
 
@@ -69,8 +79,7 @@ export class RegistrationController {
         destination: '/data/transactions',
         filename: (
           _req: Request,
-          // eslint-disable-next-line no-undef
-          file: Express.Multer.File,
+          file: MulterFile,
           cb: (error: Error | null, filename: string) => void,
         ) => {
           cb(null, generateSecureFilename(file.originalname));
@@ -81,7 +90,7 @@ export class RegistrationController {
       },
       fileFilter: (
         _req: Request,
-        file: Express.Multer.File,
+        file: MulterFile,
         cb: (error: Error | null, acceptFile: boolean) => void,
       ) => {
         // Validate MIME type
@@ -173,6 +182,44 @@ export class RegistrationController {
     return {
       success: true,
       data: registrations,
+    };
+  }
+
+  /**
+   * PATCH /api/register/:id
+   *
+   * Update a registration (admin only).
+   */
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRegistrationDto,
+  ): Promise<{ success: boolean; data: Registration }> {
+    const registration = await this.registrationService.update(id, dto);
+    return {
+      success: true,
+      data: registration,
+    };
+  }
+
+  /**
+   * DELETE /api/register/:id
+   *
+   * Delete a registration (admin only).
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.registrationService.delete(id);
+    return {
+      success: true,
+      message: 'Registration deleted successfully',
     };
   }
 }

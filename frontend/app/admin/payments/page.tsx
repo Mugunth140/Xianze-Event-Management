@@ -1,13 +1,14 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { ConfirmModal } from '../components/ui/Modal';
+import Pagination from '../components/ui/Pagination';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
 
@@ -44,6 +45,10 @@ export default function PaymentsPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const fetchPayments = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -126,6 +131,18 @@ export default function PaymentsPage() {
       reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       reg.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, eventFilter, activeTab]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
+  const paginatedRegistrations = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRegistrations.slice(start, start + itemsPerPage);
+  }, [filteredRegistrations, currentPage, itemsPerPage]);
 
   const pendingCount = registrations.filter((r) => r.paymentStatus === 'pending').length;
 
@@ -214,7 +231,7 @@ export default function PaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRegistrations.map((reg) => (
+              {paginatedRegistrations.map((reg) => (
                 <tr key={reg.id}>
                   <td>
                     <div>
@@ -272,7 +289,7 @@ export default function PaymentsPage() {
                   )}
                 </tr>
               ))}
-              {filteredRegistrations.length === 0 && (
+              {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td
                     colSpan={activeTab === 'pending' ? 6 : 5}
@@ -284,6 +301,15 @@ export default function PaymentsPage() {
               )}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredRegistrations.length}
+            itemsPerPage={itemsPerPage}
+          />
         </Card>
       )}
 

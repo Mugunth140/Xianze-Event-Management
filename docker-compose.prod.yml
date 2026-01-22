@@ -61,7 +61,6 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-https://xianze.tech}
     volumes:
       - sqlite-data:/data
-      - ./uploads:/data/transactions
     networks:
       - xianze-network
     healthcheck:
