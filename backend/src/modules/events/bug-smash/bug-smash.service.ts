@@ -60,25 +60,44 @@ export class BugSmashService {
         return state;
     }
 
-    async startRound1(): Promise<BugSmashRoundState> {
+    async startRound1(durationMinutes: number): Promise<BugSmashRoundState> {
         const state = await this.getRoundState();
         state.round1Status = RoundStatus.ACTIVE;
         state.currentRound = 1;
+        state.roundDuration = durationMinutes;
+        state.startedAt = new Date();
         return this.roundStateRepo.save(state);
     }
 
     async endRound1(): Promise<BugSmashRoundState> {
         const state = await this.getRoundState();
         state.round1Status = RoundStatus.COMPLETED;
-        state.currentQuestionId = null;
         return this.roundStateRepo.save(state);
     }
 
-    async setCurrentQuestion(questionId: number): Promise<BugSmashRoundState> {
-        const state = await this.getRoundState();
-        state.currentQuestionId = questionId;
-        state.questionStartedAt = new Date();
-        return this.roundStateRepo.save(state);
+    // ========================
+    // QUESTION MANAGEMENT
+    // ========================
+
+    async getNextQuestion(participantId: number): Promise<BugSmashQuestion | null> {
+        const participant = await this.participantRepo.findOne({
+            where: { id: participantId },
+            relations: ['submissions']
+        });
+        if (!participant) throw new NotFoundException('Participant not found');
+
+        const answeredIds = participant.submissions.map(s => s.questionId);
+
+        // Get next unanswered question by order
+        const qb = this.questionRepo.createQueryBuilder('q')
+            .where('q.isActive = :isActive', { isActive: true })
+            .orderBy('q.order', 'ASC');
+
+        if (answeredIds.length > 0) {
+            qb.andWhere('q.id NOT IN (:...ids)', { ids: answeredIds });
+        }
+
+        return qb.getOne();
     }
 
     // ========================
@@ -156,7 +175,7 @@ export class BugSmashService {
         participantId: number,
         questionId: number,
         selectedIndex: number,
-    ): Promise<{ isCorrect: boolean; score: number }> {
+    ): Promise<{ message: string }> {
         const participant = await this.participantRepo.findOne({ where: { id: participantId } });
         if (!participant) throw new NotFoundException('Participant not found');
 
@@ -181,14 +200,14 @@ export class BugSmashService {
         });
         await this.submissionRepo.save(submission);
 
-        // Update participant score
+        // Update participant score silently
         if (isCorrect) {
             participant.round1Score += 1;
         }
         participant.lastSubmitTime = new Date();
         await this.participantRepo.save(participant);
 
-        return { isCorrect, score: participant.round1Score };
+        return { message: 'Answer saved' };
     }
 
     // ========================
@@ -276,8 +295,7 @@ export class BugSmashService {
         await this.participantRepo.update({}, { round1Score: 0, lastSubmitTime: null });
         const state = await this.getRoundState();
         state.round1Status = RoundStatus.WAITING;
-        state.currentQuestionId = null;
-        state.questionStartedAt = null;
+        state.startedAt = null;
         await this.roundStateRepo.save(state);
     }
 }

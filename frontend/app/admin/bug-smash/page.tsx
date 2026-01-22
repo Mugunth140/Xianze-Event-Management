@@ -32,8 +32,8 @@ interface Participant {
 
 interface RoundState {
   round1Status: 'waiting' | 'active' | 'completed';
-  currentQuestionId: number | null;
-  questionStartedAt: string | null;
+  roundDuration: number;
+  startedAt: string | null;
 }
 
 interface Stats {
@@ -53,13 +53,14 @@ export default function BugSmashPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [roundDuration, setRoundDuration] = useState(30);
 
   // New question form
   const [newQuestion, setNewQuestion] = useState({
     questionText: '',
     options: ['', '', '', ''],
     correctIndex: 0,
-    timeLimit: 30,
+    timeLimit: 30, // keeping for data structure compatibility, though ignored in exam mode usually
   });
 
   const fetchData = useCallback(async () => {
@@ -90,7 +91,7 @@ export default function BugSmashPage() {
 
   useEffect(() => {
     fetchData();
-    // Poll for updates every 5 seconds during active round
+    // Poll for updates every 5 seconds
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [fetchData]);
@@ -128,7 +129,8 @@ export default function BugSmashPage() {
     const token = localStorage.getItem('token');
     await fetch(getApiUrl('/bug-smash/round1/start'), {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ duration: roundDuration }),
     });
     fetchData();
   };
@@ -136,15 +138,6 @@ export default function BugSmashPage() {
   const handleEndRound = async () => {
     const token = localStorage.getItem('token');
     await fetch(getApiUrl('/bug-smash/round1/end'), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchData();
-  };
-
-  const handleSetCurrentQuestion = async (id: number) => {
-    const token = localStorage.getItem('token');
-    await fetch(getApiUrl(`/bug-smash/round1/question/${id}`), {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -175,7 +168,7 @@ export default function BugSmashPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Bug Smash" subtitle="Debugging competition - MCQ Round + Manual Finals" />
+      <PageHeader title="Bug Smash" subtitle="Debugging competition - Exam Mode + Manual Finals" />
 
       {error && (
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600">
@@ -248,10 +241,24 @@ export default function BugSmashPage() {
                 <Badge variant={roundState?.round1Status === 'active' ? 'success' : 'warning'}>
                   {roundState?.round1Status || 'waiting'}
                 </Badge>
+                {roundState?.startedAt && roundState.round1Status === 'active' && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    Duration: {roundState.roundDuration}m
+                  </span>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 {roundState?.round1Status !== 'active' ? (
-                  <Button onClick={handleStartRound}>Start Round 1</Button>
+                  <>
+                    <Input
+                      type="number"
+                      className="w-20"
+                      value={roundDuration}
+                      onChange={(e) => setRoundDuration(parseInt(e.target.value) || 30)}
+                      placeholder="Mins"
+                    />
+                    <Button onClick={handleStartRound}>Start Exam</Button>
+                  </>
                 ) : (
                   <Button variant="danger" onClick={handleEndRound}>
                     End Round 1
@@ -290,16 +297,7 @@ export default function BugSmashPage() {
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-600">Time (s):</label>
-              <Input
-                type="number"
-                className="w-20"
-                value={newQuestion.timeLimit}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, timeLimit: parseInt(e.target.value) || 30 })
-                }
-              />
+            <div className="flex justify-end">
               <Button onClick={handleAddQuestion}>Add Question</Button>
             </div>
           </Card>
@@ -309,14 +307,7 @@ export default function BugSmashPage() {
             <h3 className="font-semibold mb-4">Questions ({questions.length})</h3>
             <div className="space-y-2">
               {questions.map((q) => (
-                <div
-                  key={q.id}
-                  className={`p-3 rounded-lg border ${
-                    roundState?.currentQuestionId === q.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200'
-                  }`}
-                >
+                <div key={q.id} className="p-3 rounded-lg border border-gray-200">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{q.questionText}</p>
@@ -332,11 +323,6 @@ export default function BugSmashPage() {
                         ))}
                       </p>
                     </div>
-                    {roundState?.round1Status === 'active' && (
-                      <Button size="sm" onClick={() => handleSetCurrentQuestion(q.id)}>
-                        Show
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}

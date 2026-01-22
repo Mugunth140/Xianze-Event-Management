@@ -3,12 +3,12 @@
 import { getApiUrl } from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
 
-interface CurrentQuestion {
+interface NextQuestion {
   id: number;
   questionText: string;
   options: string[];
-  timeLimit: number;
-  startedAt: string;
+  roundStartedAt: string;
+  roundDuration: number; // minutes
 }
 
 interface Participant {
@@ -21,63 +21,100 @@ interface Participant {
 export default function BugSmashEventPage() {
   const [email, setEmail] = useState('');
   const [participant, setParticipant] = useState<Participant | null>(null);
-
-  const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<NextQuestion | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [lastResult, setLastResult] = useState<{ isCorrect: boolean; score: number } | null>(null);
+
+  // Timer state
   const [timeLeft, setTimeLeft] = useState(0);
+  const [roundEnded, setRoundEnded] = useState(false);
+  const [waitingForRound, setWaitingForRound] = useState(false);
+
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
+  const [loadingQuestion, setLoadingQuestion] = useState(false);
 
-  // Fetch current state
-  const fetchState = useCallback(async () => {
+  // Fetch next question
+  const fetchNextQuestion = useCallback(async () => {
+    if (!participant) return;
+    setLoadingQuestion(true);
+    setSubmitted(false);
+    setSelectedAnswer(null);
+
     try {
-      const questionRes = await fetch(getApiUrl('/bug-smash/current-question'));
-      const questionData = await questionRes.json();
+      const res = await fetch(getApiUrl('/bug-smash/next-question'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId: participant.id }),
+      });
+      const data = await res.json();
 
-      if (questionData.data) {
-        const newQuestion = questionData.data as CurrentQuestion;
+      if (data.data) {
+        setWaitingForRound(false);
+        const question = data.data as NextQuestion;
+        setCurrentQuestion(question);
 
-        // If it's a new question, reset state
-        if (!currentQuestion || currentQuestion.id !== newQuestion.id) {
-          setCurrentQuestion(newQuestion);
-          setSelectedAnswer(null);
-          setSubmitted(false);
-          setLastResult(null);
+        // Calculate global time left
+        const startTime = new Date(question.roundStartedAt).getTime();
+        const durationMs = question.roundDuration * 60 * 1000;
+        const endTime = startTime + durationMs;
+        const remaining = (endTime - Date.now()) / 1000;
 
-          // Calculate time left
-          const startTime = new Date(newQuestion.startedAt).getTime();
-          const elapsed = (Date.now() - startTime) / 1000;
-          setTimeLeft(Math.max(0, newQuestion.timeLimit - elapsed));
+        if (remaining <= 0) {
+          setRoundEnded(true);
+          setCurrentQuestion(null);
+        } else {
+          setTimeLeft(remaining);
         }
-      } else {
+      } else if (data.message === 'Round is not active') {
+        setWaitingForRound(true);
         setCurrentQuestion(null);
+      } else {
+        // No more questions or round ended
+        setCurrentQuestion(null);
+        if (!waitingForRound) {
+          // check if we are just done with questions or round inactive
+          // relying on data.data being null usually means done with ALL questions
+        }
       }
     } catch {
-      // Ignore polling errors
+      // ignore
+    } finally {
+      setLoadingQuestion(false);
     }
-  }, [currentQuestion]);
+  }, [participant, waitingForRound]);
 
-  // Poll for updates
+  // Initial fetch on join
   useEffect(() => {
-    if (!participant) return;
+    if (participant && !currentQuestion && !roundEnded) {
+      fetchNextQuestion();
+    }
+  }, [participant, currentQuestion, roundEnded, fetchNextQuestion]);
 
-    fetchState();
-    const interval = setInterval(fetchState, 2000);
+  // Poll while waiting for round
+  useEffect(() => {
+    if (!waitingForRound) return;
+    const interval = setInterval(fetchNextQuestion, 5000);
     return () => clearInterval(interval);
-  }, [participant, fetchState]);
+  }, [waitingForRound, fetchNextQuestion]);
 
-  // Timer countdown
+  // Global Timer
   useEffect(() => {
-    if (timeLeft <= 0 || submitted) return;
+    if (timeLeft <= 0 || roundEnded) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => Math.max(0, prev - 1));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setRoundEnded(true);
+          setCurrentQuestion(null);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, submitted]);
+  }, [timeLeft, roundEnded]);
 
   const handleJoin = async () => {
     if (!email) {
@@ -89,7 +126,7 @@ export default function BugSmashEventPage() {
     setError('');
 
     try {
-      // Try to get existing registration data
+      // Try to get existing registration
       const regRes = await fetch(getApiUrl(`/register/email/${encodeURIComponent(email)}`));
       let name = email.split('@')[0];
       let phone = '';
@@ -102,7 +139,6 @@ export default function BugSmashEventPage() {
         }
       }
 
-      // Join Bug Smash
       const joinRes = await fetch(getApiUrl('/bug-smash/join'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,6 +161,8 @@ export default function BugSmashEventPage() {
   const handleSubmit = async () => {
     if (selectedAnswer === null || !currentQuestion || !participant) return;
 
+    setSubmitted(true); // optimistically disable
+
     try {
       const res = await fetch(getApiUrl(`/bug-smash/submit/${currentQuestion.id}`), {
         method: 'POST',
@@ -137,25 +175,26 @@ export default function BugSmashEventPage() {
 
       const data = await res.json();
       if (data.success) {
-        setSubmitted(true);
-        setLastResult(data.data);
-        setParticipant((prev) => (prev ? { ...prev, round1Score: data.data.score } : null));
+        // Fetch next Immediately
+        fetchNextQuestion();
       } else {
         setError(data.message || 'Failed to submit');
+        setSubmitted(false);
       }
     } catch {
       setError('Failed to submit answer');
+      setSubmitted(false);
     }
   };
 
-  // Join screen
+  // 1. Join Screen
   if (!participant) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">🐛 Bug Smash</h1>
-            <p className="text-gray-600 mt-2">Debugging Competition</p>
+            <p className="text-gray-600 mt-2">Exam Mode</p>
           </div>
 
           {error && (
@@ -176,7 +215,7 @@ export default function BugSmashEventPage() {
               disabled={joining}
               className="w-full py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50"
             >
-              {joining ? 'Joining...' : 'Join Competition'}
+              {joining ? 'Joining...' : 'Join Exam'}
             </button>
           </div>
         </div>
@@ -184,91 +223,82 @@ export default function BugSmashEventPage() {
     );
   }
 
-  // Waiting screen
-  if (!currentQuestion) {
+  // 2. Waiting for Round Start
+  if (waitingForRound) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
         <div className="text-center text-white">
-          <h1 className="text-3xl font-bold mb-4">Welcome, {participant.name}!</h1>
-          <p className="text-xl text-gray-300 mb-8">Waiting for the round to start...</p>
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/10 rounded-xl">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-            <span>Your Score: {participant.round1Score}</span>
-          </div>
+          <h1 className="text-3xl font-bold mb-4">Welcome, {participant.name}</h1>
+          <p className="text-xl text-gray-300 mb-8 animate-pulse">
+            Waiting for admin to start the round...
+          </p>
         </div>
       </div>
     );
   }
 
-  // Question screen
+  // 3. Round Ended / All Done
+  if (roundEnded || (!currentQuestion && !loadingQuestion)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+        <div className="text-center text-white">
+          <h1 className="text-4xl font-bold mb-6">🎉 Round Completed!</h1>
+          <p className="text-xl text-gray-300">You have finished the exam or time has run out.</p>
+          <p className="mt-4 text-gray-400">Please wait for the results.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Question Interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 text-white">
           <div>
-            <span className="text-gray-400">Score:</span>{' '}
-            <span className="font-bold text-2xl">{participant.round1Score}</span>
+            <span className="text-gray-400">Participant:</span>{' '}
+            <span className="font-bold">{participant.name}</span>
           </div>
           <div
-            className={`text-3xl font-mono font-bold ${
-              timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-white'
-            }`}
+            className={`text-2xl font-mono font-bold ${timeLeft <= 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}
           >
-            {Math.floor(timeLeft)}s
+            ⏱ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
           </div>
         </div>
 
-        {/* Question Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            {currentQuestion.questionText}
-          </h2>
+        {currentQuestion && (
+          <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 break-words">
+              {currentQuestion.questionText}
+            </h2>
 
-          <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => !submitted && setSelectedAnswer(index)}
-                disabled={submitted}
-                className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
-                  submitted
-                    ? lastResult?.isCorrect && selectedAnswer === index
-                      ? 'border-green-500 bg-green-50'
-                      : !lastResult?.isCorrect && selectedAnswer === index
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 opacity-50'
-                    : selectedAnswer === index
-                      ? 'border-primary-500 bg-primary-50'
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => !submitted && setSelectedAnswer(index)}
+                  disabled={submitted}
+                  className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
+                    selectedAnswer === index
+                      ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600'
                       : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <span className="font-medium">{String.fromCharCode(65 + index)}.</span> {option}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Submit or Result */}
-        {!submitted ? (
-          <button
-            onClick={handleSubmit}
-            disabled={selectedAnswer === null || timeLeft <= 0}
-            className="w-full py-4 bg-primary-600 text-white rounded-xl font-bold text-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Submit Answer
-          </button>
-        ) : (
-          <div
-            className={`p-6 rounded-xl text-center ${
-              lastResult?.isCorrect ? 'bg-green-500' : 'bg-red-500'
-            } text-white`}
-          >
-            <div className="text-4xl mb-2">{lastResult?.isCorrect ? '✅' : '❌'}</div>
-            <p className="text-xl font-bold">{lastResult?.isCorrect ? 'Correct!' : 'Wrong!'}</p>
-            <p className="opacity-80">Waiting for next question...</p>
+                  } ${submitted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span className="font-bold mr-2">{String.fromCharCode(65 + index)}.</span>
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={selectedAnswer === null || submitted}
+          className="w-full py-4 bg-primary-600 text-white rounded-xl font-bold text-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {submitted ? 'Saving...' : 'Submit & Next'}
+        </button>
 
         {error && (
           <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-center">{error}</div>

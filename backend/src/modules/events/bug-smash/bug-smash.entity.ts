@@ -147,6 +147,12 @@ export class BugSmashRoundState {
     @Column({ type: 'varchar', length: 20, default: RoundStatus.WAITING })
     round1Status: RoundStatus;
 
+    @Column({ type: 'int', default: 30 })
+    roundDuration: number; // minutes
+
+    @Column({ type: 'datetime', nullable: true })
+    startedAt: Date | null;
+
     @Column({ type: 'int', nullable: true })
     currentQuestionId: number | null;
 

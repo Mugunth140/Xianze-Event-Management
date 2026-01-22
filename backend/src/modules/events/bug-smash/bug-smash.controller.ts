@@ -40,8 +40,8 @@ export class BugSmashController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
     @HttpCode(HttpStatus.OK)
-    async startRound1() {
-        const state = await this.service.startRound1();
+    async startRound1(@Body('duration') duration?: number) {
+        const state = await this.service.startRound1(duration || 30);
         return { success: true, data: state };
     }
 
@@ -51,15 +51,6 @@ export class BugSmashController {
     @HttpCode(HttpStatus.OK)
     async endRound1() {
         const state = await this.service.endRound1();
-        return { success: true, data: state };
-    }
-
-    @Post('round1/question/:id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
-    @HttpCode(HttpStatus.OK)
-    async setCurrentQuestion(@Param('id', ParseIntPipe) id: number) {
-        const state = await this.service.setCurrentQuestion(id);
         return { success: true, data: state };
     }
 
@@ -121,15 +112,6 @@ export class BugSmashController {
         return { success: true, data: participant };
     }
 
-    @Get('participant/:email')
-    async getParticipant(@Param('email') email: string) {
-        const participant = await this.service.getParticipantByEmail(email);
-        if (!participant) {
-            return { success: false, data: null };
-        }
-        return { success: true, data: participant };
-    }
-
     // ========================
     // ANSWER SUBMISSION (Public)
     // ========================
@@ -149,16 +131,25 @@ export class BugSmashController {
     }
 
     // ========================
-    // CURRENT QUESTION (Public) - for participants to see
+    // NEXT QUESTION (Public)
     // ========================
 
-    @Get('current-question')
-    async getCurrentQuestion() {
+    @Post('next-question')
+    async getNextQuestion(@Body('participantId') participantId: number) {
+        if (!participantId) throw new BadRequestException('participantId required');
+
+        // Check round state
         const state = await this.service.getRoundState();
-        if (!state.currentQuestionId) {
-            return { success: true, data: null };
+        if (state.round1Status !== 'active') {
+            return { success: false, message: 'Round is not active', data: null };
         }
-        const question = await this.service.getQuestionById(state.currentQuestionId);
+
+        const question = await this.service.getNextQuestion(participantId);
+
+        if (!question) {
+            return { success: true, data: null }; // No more questions
+        }
+
         // Don't send correctIndex to participants
         return {
             success: true,
@@ -166,8 +157,9 @@ export class BugSmashController {
                 id: question.id,
                 questionText: question.questionText,
                 options: question.options,
-                timeLimit: question.timeLimit,
-                startedAt: state.questionStartedAt,
+                timeLimit: question.timeLimit, // Per question time limit (optional, can be ignored in UI if using global timer)
+                roundStartedAt: state.startedAt,
+                roundDuration: state.roundDuration,
             },
         };
     }
@@ -226,17 +218,5 @@ export class BugSmashController {
     async getStats() {
         const stats = await this.service.getStats();
         return { success: true, data: stats };
-    }
-
-    // ========================
-    // ALL PARTICIPANTS (Coordinator)
-    // ========================
-
-    @Get('participants')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.COORDINATOR, UserRole.MEMBER)
-    async getAllParticipants() {
-        const participants = await this.service.getAllParticipants();
-        return { success: true, data: participants };
     }
 }
