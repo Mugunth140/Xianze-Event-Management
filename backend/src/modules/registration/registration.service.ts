@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
+import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { PaymentStatus, Registration } from './registration.entity';
 import { generatePassId, hashEmailForQR } from './utils/hash.util';
 
@@ -96,6 +97,40 @@ export class RegistrationService {
       where: { email },
     });
     return count > 0;
+  }
+
+  // ==========================================
+  // Admin CRUD Methods
+  // ==========================================
+
+  /**
+   * Update a registration (admin only)
+   */
+  async update(id: number, dto: UpdateRegistrationDto): Promise<Registration> {
+    const registration = await this.findOne(id);
+
+    // If email is being changed, check for duplicates
+    if (dto.email && dto.email !== registration.email) {
+      const emailExists = await this.existsByEmail(dto.email);
+      if (emailExists) {
+        throw new ConflictException('Email already registered');
+      }
+    }
+
+    // Update fields
+    Object.assign(registration, dto);
+
+    this.logger.log(`Registration ${id} updated`);
+    return this.registrationRepository.save(registration);
+  }
+
+  /**
+   * Delete a registration (admin only)
+   */
+  async delete(id: number): Promise<void> {
+    const registration = await this.findOne(id);
+    await this.registrationRepository.remove(registration);
+    this.logger.log(`Registration ${id} deleted`);
   }
 
   // ==========================================

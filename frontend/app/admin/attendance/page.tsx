@@ -212,10 +212,11 @@ export default function AttendancePage() {
         {/* Check-in result feedback */}
         {checkInResult && (
           <div
-            className={`mb-4 p-4 rounded-xl ${checkInResult.success
+            className={`mb-4 p-4 rounded-xl ${
+              checkInResult.success
                 ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
                 : 'bg-red-50 border border-red-200 text-red-700'
-              }`}
+            }`}
           >
             <div className="flex items-center gap-3">
               {checkInResult.success ? (
