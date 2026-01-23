@@ -10,6 +10,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BugSmashModule } from './modules/events/bug-smash/bug-smash.module';
+import { CtrlQuizModule } from './modules/events/ctrl-quiz/ctrl-quiz.module';
 import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
 import { ThinkLinkModule } from './modules/events/think-link/think-link.module';
 import { RegistrationModule } from './modules/registration/registration.module';
@@ -58,6 +59,7 @@ import { UsersModule } from './modules/users/users.module';
     PaperPresentationModule,
     ThinkLinkModule,
     BugSmashModule,
+    CtrlQuizModule,
   ],
   controllers: [AppController],
   providers: [
