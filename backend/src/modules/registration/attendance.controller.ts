@@ -27,7 +27,7 @@ interface AuthRequest {
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, TasksGuard)
 export class AttendanceController {
-  constructor(private readonly registrationService: RegistrationService) { }
+  constructor(private readonly registrationService: RegistrationService) {}
 
   /**
    * Validate a participant for check-in (QR scan)

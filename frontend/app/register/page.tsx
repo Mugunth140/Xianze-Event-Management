@@ -1,6 +1,5 @@
 'use client';
 
-import PaymentModal from '@/components/PaymentModal';
 import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import {
   sanitizeInput,
@@ -101,8 +100,9 @@ const CustomDropdown = ({ label, options, selected, setSelected, placeholder }: 
 const submitDebounce = createSubmitDebounce(3000);
 
 const Register = () => {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAlternativeQR, setShowAlternativeQR] = useState(false);
+  const [showQRMobile, setShowQRMobile] = useState(false);
+  const [copiedMobile, setCopiedMobile] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -498,17 +498,31 @@ const Register = () => {
     } else if (!/^\d{12}$/.test(formData.transactionId)) {
       errors.transactionId = 'Transaction ID must contain only digits';
     }
+
+    // Track screenshot error separately (not part of FormData type)
+    let screenshotError = '';
     if (!screenshot) {
-      setErrorMessage('Payment screenshot is required');
-      setLoading(false);
-      return;
+      screenshotError = 'Payment screenshot is required';
     }
 
     // Check if there are validation errors
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0 || screenshotError) {
       setFieldErrors(errors);
       setSubmitStatus('error');
-      setErrorMessage('Please fix the errors above.');
+      // Build a descriptive error message listing all issues
+      const errorMessages: string[] = [];
+      if (errors.name) errorMessages.push(`Name: ${errors.name}`);
+      if (errors.email) errorMessages.push(`Email: ${errors.email}`);
+      if (errors.contact) errorMessages.push(`Contact: ${errors.contact}`);
+      if (errors.college) errorMessages.push(`College: ${errors.college}`);
+      if (errors.course) errorMessages.push(`Course: ${errors.course}`);
+      if (errors.otherCourse) errorMessages.push(`Course Name: ${errors.otherCourse}`);
+      if (errors.branch) errorMessages.push(`Branch: ${errors.branch}`);
+      if (errors.otherBranch) errorMessages.push(`Branch Name: ${errors.otherBranch}`);
+      if (errors.event) errorMessages.push(`Event: ${errors.event}`);
+      if (errors.transactionId) errorMessages.push(`Transaction ID: ${errors.transactionId}`);
+      if (screenshotError) errorMessages.push(`Screenshot: ${screenshotError}`);
+      setErrorMessage(screenshotError || errorMessages.join(' | '));
       setLoading(false);
       return;
     }
@@ -1050,23 +1064,133 @@ const Register = () => {
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-6 items-center">
-                      {/* Mobile Button - More Prominent */}
-                      <button
-                        type="button"
-                        onClick={() => setShowPaymentModal(true)}
-                        className="md:hidden w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-5 px-6 rounded-2xl font-bold text-lg shadow-xl shadow-primary-400/30 active:scale-95 transition-all hover:shadow-2xl hover:shadow-primary-400/40 border border-primary-500"
-                      >
-                        ₹ Pay with UPI
-                      </button>
+                      {/* Mobile Payment Section - Inline */}
+                      <div className="lg:hidden w-full">
+                        <div
+                          className={`rounded-2xl border shadow-sm p-5 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
+                        >
+                          {/* Toggle between UPI ID and QR */}
+                          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+                            <button
+                              type="button"
+                              onClick={() => setShowQRMobile(false)}
+                              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
+                                !showQRMobile
+                                  ? 'bg-white text-primary-700 shadow-sm'
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              UPI ID
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowQRMobile(true)}
+                              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
+                                showQRMobile
+                                  ? 'bg-white text-primary-700 shadow-sm'
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              QR Code
+                            </button>
+                          </div>
 
-                      <PaymentModal
-                        isOpen={showPaymentModal}
-                        onClose={() => setShowPaymentModal(false)}
-                        upiId1={upiId1}
-                        upiId2={upiId2}
-                        amount="100"
-                        name="Xianze2K26"
-                      />
+                          {/* QR Code View */}
+                          {showQRMobile && (
+                            <div className="flex flex-col items-center mb-4">
+                              <div
+                                className={`relative w-44 h-44 bg-white p-2 rounded-2xl shadow-md border mb-3 ${
+                                  showAlternativeQR ? 'border-amber-200' : 'border-gray-200'
+                                }`}
+                              >
+                                <NextImage
+                                  src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
+                                  alt="Scan to Pay"
+                                  fill
+                                  className="object-contain rounded-xl"
+                                />
+                              </div>
+                              <div
+                                className={`px-3 py-1.5 rounded-full border ${
+                                  showAlternativeQR
+                                    ? 'bg-amber-100 border-amber-200'
+                                    : 'bg-primary-50 border-primary-100'
+                                }`}
+                              >
+                                <p
+                                  className={`text-xs font-bold uppercase tracking-widest ${
+                                    showAlternativeQR ? 'text-amber-800' : 'text-primary-700'
+                                  }`}
+                                >
+                                  Scan with any UPI App
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* UPI ID View */}
+                          {!showQRMobile && (
+                            <div className="mb-4">
+                              <p className="text-xs text-gray-500 font-medium mb-2 text-center">
+                                Copy and pay via any UPI app
+                              </p>
+                              <div className="flex flex-col gap-2">
+                                <code
+                                  className={`w-full px-3 py-3 rounded-xl text-xs font-mono border text-center break-all ${
+                                    showAlternativeQR
+                                      ? 'bg-amber-100 border-amber-200 text-amber-900'
+                                      : 'bg-gray-100 border-gray-200 text-gray-700'
+                                  }`}
+                                >
+                                  {showAlternativeQR ? upiId2 : upiId1}
+                                </code>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(
+                                      showAlternativeQR ? upiId2 : upiId1
+                                    );
+                                    setCopiedMobile(true);
+                                    setTimeout(() => setCopiedMobile(false), 2000);
+                                  }}
+                                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                    copiedMobile
+                                      ? 'bg-green-500 text-white'
+                                      : showAlternativeQR
+                                        ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                                  }`}
+                                >
+                                  {copiedMobile ? 'Copied!' : 'Copy UPI ID'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Alternative UPI Toggle */}
+                          <button
+                            type="button"
+                            onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                            className={`w-full p-3 rounded-xl transition-all active:scale-95 ${
+                              showAlternativeQR
+                                ? 'bg-amber-100 hover:bg-amber-200 border-2 border-amber-300'
+                                : 'bg-orange-50 hover:bg-orange-100 border-2 border-orange-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              <p
+                                className={`text-sm font-bold ${
+                                  showAlternativeQR ? 'text-amber-900' : 'text-orange-900'
+                                }`}
+                              >
+                                {showAlternativeQR
+                                  ? 'Back to Primary UPI'
+                                  : 'Payment Failing? Try Alternative'}
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
 
                       {/* Desktop QR - Clean Centered Layout */}
                       <div className="hidden lg:block w-full">
@@ -1144,7 +1268,6 @@ const Register = () => {
                                     : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
                                 }`}
                               >
-                                <span className="text-xl">{showAlternativeQR ? '↺' : '⚠️'}</span>
                                 {showAlternativeQR
                                   ? 'Back to Primary UPI'
                                   : 'Payment Failing? Try Alternative'}
@@ -1152,10 +1275,6 @@ const Register = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="lg:hidden text-sm text-gray-600 text-center">
-                        <p>Pay via button above, then enter details below.</p>
                       </div>
                     </div>
                   </div>
@@ -1285,45 +1404,77 @@ const Register = () => {
               </button>
 
               {/* Error Banner - Below Submit Button */}
-              {submitStatus === 'error' && errorMessage && (
-                <div className="rounded-2xl bg-red-50 border border-red-200 p-4 mt-4 flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-red-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
+              {submitStatus === 'error' &&
+                (errorMessage || Object.keys(fieldErrors).length > 0) && (
+                  <div className="rounded-2xl bg-red-50 border border-red-200 p-4 mt-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg
+                          className="w-5 h-5 text-red-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-red-800 mb-1">
+                          {Object.keys(fieldErrors).length > 0
+                            ? 'Please complete the required fields'
+                            : 'Registration Failed'}
+                        </h4>
+                        {/* Show field-specific errors as a list */}
+                        {Object.keys(fieldErrors).length > 0 ? (
+                          <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                            {fieldErrors.name && <li>{fieldErrors.name}</li>}
+                            {fieldErrors.email && <li>{fieldErrors.email}</li>}
+                            {fieldErrors.contact && <li>{fieldErrors.contact}</li>}
+                            {fieldErrors.college && <li>{fieldErrors.college}</li>}
+                            {fieldErrors.course && <li>{fieldErrors.course}</li>}
+                            {fieldErrors.otherCourse && <li>{fieldErrors.otherCourse}</li>}
+                            {fieldErrors.branch && <li>{fieldErrors.branch}</li>}
+                            {fieldErrors.otherBranch && <li>{fieldErrors.otherBranch}</li>}
+                            {fieldErrors.event && <li>{fieldErrors.event}</li>}
+                            {fieldErrors.transactionId && <li>{fieldErrors.transactionId}</li>}
+                            {errorMessage && errorMessage.includes('screenshot') && (
+                              <li>{errorMessage}</li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-red-700">{errorMessage}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSubmitStatus('idle');
+                          setErrorMessage('');
+                          setFieldErrors({});
+                        }}
+                        className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-red-800 mb-1">Registration Failed</h4>
-                    <p className="text-sm text-red-700">{errorMessage}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSubmitStatus('idle');
-                      setErrorMessage('');
-                    }}
-                    className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              )}
+                )}
             </form>
           )}
         </div>

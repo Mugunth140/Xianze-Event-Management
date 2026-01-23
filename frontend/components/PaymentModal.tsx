@@ -19,6 +19,8 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
   const overlayRef = useRef<HTMLDivElement>(null);
   const [useAlternative, setUseAlternative] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -61,6 +63,13 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
 
   const currentUpiId = useAlternative ? upiId2 : upiId1;
   const note = 'Xianze 2K26 Registration';
+
+  // Copy UPI ID to clipboard
+  const handleCopyUpiId = () => {
+    navigator.clipboard.writeText(currentUpiId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Standard UPI URL format (works as fallback)
   const upiUrl = `upi://pay?pa=${encodeURIComponent(currentUpiId)}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
@@ -159,45 +168,124 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
           style={{ maxHeight: 'calc(80vh - 120px)' }}
         >
           <div className="text-center mb-3">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Select Payment App</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+              {showQR ? 'Scan QR Code' : 'Pay via UPI'}
+            </h3>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-full text-primary-700 font-medium text-xs sm:text-sm">
               <span>₹{amount} per head</span>
             </div>
           </div>
 
-          {/* Selected UPI Info */}
-          <div className="text-center mb-3">
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">
-              Paying To
-            </p>
-            <p className="font-mono text-xs sm:text-sm text-gray-600 bg-gray-50 inline-block px-3 py-1 rounded-lg border border-gray-100 break-all">
-              {currentUpiId}
-            </p>
+          {/* Toggle between UPI Apps and QR */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+            <button
+              type="button"
+              onClick={() => setShowQR(false)}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                !showQR
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📱 UPI Apps
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQR(true)}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                showQR ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📷 QR Code
+            </button>
           </div>
 
-          {/* Apps Grid - Clean and Minimal */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {apps.map((app) => (
-              <a
-                key={app.name}
-                href={getAppLink(app.name)}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all active:scale-95 ${app.bg} ${app.border} shadow-sm group`}
+          {/* UPI ID Display with Copy Button */}
+          <div className="mb-4">
+            <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2 text-center">
+              UPI ID
+            </p>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-2 border border-gray-200">
+              <code className="flex-1 text-xs sm:text-sm font-mono text-gray-700 px-2 break-all">
+                {currentUpiId}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopyUpiId}
+                className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${
+                  copied
+                    ? 'bg-green-500 text-white'
+                    : useAlternative
+                      ? 'bg-amber-500 text-white hover:bg-amber-600'
+                      : 'bg-primary-500 text-white hover:bg-primary-600'
+                }`}
               >
-                <div className="mb-2 transform transition-transform group-hover:scale-110">
-                  {app.image ? (
-                    <div className="relative w-10 h-10 sm:w-12 sm:h-12">
-                      <Image src={app.image} alt={app.name} fill className="object-contain" />
-                    </div>
-                  ) : (
-                    app.icon
-                  )}
-                </div>
-                <span className={`text-xs sm:text-sm font-semibold text-center ${app.text}`}>
-                  {app.name}
-                </span>
-              </a>
-            ))}
+                {copied ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
           </div>
+
+          {/* QR Code View */}
+          {showQR && (
+            <div className="flex flex-col items-center mb-4">
+              <div
+                className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-3 ${
+                  useAlternative ? 'border-amber-200' : 'border-gray-200'
+                }`}
+              >
+                <Image
+                  src={useAlternative ? '/qr2.png' : '/upi_qr.jpeg'}
+                  alt="Scan to Pay"
+                  fill
+                  className="object-contain rounded-xl"
+                />
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full border ${
+                  useAlternative
+                    ? 'bg-amber-100 border-amber-200'
+                    : 'bg-primary-50 border-primary-100'
+                }`}
+              >
+                <p
+                  className={`text-xs font-bold uppercase tracking-widest ${
+                    useAlternative ? 'text-amber-800' : 'text-primary-700'
+                  }`}
+                >
+                  Scan with any UPI App
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* UPI Apps View */}
+          {!showQR && (
+            <>
+              {/* Apps Grid - Clean and Minimal */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {apps.map((app) => (
+                  <a
+                    key={app.name}
+                    href={getAppLink(app.name)}
+                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all active:scale-95 ${app.bg} ${app.border} shadow-sm group`}
+                  >
+                    <div className="mb-2 transform transition-transform group-hover:scale-110">
+                      {app.image ? (
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12">
+                          <Image src={app.image} alt={app.name} fill className="object-contain" />
+                        </div>
+                      ) : (
+                        app.icon
+                      )}
+                    </div>
+                    <span className={`text-xs sm:text-sm font-semibold text-center ${app.text}`}>
+                      {app.name}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Alternative Toggle - Prominent Button */}
           <div className="border-t border-gray-100 pt-3 pb-2">

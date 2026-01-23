@@ -1,23 +1,23 @@
 import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  NotFoundException,
-  Param,
-  ParseFilePipe,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    BadRequestException,
+    Body,
+    ConflictException,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    NotFoundException,
+    Param,
+    ParseFilePipe,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Res,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
@@ -62,7 +62,7 @@ export class RegistrationController {
   constructor(
     private readonly registrationService: RegistrationService,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   /**
    * POST /api/register
@@ -220,18 +220,9 @@ export class RegistrationController {
     if (!registration) throw new NotFoundException('Registration not found');
     if (!registration.screenshotPath) throw new NotFoundException('No screenshot available');
 
-    // Remove leading slash if present
-    const cleanPath = registration.screenshotPath.startsWith('/')
-      ? registration.screenshotPath.substring(1)
-      : registration.screenshotPath;
-
     // Full path: /data/transactions/filename
     // registration.screenshotPath is stored as '/transactions/filename'
-    // So we need to join '/data' with the path
-    // Actually, registration.controller.ts line 79 stores it in '/data/transactions'
-    // And line 141 saves it as `/transactions/${file.filename}`
-    // so we need to map /transactions/ -> /data/transactions/
-
+    // So we need to map /transactions/ -> /data/transactions/
     const filename = basename(registration.screenshotPath);
     const filePath = join('/data/transactions', filename);
 
