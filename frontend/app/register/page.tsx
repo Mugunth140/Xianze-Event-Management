@@ -680,10 +680,25 @@ const Register = () => {
             !
           </h1>
 
-          <p className="text-lg text-gray-600 max-w-lg mx-auto">
-            Secure your spot at the ultimate inter-collegiate tech symposium. Fill out the form
-            below to get started!
-          </p>
+          <div className="bg-white/60 backdrop-blur-sm border border-primary-100 p-4 rounded-2xl max-w-2xl mx-auto mb-6 shadow-sm">
+            <p className="text-base sm:text-lg text-gray-700 font-medium leading-relaxed flex items-center gap-3 justify-center text-left sm:text-center">
+              <span className="text-2xl flex-shrink-0">👥</span>
+              <span>
+                Please ensure that all team members complete individual registration beforehand and
+                collaborate with your team upon arrival.
+              </span>
+            </p>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border-2 border-green-100 shadow-lg shadow-green-100/50 transform hover:scale-105 transition-all duration-300">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span className="font-bold text-green-700 tracking-wide text-sm sm:text-base">
+              On-Spot Registration Available ✨
+            </span>
+          </div>
         </div>
 
         <div className="max-w-xl mx-auto space-y-8 relative z-10">

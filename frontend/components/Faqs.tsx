@@ -48,7 +48,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Will I get a certificate?',
     answer:
-      'Yes! All participants will receive certificates, and winners will get special recognition and prizes. Proof of your awesomeness! 📜',
+      'Yes! All participants will receive e-certificates, and winners will get special recognition and prizes. Proof of your awesomeness! 📜',
     emoji: '🎖️',
   },
 ];

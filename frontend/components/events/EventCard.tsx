@@ -144,6 +144,29 @@ export default function EventCard({ event, index }: EventCardProps) {
             </div>
           </div>
 
+          {/* Themes */}
+          {event.themes && event.themes.length > 0 && (
+            <div className="mb-8 p-6 rounded-3xl bg-white border border-gray-100 shadow-sm">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                <span className={`w-2 h-2 rounded-full ${event.color}`} />
+                Themes
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {event.themes.map((theme, idx) => (
+                  <span
+                    key={idx}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium ${event.bgColor} ${event.color.replace(
+                      'bg-',
+                      'text-'
+                    )} border border-transparent`}
+                  >
+                    {theme}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           {event.notes.length > 0 && (
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-100/50 flex items-start gap-3">

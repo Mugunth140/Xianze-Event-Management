@@ -8,6 +8,7 @@ export interface Event {
   rules: string[];
   instructions: string[];
   notes: string[];
+  themes?: string[];
 }
 
 export const events: Event[] = [
@@ -22,14 +23,13 @@ export const events: Event[] = [
       'Team can consist of 2-4 members',
       'Prototypes must be completed within 2-hour time limit',
       'No pre-existing prototypes or modules',
-      'AI tools are allowed',
     ],
     instructions: [
       'Praticipants have to build a prototype using the provided APIs',
       'Judging based on creativity and implementation',
       'Present your solution at the end',
     ],
-    notes: ['Participants should bring their own laptop'],
+    notes: ['Bring your own laptop; Wi-Fi will not be provided.'],
   },
   {
     id: 2,
@@ -38,9 +38,9 @@ export const events: Event[] = [
     image: '/event-debugging.svg',
     color: 'bg-yellow-500',
     bgColor: 'bg-yellow-50',
-    rules: ['Team consists of 2 members', 'No smart devices allowed', 'C/C++/Java/Python only'],
+    rules: ['Team consists of 2 members', 'No smart devices allowed', 'C/C++/Java/Python/JS only'],
     instructions: [
-      'Two elimination rounds',
+      'One elimination round',
       'Time-bound challenges',
       'Find and fix bugs in given code snippets',
     ],
@@ -63,7 +63,21 @@ export const events: Event[] = [
       '5-8 minute time limit per presentation',
       'Q&A session after each presentation',
     ],
-    notes: ['Themes: AI, ML, Data Science, Blockchain, Network Security, IoT, NLP'],
+    themes: [
+      'Machine Learning',
+      'Deep Learning',
+      'Data Science',
+      'Block chain technology',
+      'Cryptography & Cyber security',
+      'Cloud computing',
+      'Soft computing',
+      'Automation and Robotics',
+      'Network Security',
+      'Computer vision',
+      'IOT',
+      'Natural Language processing',
+    ],
+    notes: [],
   },
   {
     id: 4,
@@ -97,7 +111,7 @@ export const events: Event[] = [
       'Fun-filled SQL challenges',
       'Logical problem solving required',
     ],
-    notes: ['Participants should bring their own laptop'],
+    notes: [],
   },
   {
     id: 6,
@@ -111,11 +125,7 @@ export const events: Event[] = [
       'Players are expected to play fairly',
       "Judges' decisions are final",
     ],
-    instructions: [
-      '45-minute time limit for Round 1',
-      'Top scorers advance to Round 2',
-      '3 questions per presentation slide',
-    ],
+    instructions: ['30-minute time limit for Round 1', 'Top scorers advance to Round 2'],
     notes: ['No external resources allowed'],
   },
   {
