@@ -1050,14 +1050,13 @@ const Register = () => {
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-6 items-center">
-                      {/* Mobile Button 1*/}
-                      {/* Mobile Payment Options - Opens Modal */}
+                      {/* Mobile Button - More Prominent */}
                       <button
                         type="button"
                         onClick={() => setShowPaymentModal(true)}
-                        className="md:hidden w-full bg-black text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-xl shadow-gray-200 active:scale-95 transition-transform"
+                        className="md:hidden w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-5 px-6 rounded-2xl font-bold text-lg shadow-xl shadow-primary-400/30 active:scale-95 transition-all hover:shadow-2xl hover:shadow-primary-400/40 border border-primary-500"
                       >
-                        Pay with UPI
+                        ₹ Pay with UPI
                       </button>
 
                       <PaymentModal
@@ -1135,21 +1134,21 @@ const Register = () => {
                                 </div>
                               </div>
 
-                              {/* Toggle Button */}
-                              <div className="flex justify-center border border-amber-200 p-2 rounded-xl bg-amber-50">
-                                <button
-                                  type="button"
-                                  onClick={() => setShowAlternativeQR(!showAlternativeQR)}
-                                  className="text-sm font-medium text-amber-700 hover:text-amber-800 flex items-center justify-center gap-2 group transition-colors"
-                                >
-                                  <span className="bg-amber-100 p-1.5 rounded-lg group-hover:bg-amber-200 transition-colors">
-                                    {showAlternativeQR ? '↺' : '⚠️'}
-                                  </span>
-                                  {showAlternativeQR
-                                    ? 'Go back to Primary UPI ID'
-                                    : 'Payment Failing? Try Alternative ID'}
-                                </button>
-                              </div>
+                              {/* Toggle Button - Made More Prominent */}
+                              <button
+                                type="button"
+                                onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                                className={`w-full py-4 px-6 rounded-xl font-bold text-base transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
+                                  showAlternativeQR
+                                    ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200'
+                                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
+                                }`}
+                              >
+                                <span className="text-xl">{showAlternativeQR ? '↺' : '⚠️'}</span>
+                                {showAlternativeQR
+                                  ? 'Back to Primary UPI'
+                                  : 'Payment Failing? Try Alternative'}
+                              </button>
                             </div>
                           </div>
                         </div>

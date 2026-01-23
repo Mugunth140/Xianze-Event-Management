@@ -124,96 +124,101 @@ const PaymentModal = ({ isOpen, onClose, upiId1, upiId2, amount, name }: Payment
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center pointer-events-none sm:items-center">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pointer-events-none p-4 sm:p-0">
       {/* Overlay - Light/Transparent */}
       <div
         ref={overlayRef}
         onClick={handleClose}
-        className="absolute inset-0 bg-white/80 backdrop-blur-sm pointer-events-auto transition-opacity"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity"
       />
 
-      {/* Modal - Modern Card Design */}
+      {/* Modal - Modern Card Design - Fixed Sizing */}
       <div
         ref={modalRef}
-        className="relative w-full sm:max-w-sm max-h-[85dvh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] p-6 pb-10 shadow-2xl pointer-events-auto transform transition-transform border border-gray-200"
+        className="relative w-full sm:max-w-sm max-h-[85vh] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl pointer-events-auto transform transition-transform border border-gray-200 flex flex-col"
       >
         {/* Handle for mobile feel */}
-        <div className="sticky top-0 w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+        <div className="flex-shrink-0 w-12 h-1.5 bg-gray-200 rounded-full mx-auto pt-4 pb-2" />
 
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Select Payment App</h3>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-full text-primary-700 font-medium text-sm">
-            <span>₹{amount} per head</span>
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 pb-4">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Select Payment App</h3>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 rounded-full text-primary-700 font-medium text-sm">
+              <span>₹{amount} per head</span>
+            </div>
           </div>
-        </div>
 
-        {/* Selected UPI Info */}
-        <div className="text-center mb-6">
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">
-            Paying To
-          </p>
-          <p className="font-mono text-sm text-gray-600 bg-gray-50 inline-block px-3 py-1 rounded-lg border border-gray-100">
-            {currentUpiId}
-          </p>
-        </div>
+          {/* Selected UPI Info */}
+          <div className="text-center mb-6">
+            <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">
+              Paying To
+            </p>
+            <p className="font-mono text-sm text-gray-600 bg-gray-50 inline-block px-3 py-1 rounded-lg border border-gray-100">
+              {currentUpiId}
+            </p>
+          </div>
 
-        {/* Apps Grid - Clean and Minimal */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {apps.map((app) => (
-            <a
-              key={app.name}
-              href={getAppLink(app.name)}
-              className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all active:scale-95 ${app.bg} ${app.border} shadow-sm group`}
-            >
-              <div className="mb-3 transform transition-transform group-hover:scale-110">
-                {app.image ? (
-                  <div className="relative w-12 h-12">
-                    <Image src={app.image} alt={app.name} fill className="object-contain" />
-                  </div>
-                ) : (
-                  app.icon
-                )}
-              </div>
-              <span className={`text-sm font-semibold ${app.text}`}>{app.name}</span>
-            </a>
-          ))}
-        </div>
-
-        {/* Alternative Toggle - Clean Bottom Bar */}
-        <div
-          onClick={() => setUseAlternative(!useAlternative)}
-          className="border-t border-gray-100 pt-4 pb-4 cursor-pointer group"
-        >
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  useAlternative
-                    ? 'bg-amber-100 text-amber-600'
-                    : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
-                }`}
+          {/* Apps Grid - Clean and Minimal */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {apps.map((app) => (
+              <a
+                key={app.name}
+                href={getAppLink(app.name)}
+                className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all active:scale-95 ${app.bg} ${app.border} shadow-sm group`}
               >
-                {useAlternative ? '✓' : '⚡'}
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-gray-900">
-                  {useAlternative ? 'Using Alternative UPI' : 'Payment Failing?'}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {useAlternative ? 'Tap to switch back' : 'Tap to try alternative ID'}
-                </p>
+                <div className="mb-3 transform transition-transform group-hover:scale-110">
+                  {app.image ? (
+                    <div className="relative w-12 h-12">
+                      <Image src={app.image} alt={app.name} fill className="object-contain" />
+                    </div>
+                  ) : (
+                    app.icon
+                  )}
+                </div>
+                <span className={`text-sm font-semibold ${app.text}`}>{app.name}</span>
+              </a>
+            ))}
+          </div>
+
+          {/* Alternative Toggle - Clean Bottom Bar */}
+          <div
+            onClick={() => setUseAlternative(!useAlternative)}
+            className="border-t border-gray-100 pt-4 cursor-pointer group"
+          >
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                    useAlternative
+                      ? 'bg-amber-100 text-amber-600'
+                      : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                  }`}
+                >
+                  {useAlternative ? '✓' : '⚡'}
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {useAlternative ? 'Using Alternative UPI' : 'Payment Failing?'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {useAlternative ? 'Tap to switch back' : 'Tap to try alternative ID'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Explicit Cancel Button */}
-        <button
-          onClick={handleClose}
-          className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 active:scale-95 transition-all mb-8"
-        >
-          Cancel
-        </button>
+        {/* Fixed Bottom - Explicit Cancel Button */}
+        <div className="flex-shrink-0 border-t border-gray-100 px-6 py-4 bg-white rounded-b-3xl sm:rounded-b-2xl">
+          <button
+            onClick={handleClose}
+            className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 active:scale-95 transition-all"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
