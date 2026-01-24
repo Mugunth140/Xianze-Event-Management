@@ -123,25 +123,27 @@ export default function EventCard({ event, index }: EventCardProps) {
             </div>
 
             {/* Instructions */}
-            <div className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm">
-              <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                <span className={`w-2 h-2 rounded-full ${event.color}`} />
-                Instructions
-              </h3>
-              <ul className="space-y-3">
-                {event.instructions.map((inst, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-3 text-sm text-gray-600 leading-relaxed"
-                  >
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px] font-bold">
-                      {idx + 1}
-                    </span>
-                    <span>{inst}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {event.instructions.length > 0 && (
+              <div className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                  <span className={`w-2 h-2 rounded-full ${event.color}`} />
+                  Instructions
+                </h3>
+                <ul className="space-y-3">
+                  {event.instructions.map((inst, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-3 text-sm text-gray-600 leading-relaxed"
+                    >
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px] font-bold">
+                        {idx + 1}
+                      </span>
+                      <span>{inst}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Themes */}
@@ -169,9 +171,13 @@ export default function EventCard({ event, index }: EventCardProps) {
 
           {/* Notes */}
           {event.notes.length > 0 && (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-100/50 flex items-start gap-3">
+            <div
+              className={`p-4 rounded-xl bg-${event.noteTheme || 'amber'}-50 border border-${
+                event.noteTheme || 'amber'
+              }-100/50 flex items-start gap-3`}
+            >
               <svg
-                className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                className={`w-5 h-5 text-${event.noteTheme || 'amber'}-500 flex-shrink-0 mt-0.5`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -183,7 +189,7 @@ export default function EventCard({ event, index }: EventCardProps) {
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="text-sm text-amber-900">
+              <p className={`text-sm text-${event.noteTheme || 'amber'}-900`}>
                 <span className="font-bold">Note: </span>
                 {event.notes.join('. ')}
               </p>

@@ -20,9 +20,9 @@ interface Coordinator {
 
 const coordinators: Coordinator[] = [
   { name: 'Sri Rajakavika', phone: '8072390391', role: 'Student Coordinator' },
-  { name: 'Karthick Raja', phone: '9944910261', role: 'Student Coordinator' },
+  { name: 'Karthikraja S', phone: '9944910261', role: 'Student Coordinator' },
   { name: 'Sowdhanya Laxna', phone: '9361077188', role: 'Student Coordinator' },
-  { name: 'Saran', phone: '9025744404', role: 'Student Coordinator' },
+  { name: 'Sharan M', phone: '9025744404', role: 'Student Coordinator' },
   { name: 'Kaviyadharshini', phone: '8438437557', role: 'Student Coordinator' },
 ];
 

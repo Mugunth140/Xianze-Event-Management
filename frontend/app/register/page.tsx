@@ -1,5 +1,6 @@
 'use client';
 
+import { events } from '@/data/events';
 import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
 import {
   sanitizeInput,
@@ -662,13 +663,7 @@ const Register = () => {
       <div className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div ref={headerRef} className="text-center mb-12">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
-            <span className="text-2xl">🚀</span>
-            <span className="text-sm font-semibold text-primary-700 uppercase tracking-wider">
-              Join Xianze 2K26
-            </span>
-          </div>
+          {/* Badge Removed */}
 
           {/* Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-gray-900 mb-4">
@@ -682,7 +677,6 @@ const Register = () => {
 
           <div className="bg-white/60 backdrop-blur-sm border border-primary-100 p-4 rounded-2xl max-w-2xl mx-auto mb-6 shadow-sm">
             <p className="text-base sm:text-lg text-gray-700 font-medium leading-relaxed flex items-center gap-3 justify-center text-left sm:text-center">
-              <span className="text-2xl flex-shrink-0">👥</span>
               <span>
                 Please ensure that all team members complete individual registration beforehand and
                 collaborate with your team upon arrival.
@@ -690,13 +684,18 @@ const Register = () => {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border-2 border-green-100 shadow-lg shadow-green-100/50 transform hover:scale-105 transition-all duration-300">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-            <span className="font-bold text-green-700 tracking-wide text-sm sm:text-base">
-              On-Spot Registration Available ✨
+          <div className="flex flex-col items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border-2 border-green-100 shadow-lg shadow-green-100/50 transform hover:scale-105 transition-all duration-300">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              <span className="font-bold text-green-700 tracking-wide text-sm sm:text-base">
+                On-Spot Registration also Available
+              </span>
+            </div>
+            <span className="text-xs text-gray-500 font-medium bg-white/50 px-3 py-1 rounded-full border border-gray-100">
+              🍱 Food will be provided
             </span>
           </div>
         </div>
@@ -1010,52 +1009,71 @@ const Register = () => {
                     Choose an Event
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {eventsList.map((event) => (
-                      <div
-                        key={event}
-                        onClick={() =>
-                          handleChange({
-                            target: { name: 'event', value: event },
-                          } as unknown as React.ChangeEvent<HTMLInputElement>)
-                        }
-                        className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
-                          formData.event === event
-                            ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
-                            : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`font-medium ${formData.event === event ? 'text-primary-700' : 'text-gray-700'}`}
-                          >
-                            {event}
-                          </span>
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              formData.event === event
-                                ? 'border-primary-500 bg-primary-500'
-                                : 'border-gray-300'
-                            }`}
-                          >
-                            {formData.event === event && (
-                              <svg
-                                className="w-4 h-4 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            )}
+                    {eventsList.map((event) => {
+                      const eventData =
+                        events.find((e) => e.name === event) ||
+                        events.find(
+                          (e) =>
+                            e.name.replace(/\s+/g, '').toLowerCase() ===
+                            event.replace(/\s+/g, '').toLowerCase()
+                        );
+
+                      return (
+                        <div
+                          key={event}
+                          onClick={() =>
+                            handleChange({
+                              target: { name: 'event', value: event },
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
+                          }
+                          className={`relative group cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
+                            formData.event === event
+                              ? 'bg-primary-50 border-primary-500 shadow-md transform scale-[1.02]'
+                              : 'bg-white border-gray-100 hover:border-primary-200 hover:shadow-lg'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`font-medium ${
+                                formData.event === event ? 'text-primary-700' : 'text-gray-700'
+                              }`}
+                            >
+                              {event}
+                            </span>
+                            <div
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                formData.event === event
+                                  ? 'border-primary-500 bg-primary-500'
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                              {formData.event === event && (
+                                <svg
+                                  className="w-4 h-4 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
                           </div>
+                          {formData.event === event && eventData && (
+                            <div className="mt-3 pt-3 border-t border-primary-100/50 animate-in fade-in slide-in-from-top-1">
+                              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-medium">
+                                {eventData.tagline}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {fieldErrors.event && (
                     <p className="mt-2 text-sm text-red-500">{fieldErrors.event}</p>
