@@ -83,7 +83,7 @@ export default function EventCard({ event, index }: EventCardProps) {
               {event.name}
             </h2>
             <div
-              className={`inline-block px-4 py-1.5 rounded-full ${event.bgColor} text-gray-700 font-medium text-sm border border-black/5`}
+              className={`inline-block px-4 py-1.5 rounded-2xl ${event.bgColor} text-gray-700 font-medium text-sm border border-black/5`}
             >
               {event.tagline}
             </div>

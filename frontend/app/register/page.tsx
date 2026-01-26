@@ -664,6 +664,12 @@ const Register = () => {
         {/* Header */}
         <div ref={headerRef} className="text-center mb-12">
           {/* Badge Removed */}
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
+            <span className="text-2xl">📢</span>
+            <span className="text-sm font-semibold text-primary-700 uppercase tracking-wider">
+              Join Now
+            </span>
+          </div>
 
           {/* Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-gray-900 mb-4">
@@ -671,31 +677,26 @@ const Register = () => {
             <span className="relative inline-block">
               <span className="relative z-10 text-primary-600">Now</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary-200/60 -rotate-1 -z-0" />
-            </span>
+            </span>{' '}
             !
           </h1>
 
-          <div className="bg-white/60 backdrop-blur-sm border border-primary-100 p-4 rounded-2xl max-w-2xl mx-auto mb-6 shadow-sm">
-            <p className="text-base sm:text-lg text-gray-700 font-medium leading-relaxed flex items-center gap-3 justify-center text-left sm:text-center">
-              <span>
-                Please ensure that all team members complete individual registration beforehand and
-                collaborate with your team upon arrival.
-              </span>
-            </p>
-          </div>
+          <p className="text-lg text-gray-600 max-w-lg mx-auto my-2">
+            Ensure team members register individually ahead of time and meet up on arrival.
+          </p>
 
           <div className="flex flex-col items-center gap-2">
-            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border-2 border-green-100 shadow-lg shadow-green-100/50 transform hover:scale-105 transition-all duration-300">
+            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-green-100 shadow-xl shadow-green-100/50">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-400"></span>
               </span>
               <span className="font-bold text-green-700 tracking-wide text-sm sm:text-base">
-                On-Spot Registration also Available
+                Spot Registration Available
               </span>
             </div>
-            <span className="text-xs text-gray-500 font-medium bg-white/50 px-3 py-1 rounded-full border border-gray-100">
-              🍱 Food will be provided
+            <span className="text-sm text-gray-500 font-medium px-3 py-1 ">
+              Lunch & Refreshment Included
             </span>
           </div>
         </div>
@@ -1320,9 +1321,6 @@ const Register = () => {
                         htmlFor="transactionId"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
                       >
-                        <span className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-xs">
-                          🔢
-                        </span>
                         Transaction ID (UTR)
                       </label>
                       <input
@@ -1355,9 +1353,6 @@ const Register = () => {
                         htmlFor="screenshot"
                         className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
                       >
-                        <span className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-xs">
-                          📸
-                        </span>
                         Payment Screenshot
                       </label>
 

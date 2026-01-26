@@ -34,9 +34,10 @@ export default function EventsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div ref={headingRef} className="text-center max-w-3xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center justify-center mb-6">
-              <span className="px-5 py-2 rounded-full bg-white border border-primary-100 shadow-sm text-sm font-semibold text-primary-700 uppercase tracking-wider flex items-center gap-2">
-                <span className="text-lg">🚀</span> Explore Events
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
+              <span className="text-2xl">🚀</span>
+              <span className="text-sm font-semibold text-primary-700 uppercase tracking-wider">
+                Explore Events
               </span>
             </div>
 
