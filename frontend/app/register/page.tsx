@@ -748,7 +748,10 @@ const Register = () => {
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Confirmation email sent to your inbox</span>
+                    <span>
+                      Confirmation email sent to your inbox (if you don&apos;t see it, check Spam or
+                      Promotions)
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-amber-500 mt-0.5">⏳</span>
