@@ -3,7 +3,7 @@
 import { getApiUrl } from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from './components/layout';
 import Badge from './components/ui/Badge';
 import Card, { StatCard } from './components/ui/Card';
@@ -14,7 +14,6 @@ interface OverviewData {
   totalRegistrations: number;
   totalContacts: number;
   registrationsByEvent: { event: string; count: string }[];
-  registrationsByCollege: { college: string; count: string }[];
 }
 
 interface Registration {
@@ -54,6 +53,28 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [hasAnalyticsAccess, setHasAnalyticsAccess] = useState(true);
+
+  const totalTrendCount = useMemo(
+    () => trends.reduce((sum, item) => sum + Number(item.count || 0), 0),
+    [trends]
+  );
+
+  const averagePerDay = useMemo(() => {
+    if (trends.length === 0) return 0;
+    return totalTrendCount / trends.length;
+  }, [totalTrendCount, trends.length]);
+
+  const peakDay = useMemo(() => {
+    if (trends.length === 0) return null;
+    return trends.reduce((max, item) => (Number(item.count) > Number(max.count) ? item : max));
+  }, [trends]);
+
+  const latestDelta = useMemo(() => {
+    if (trends.length < 2) return null;
+    const last = Number(trends[trends.length - 1].count || 0);
+    const prev = Number(trends[trends.length - 2].count || 0);
+    return last - prev;
+  }, [trends]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -365,11 +386,39 @@ export default function AdminDashboard() {
               />
             </svg>
           }
-          value={overview?.registrationsByCollege?.length || 0}
-          label="Colleges"
+          value={Number.isFinite(averagePerDay) ? averagePerDay.toFixed(1) : '0'}
+          label="Avg / Day"
           iconColor="text-pink-600"
         />
       </div>
+
+      <Card className="p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+          Insight Highlights
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-gray-100 bg-white/80 p-4">
+            <p className="text-sm text-gray-500">Total trend volume</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-2">{totalTrendCount}</p>
+          </div>
+          <div className="rounded-2xl border border-gray-100 bg-white/80 p-4">
+            <p className="text-sm text-gray-500">Peak day</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-2">
+              {peakDay ? `${peakDay.count} regs` : 'N/A'}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {peakDay ? new Date(peakDay.date).toLocaleDateString() : 'No data'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-gray-100 bg-white/80 p-4">
+            <p className="text-sm text-gray-500">Latest day change</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-2">
+              {latestDelta === null ? 'N/A' : `${latestDelta >= 0 ? '+' : ''}${latestDelta}`}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">vs previous day</p>
+          </div>
+        </div>
+      </Card>
 
       {/* Analytics Charts */}
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
@@ -386,43 +435,13 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Event Breakdown */}
-        <Card className="p-4 sm:p-6 lg:col-span-2">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
             Registrations by Event
           </h2>
           <EventBarChart data={overview?.registrationsByEvent || []} />
-        </Card>
-
-        {/* Top Colleges */}
-        <Card className="p-4 sm:p-6">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Top Colleges</h2>
-          <div className="space-y-3">
-            {overview?.registrationsByCollege?.slice(0, 5).map((item, index) => (
-              <div
-                key={item.college}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 flex items-center justify-center bg-primary-50 text-primary-600 text-xs font-bold rounded-full">
-                    {index + 1}
-                  </span>
-                  <span
-                    className="text-gray-600 truncate max-w-[120px] sm:max-w-[150px]"
-                    title={item.college}
-                  >
-                    {item.college}
-                  </span>
-                </div>
-                <Badge variant="purple">{item.count}</Badge>
-              </div>
-            ))}
-            {(!overview?.registrationsByCollege ||
-              overview.registrationsByCollege.length === 0) && (
-              <p className="text-gray-400 text-center py-4">No data available</p>
-            )}
-          </div>
         </Card>
       </div>
 
@@ -438,7 +457,6 @@ export default function AdminDashboard() {
                 <th>Name</th>
                 <th className="hidden sm:table-cell">Email</th>
                 <th>Event</th>
-                <th className="hidden md:table-cell">College</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -450,13 +468,12 @@ export default function AdminDashboard() {
                   <td>
                     <Badge variant="purple">{reg.event}</Badge>
                   </td>
-                  <td className="hidden md:table-cell max-w-[150px] truncate">{reg.college}</td>
                   <td className="text-gray-400">{new Date(reg.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
               {recentRegistrations.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-400">
+                  <td colSpan={4} className="py-8 text-center text-gray-400">
                     No recent registrations
                   </td>
                 </tr>

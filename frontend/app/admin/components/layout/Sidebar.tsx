@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -67,6 +68,21 @@ const navItems = [
     adminOnly: true,
   },
   {
+    href: '/admin/events',
+    label: 'Events',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
+      </svg>
+    ),
+    requiresEventAccess: true,
+  },
+  {
     href: '/admin/payments',
     label: 'Payments',
     icon: (
@@ -112,21 +128,6 @@ const navItems = [
     requiresTask: 'mark_attendance',
   },
   {
-    href: '/admin/paper-presentation',
-    label: 'Paper Presentation',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-    ),
-    coordinatorAndAbove: true,
-  },
-  {
     href: '/admin/qr-checkin',
     label: 'QR Check-in',
     icon: (
@@ -141,51 +142,6 @@ const navItems = [
     ),
     mobileOnly: true,
     requiresTask: 'check_in_participant',
-  },
-  {
-    href: '/admin/think-link',
-    label: 'Think & Link',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.102"
-        />
-      </svg>
-    ),
-    coordinatorAndAbove: true,
-  },
-  {
-    href: '/admin/bug-smash',
-    label: 'Bug Smash',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    ),
-    coordinatorAndAbove: true,
-  },
-  {
-    href: '/admin/ctrl-quiz',
-    label: 'Ctrl + Quiz',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-    coordinatorAndAbove: true,
   },
   {
     href: '/admin/settings',
@@ -216,6 +172,11 @@ const userHasTask = (user: User, task: string): boolean => {
   return user.tasks?.includes(task) ?? false;
 };
 
+const userHasEventAccess = (user: User): boolean => {
+  if (user.role === 'admin') return true;
+  return Boolean(user.assignedEvent || (user.assignedEvents && user.assignedEvents.length > 0));
+};
+
 export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
@@ -238,6 +199,9 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
 
     // Task requirement check
     if (item.requiresTask && !userHasTask(user, item.requiresTask)) return false;
+
+    // Event access check
+    if (item.requiresEventAccess && !userHasEventAccess(user)) return false;
 
     // Mobile-only check
     if (item.mobileOnly && !isMobile) return false;
@@ -269,9 +233,7 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
           {/* Logo */}
           <div className="p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20">
-                <span className="text-white font-bold text-lg">X</span>
-              </div>
+              <Image src="/favicon/favicon.ico" alt="XIANZE" width={40} height={40} />
               <div>
                 <h1 className="text-lg font-bold text-gray-900 tracking-tight">XIANZE</h1>
                 <p className="text-xs text-gray-500 font-medium">Admin Panel</p>

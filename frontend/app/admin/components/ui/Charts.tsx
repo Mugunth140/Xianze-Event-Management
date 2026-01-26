@@ -100,6 +100,12 @@ export function PaymentPieChart({ data }: ChartProps) {
     rejected: '#EF4444', // red
   };
 
+  const STATUS_LABELS = {
+    verified: 'Verified',
+    pending: 'Pending',
+    rejected: 'Rejected',
+  };
+
   const RADIAN = Math.PI / 180;
 
   interface LabelProps {
@@ -171,7 +177,14 @@ export function PaymentPieChart({ data }: ChartProps) {
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
             }}
           />
-          <Legend verticalAlign="bottom" height={36} />
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            formatter={(value, entry: any) => {
+              const status = entry.payload?.status;
+              return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || value;
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>
