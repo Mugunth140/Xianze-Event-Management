@@ -1,15 +1,12 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef } from 'react';
 
-const listVariants = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.08, // faster
-    },
-  },
-};
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 // const itemVariants = {
 //   hidden: { opacity: 0, y: 14 },
@@ -24,6 +21,75 @@ const listVariants = {
 // };
 
 const Eventschedule = () => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        card,
+        { x: -40, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 80%',
+            once: true,
+          },
+        }
+      );
+
+      if (contentRef.current) {
+        gsap.fromTo(
+          Array.from(contentRef.current.children),
+          { y: 18, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.45,
+            ease: 'power3.out',
+            stagger: 0.08,
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 80%',
+              once: true,
+            },
+          }
+        );
+      }
+
+      if (iconRef.current) {
+        gsap.to(iconRef.current, {
+          y: -10,
+          rotation: 5,
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
+
+      if (titleRef.current) {
+        gsap.to(titleRef.current, {
+          opacity: 0.7,
+          duration: 1.6,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
+    });
+
+    return () => ctx.revert();
+  }, []);
   // const schedule = [
   //   { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
   //   { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
@@ -80,14 +146,8 @@ const Eventschedule = () => {
         </div>
 
         {/* Schedule Card */}
-        <motion.div
-          initial={{ x: -60, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{
-            duration: 0.4,
-            ease: 'easeOut',
-          }}
+        <div
+          ref={cardRef}
           className="
             relative
             w-full
@@ -113,51 +173,22 @@ const Eventschedule = () => {
           "
           />
 
-          <motion.ul
-            variants={listVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="space-y-3"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                duration: 0.5,
-                ease: 'backOut',
-              }}
-              className="flex flex-col items-center justify-center py-12"
-            >
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="text-6xl mb-6"
-              >
+          <div ref={contentRef} className="space-y-3">
+            <div className="flex flex-col items-center justify-center py-12">
+              <div ref={iconRef} className="text-6xl mb-6">
                 ⏳
-              </motion.div>
+              </div>
 
-              <motion.h3
-                className="text-2xl font-bold text-violet-600 mb-2"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
+              <h3 ref={titleRef} className="text-2xl font-bold text-violet-600 mb-2">
                 Coming Soon
-              </motion.h3>
+              </h3>
 
               <p className="text-neutral-500">
                 The event schedule will be updated shortly. <br /> Stay tuned!
               </p>
-            </motion.div>
-          </motion.ul>
-        </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

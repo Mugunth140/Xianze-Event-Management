@@ -1,11 +1,11 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-  Unique,
-  UpdateDateColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    Index,
+    PrimaryGeneratedColumn,
+    Unique,
+    UpdateDateColumn,
 } from 'typeorm';
 
 export enum PaymentStatus {
@@ -16,6 +16,7 @@ export enum PaymentStatus {
 
 @Entity('registration')
 @Unique(['email'])
+@Index(['transactionId'], { unique: true })
 @Index(['paymentStatus'])
 @Index(['event'])
 @Index(['createdAt'])

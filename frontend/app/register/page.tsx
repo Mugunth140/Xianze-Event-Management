@@ -144,8 +144,8 @@ const Register = () => {
     if (headerRef.current) {
       tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 60, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+        { opacity: 0, y: 60 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power4.out' }
       );
     }
 
@@ -154,11 +154,10 @@ const Register = () => {
     if (formSections.length > 0) {
       tl.fromTo(
         formSections,
-        { opacity: 0, y: 50, filter: 'blur(10px)' },
+        { opacity: 0, y: 50 },
         {
           opacity: 1,
           y: 0,
-          filter: 'blur(0px)',
           duration: 0.8,
           stagger: 0.1,
           ease: 'power4.out',

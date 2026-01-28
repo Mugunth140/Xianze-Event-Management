@@ -1,24 +1,24 @@
 import {
-    BadRequestException,
-    Body,
-    ConflictException,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Logger,
-    MaxFileSizeValidator,
-    NotFoundException,
-    Param,
-    ParseFilePipe,
-    ParseIntPipe,
-    Patch,
-    Post,
-    Res,
-    UploadedFile,
-    UseGuards,
-    UseInterceptors,
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  MaxFileSizeValidator,
+  NotFoundException,
+  Param,
+  ParseFilePipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
@@ -134,6 +134,18 @@ export class RegistrationController {
       throw new ConflictException({
         success: false,
         message: 'This email is already registered for an event',
+      });
+    }
+
+    // Check for duplicate transaction ID
+    const transactionExists = await this.registrationService.existsByTransactionId(
+      dto.transactionId,
+    );
+
+    if (transactionExists) {
+      throw new ConflictException({
+        success: false,
+        message: 'This transaction ID is already used',
       });
     }
 

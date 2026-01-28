@@ -99,6 +99,16 @@ export class RegistrationService {
     return count > 0;
   }
 
+  /**
+   * Check if a registration already exists for the given transaction ID
+   */
+  async existsByTransactionId(transactionId: string): Promise<boolean> {
+    const count = await this.registrationRepository.count({
+      where: { transactionId },
+    });
+    return count > 0;
+  }
+
   // ==========================================
   // Admin CRUD Methods
   // ==========================================
@@ -114,6 +124,14 @@ export class RegistrationService {
       const emailExists = await this.existsByEmail(dto.email);
       if (emailExists) {
         throw new ConflictException('Email already registered');
+      }
+    }
+
+    // If transaction ID is being changed, check for duplicates
+    if (dto.transactionId && dto.transactionId !== registration.transactionId) {
+      const transactionExists = await this.existsByTransactionId(dto.transactionId);
+      if (transactionExists) {
+        throw new ConflictException('Transaction ID already used');
       }
     }
 
