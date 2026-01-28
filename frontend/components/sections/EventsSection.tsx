@@ -22,16 +22,16 @@ export default function EventsSection() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 80%',
-        toggleActions: 'play none none none',
+        start: 'top 85%',
+        once: true,
       },
     });
 
     if (headerRef.current) {
       tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 60, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
   }, []);

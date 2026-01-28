@@ -127,48 +127,56 @@ const Register = () => {
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-
-    // Unified Animation Timeline
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top 80%', // Trigger earlier for better visibility
-        toggleActions: 'play none none none', // Don't reverse, just play once cleanly
-      },
-    });
-
-    if (headerRef.current) {
-      tl.fromTo(
-        headerRef.current,
-        { opacity: 0, y: 60 },
-        { opacity: 1, y: 0, duration: 0.8, ease: 'power4.out' }
-      );
-    }
-
-    // Stagger Form Sections
-    const formSections = document.querySelectorAll('.form-section-item');
-    if (formSections.length > 0) {
-      tl.fromTo(
-        formSections,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power4.out',
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 85%',
+          once: true,
         },
-        '-=0.6'
-      );
-    }
+      });
 
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
+      if (headerRef.current) {
+        tl.fromTo(
+          headerRef.current,
+          { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
+        );
+      }
+
+      const formSections = gsap.utils.toArray<HTMLElement>('.form-section-item');
+      if (formSections.length > 0) {
+        tl.fromTo(
+          formSections,
+          { opacity: 0, y: 24 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.45,
+            stagger: 0.07,
+            ease: 'power2.out',
+          },
+          '-=0.25'
+        );
+      }
+
+      const submitButton = section.querySelector('.register-submit');
+      if (submitButton) {
+        tl.fromTo(
+          submitButton,
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
+          '-=0.2'
+        );
+      }
+    }, section);
+
+    return () => ctx.revert();
   }, []);
 
   const eventsList = [
@@ -649,14 +657,12 @@ const Register = () => {
         className="fixed top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
         }}
       />
       <div
         className="fixed bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
-          filter: 'blur(80px)',
         }}
       />
 
@@ -826,7 +832,7 @@ const Register = () => {
 
           {/* Form State */}
           {submitStatus !== 'success' && (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
               {/* SECTION 1: Personal Details */}
               <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30">
                 <div className="flex items-center gap-4 mb-6">
@@ -1422,7 +1428,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="register-submit w-full bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

@@ -49,56 +49,55 @@ export default function Hero() {
 
   useEffect(() => {
     // Entrance animations with GSAP
-    const tl = gsap.timeline({ delay: 0.1 });
+    const tl = gsap.timeline({ delay: 0.05 });
 
     if (badgeRef.current) {
       tl.fromTo(
         badgeRef.current,
-        { opacity: 0, y: 30, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }
       );
     }
 
     if (headlineRef.current) {
       tl.fromTo(
         headlineRef.current,
-        { opacity: 0, y: 40, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
-        '-=0.6'
+        { opacity: 0, y: 32 },
+        { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' },
+        '-=0.4'
       );
     }
 
     if (descriptionRef.current) {
       tl.fromTo(
         descriptionRef.current,
-        { opacity: 0, y: 30, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
-        '-=0.6'
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' },
+        '-=0.4'
       );
     }
 
     if (ctaRef.current) {
       tl.fromTo(
         ctaRef.current,
-        { opacity: 0, y: 30, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
-        '-=0.6'
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' },
+        '-=0.4'
       );
     }
 
     if (videoRef.current) {
       tl.fromTo(
         videoRef.current,
-        { opacity: 0, y: 60, scale: 0.95, filter: 'blur(10px)' },
+        { opacity: 0, y: 40, scale: 0.97 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          filter: 'blur(0px)',
-          duration: 1.0,
-          ease: 'power4.out',
+          duration: 0.7,
+          ease: 'power3.out',
         },
-        '-=0.6'
+        '-=0.35'
       );
     }
   }, []);
@@ -117,7 +116,6 @@ export default function Hero() {
           className="absolute top-20 right-20 w-[400px] h-[400px] rounded-full"
           style={{
             background: 'radial-gradient(circle, rgba(109, 64, 212, 0.15) 0%, transparent 70%)',
-            filter: 'blur(60px)',
           }}
         />
       </div>

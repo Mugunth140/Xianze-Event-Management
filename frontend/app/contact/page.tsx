@@ -53,8 +53,8 @@ const Contact = () => {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 70%',
-        toggleActions: 'play none none none',
+        start: 'top 85%',
+        once: true,
       },
     });
 
@@ -62,8 +62,8 @@ const Contact = () => {
     if (headerRef.current) {
       tl.fromTo(
         headerRef.current,
-        { opacity: 0, y: 60, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
 
@@ -72,16 +72,15 @@ const Contact = () => {
     if (cards.length > 0) {
       tl.fromTo(
         cards,
-        { opacity: 0, y: 50, filter: 'blur(10px)' },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
           y: 0,
-          filter: 'blur(0px)',
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power4.out',
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'power3.out',
         },
-        '-=0.6'
+        '-=0.35'
       );
     }
 
@@ -89,15 +88,14 @@ const Contact = () => {
     if (coordinatorsRef.current) {
       tl.fromTo(
         coordinatorsRef.current,
-        { opacity: 0, y: 50, filter: 'blur(10px)' },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
           y: 0,
-          filter: 'blur(0px)',
-          duration: 0.8,
-          ease: 'power4.out',
+          duration: 0.6,
+          ease: 'power3.out',
         },
-        '-=0.6'
+        '-=0.35'
       );
     }
 
@@ -105,15 +103,14 @@ const Contact = () => {
     if (formRef.current) {
       tl.fromTo(
         formRef.current,
-        { opacity: 0, y: 60, filter: 'blur(10px)' },
+        { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
-          filter: 'blur(0px)',
-          duration: 0.8,
-          ease: 'power4.out',
+          duration: 0.6,
+          ease: 'power3.out',
         },
-        '-=0.6'
+        '-=0.35'
       );
     }
 
@@ -240,14 +237,12 @@ const Contact = () => {
         className="fixed top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
         }}
       />
       <div
         className="fixed bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
-          filter: 'blur(80px)',
         }}
       />
 

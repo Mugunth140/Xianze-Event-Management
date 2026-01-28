@@ -22,25 +22,25 @@ export default function AboutSection() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 70%',
-        toggleActions: 'play none none none',
+        start: 'top 85%',
+        once: true,
       },
     });
 
     if (headingRef.current) {
       tl.fromTo(
         headingRef.current,
-        { opacity: 0, y: 60, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' }
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
 
     if (textRef.current) {
       tl.fromTo(
         textRef.current,
-        { opacity: 0, y: 30, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'power4.out' },
-        '-=0.6'
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        '-=0.35'
       );
     }
 
@@ -48,16 +48,15 @@ export default function AboutSection() {
       const statItems = statsRef.current.querySelectorAll('.stat-item');
       tl.fromTo(
         statItems,
-        { opacity: 0, y: 40, filter: 'blur(10px)' },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
           y: 0,
-          filter: 'blur(0px)',
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power4.out',
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'power3.out',
         },
-        '-=0.6'
+        '-=0.35'
       );
     }
 

@@ -22,21 +22,20 @@ export default function WhatsAppCTA() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 80%',
-        toggleActions: 'play none none none',
+        start: 'top 85%',
+        once: true,
       },
     });
 
     tl.fromTo(
       cardRef.current,
-      { opacity: 0, y: 60, scale: 0.95, filter: 'blur(10px)' },
+      { opacity: 0, y: 40, scale: 0.97 },
       {
         opacity: 1,
         y: 0,
         scale: 1,
-        filter: 'blur(0px)',
-        duration: 0.8,
-        ease: 'power4.out',
+        duration: 0.65,
+        ease: 'power3.out',
       }
     );
 
