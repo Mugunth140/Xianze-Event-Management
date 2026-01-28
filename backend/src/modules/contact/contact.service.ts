@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
@@ -31,5 +31,15 @@ export class ContactService {
     return this.contactRepository.find({
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async delete(id: number): Promise<void> {
+    const contact = await this.contactRepository.findOne({ where: { id } });
+
+    if (!contact) {
+      throw new NotFoundException('Contact inquiry not found');
+    }
+
+    await this.contactRepository.remove(contact);
   }
 }

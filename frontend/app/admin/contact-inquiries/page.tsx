@@ -7,9 +7,10 @@ import { PageHeader } from '../components/layout';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import Modal from '../components/ui/Modal';
+import Modal, { ConfirmModal } from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import { PageLoader } from '../components/ui/Spinner';
+import useAuth from '../hooks/useAuth';
 
 interface ContactInquiry {
   id: number;
@@ -21,12 +22,15 @@ interface ContactInquiry {
 
 export default function ContactInquiriesPage() {
   const router = useRouter();
+  const { isAdmin } = useAuth();
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
+  const [deleteInquiry, setDeleteInquiry] = useState<ContactInquiry | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -91,6 +95,43 @@ export default function ContactInquiriesPage() {
     }
   }, [currentPage, totalPages]);
 
+  const handleDelete = async () => {
+    if (!deleteInquiry) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const res = await fetch(getApiUrl(`/contact/${deleteInquiry.id}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error('Failed to delete inquiry');
+      }
+
+      setInquiries((prev) => prev.filter((item) => item.id !== deleteInquiry.id));
+      setDeleteInquiry(null);
+      setSelectedInquiry(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete inquiry');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <PageLoader message="Loading inquiries..." />;
   }
@@ -148,9 +189,16 @@ export default function ContactInquiriesPage() {
                     {new Date(item.createdAt).toLocaleString()}
                   </td>
                   <td className="text-right">
-                    <Button variant="ghost" onClick={() => setSelectedInquiry(item)}>
-                      View
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" onClick={() => setSelectedInquiry(item)}>
+                        View
+                      </Button>
+                      {isAdmin && (
+                        <Button variant="danger" onClick={() => setDeleteInquiry(item)}>
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -180,9 +228,20 @@ export default function ContactInquiriesPage() {
         title="Inquiry Details"
         size="lg"
         footer={
-          <Button variant="primary" onClick={() => setSelectedInquiry(null)}>
-            Close
-          </Button>
+          <>
+            {isAdmin && (
+              <Button
+                variant="danger"
+                onClick={() => selectedInquiry && setDeleteInquiry(selectedInquiry)}
+                disabled={!selectedInquiry}
+              >
+                Delete
+              </Button>
+            )}
+            <Button variant="primary" onClick={() => setSelectedInquiry(null)}>
+              Close
+            </Button>
+          </>
         }
       >
         {selectedInquiry && (
@@ -216,6 +275,17 @@ export default function ContactInquiriesPage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        isOpen={!!deleteInquiry}
+        onClose={() => setDeleteInquiry(null)}
+        onConfirm={handleDelete}
+        title="Delete Inquiry"
+        message={`Are you sure you want to delete the inquiry from "${deleteInquiry?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmVariant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
