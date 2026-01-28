@@ -428,7 +428,8 @@ const Register = () => {
 
       // Strict Size Check (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage('File size must be less than 5MB');
+        const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+        setErrorMessage(`File size must be less than 5MB. Current: ${sizeMb} MB`);
         if (fileInputRef.current) fileInputRef.current.value = ''; // Clear input
         return;
       }
@@ -1375,7 +1376,7 @@ const Register = () => {
                             }`}
                           />
                           <p className="mt-2 text-xs text-gray-500">
-                            Max size: 5MB. Formats: JPG, PNG.
+                            Max size: 5MB (any resolution). Formats: JPG, PNG.
                           </p>
                         </div>
                       ) : (

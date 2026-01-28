@@ -8,6 +8,7 @@ import {
     HttpCode,
     HttpStatus,
     Logger,
+    MaxFileSizeValidator,
     NotFoundException,
     Param,
     ParseFilePipe,
@@ -88,9 +89,6 @@ export class RegistrationController {
           cb(null, generateSecureFilename(file.originalname));
         },
       }),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB max
-      },
       fileFilter: (
         _req: Request,
         file: MulterFile,
@@ -119,6 +117,12 @@ export class RegistrationController {
       new ParseFilePipe({
         fileIsRequired: true,
         errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 5 * 1024 * 1024,
+            message: 'Payment screenshot must be less than 5MB',
+          }),
+        ],
       }),
     )
     file: MulterFile,
