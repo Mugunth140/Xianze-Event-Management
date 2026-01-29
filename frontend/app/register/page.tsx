@@ -17,10 +17,6 @@ import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
 interface FormData {
   name: string;
   email: string;
@@ -101,6 +97,8 @@ const CustomDropdown = ({ label, options, selected, setSelected, placeholder }: 
 const submitDebounce = createSubmitDebounce(3000);
 
 const Register = () => {
+  // Hydration safety - prevent SSR/client mismatch
+  const [hasMounted, setHasMounted] = useState(false);
   const [showAlternativeQR, setShowAlternativeQR] = useState(false);
   const [showQRMobile, setShowQRMobile] = useState(false);
   const [copiedMobile, setCopiedMobile] = useState(false);
@@ -129,7 +127,14 @@ const Register = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Mark as mounted after hydration
   useEffect(() => {
+    setHasMounted(true);
+    gsap.registerPlugin(ScrollTrigger);
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted) return;
     const section = sectionRef.current;
     if (!section) return;
     const ctx = gsap.context(() => {
@@ -177,7 +182,7 @@ const Register = () => {
     }, section);
 
     return () => ctx.revert();
-  }, []);
+  }, [hasMounted]);
 
   const eventsList = [
     'Buildathon',
@@ -427,6 +432,45 @@ const Register = () => {
     }
   };
 
+  // Handle phone number input - only allow digits, max 10, must start with 6-9
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+
+    // Limit to 10 digits
+    if (value.length > 10) {
+      value = value.slice(0, 10);
+    }
+
+    // If first digit exists and is 0-5, reject it
+    if (value.length > 0 && /^[0-5]/.test(value)) {
+      // Show error but allow typing (they might be correcting)
+      setFieldErrors((prev) => ({
+        ...prev,
+        contact: 'Phone number must start with 6, 7, 8, or 9',
+      }));
+    } else if (fieldErrors.contact) {
+      setFieldErrors((prev) => ({ ...prev, contact: undefined }));
+    }
+
+    setFormData((prev) => ({ ...prev, contact: value }));
+  };
+
+  // Handle transaction ID input - only allow digits
+  const handleTransactionIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+
+    // Limit to 12 digits
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
+
+    if (fieldErrors.transactionId) {
+      setFieldErrors((prev) => ({ ...prev, transactionId: undefined }));
+    }
+
+    setFormData((prev) => ({ ...prev, transactionId: value }));
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -444,15 +488,6 @@ const Register = () => {
       setScreenshot(file);
       // Clear any previous file-related errors
       if (errorMessage.includes('File')) setErrorMessage('');
-    }
-  };
-
-  const handleTransactionIdBlur = () => {
-    if (formData.transactionId && formData.transactionId.length !== 12) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        transactionId: 'Transaction ID must be exactly 12 digits',
-      }));
     }
   };
 
@@ -604,13 +639,23 @@ const Register = () => {
         // Parse meaningful error messages
         let friendlyMessage = 'Registration failed. Please try again.';
 
-        if (res.status === 409) {
+        if (res.status === 413) {
+          friendlyMessage =
+            'File too large. Please reduce your screenshot size to under 4MB and try again.';
+        } else if (res.status === 409) {
           friendlyMessage =
             dataRes.message ||
             dataRes.error ||
             'This email is already registered. Please use a different email.';
         } else if (res.status === 429) {
           friendlyMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (res.status === 400) {
+          // Bad request - validation errors from backend
+          friendlyMessage = dataRes.message
+            ? Array.isArray(dataRes.message)
+              ? dataRes.message.join(', ')
+              : dataRes.message
+            : 'Invalid form data. Please check your inputs.';
         } else if (res.status >= 500) {
           friendlyMessage = 'Server is busy. Please try again in a few moments.';
         } else if (dataRes.message) {
@@ -894,10 +939,15 @@ const Register = () => {
                       name="contact"
                       placeholder="e.g. 9876543210"
                       value={formData.contact}
-                      onChange={handleChange}
+                      onChange={handlePhoneChange}
+                      inputMode="numeric"
+                      maxLength={10}
                       required
                       className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.contact ? 'border-red-400' : 'border-gray-100'}`}
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formData.contact.length}/10 digits
+                    </p>
                     {fieldErrors.contact && (
                       <p className="mt-1 text-sm text-red-500">{fieldErrors.contact}</p>
                     )}
@@ -1338,8 +1388,7 @@ const Register = () => {
                         name="transactionId"
                         placeholder="e.g. 123456789012"
                         value={formData.transactionId}
-                        onChange={handleChange}
-                        onBlur={handleTransactionIdBlur}
+                        onChange={handleTransactionIdChange}
                         maxLength={12}
                         pattern="\d{12}"
                         inputMode="numeric"
