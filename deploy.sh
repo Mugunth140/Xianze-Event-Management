@@ -1,6 +1,6 @@
 #!/bin/bash
 # XIANZE Deployment Script
-# Usage: ./deploy.sh [dev|prod] [--init-ssl]
+# Usage: ./deploy.sh [dev|prod] [--init-ssl] [--full]
 
 set -e
 
@@ -15,15 +15,20 @@ NC='\033[0m' # No Color
 ENV="${1:-prod}"
 NO_CACHE="--no-cache"
 INIT_SSL=false
+FULL_REDEPLOY=false
 COMPOSE_FILE="docker-compose.yml"
 DOMAIN="${DOMAIN:-xianze.tech}"
 EMAIL="${EMAIL:-admin@xianze.tech}"
+SERVICES_TO_DEPLOY="backend frontend-builder nginx"
 
 # Parse arguments
 for arg in "$@"; do
     case $arg in
         --init-ssl)
             INIT_SSL=true
+            ;;
+        --full)
+            FULL_REDEPLOY=true
             ;;
         prod|dev)
             ENV="$arg"
@@ -133,9 +138,14 @@ else
     echo -e "${BLUE}[1/5]${NC} Skipping git pull (not a git repo)"
 fi
 
-# Step 2: Stop running containers
-echo -e "${BLUE}[2/5]${NC} Stopping existing containers..."
-docker compose -f "$COMPOSE_FILE" down --remove-orphans
+# Step 2: Stop containers
+if [[ "$FULL_REDEPLOY" == true ]]; then
+    echo -e "${BLUE}[2/5]${NC} Stopping all containers (full redeploy)..."
+    docker compose -f "$COMPOSE_FILE" down --remove-orphans
+else
+    echo -e "${BLUE}[2/5]${NC} Stopping app containers only..."
+    docker compose -f "$COMPOSE_FILE" stop $SERVICES_TO_DEPLOY
+fi
 
 # Step 2.5: Initialize SSL if requested (production only)
 if [[ "$INIT_SSL" == true ]] && [[ "$ENV" == "prod" ]]; then
@@ -147,11 +157,20 @@ echo -e "${BLUE}[3/5]${NC} Removing old frontend volume for fresh build..."
 docker volume rm xianze-frontend-static 2>/dev/null || true
 
 echo -e "${BLUE}[3/5]${NC} Building new images (no-cache, fresh)..."
-docker compose -f "$COMPOSE_FILE" build $NO_CACHE
+if [[ "$FULL_REDEPLOY" == true ]]; then
+    docker compose -f "$COMPOSE_FILE" build $NO_CACHE
+else
+    docker compose -f "$COMPOSE_FILE" build $NO_CACHE $SERVICES_TO_DEPLOY
+fi
 
 # Step 4: Start containers
-echo -e "${BLUE}[4/5]${NC} Starting containers..."
-docker compose -f "$COMPOSE_FILE" up -d
+if [[ "$FULL_REDEPLOY" == true ]]; then
+    echo -e "${BLUE}[4/5]${NC} Starting all containers..."
+    docker compose -f "$COMPOSE_FILE" up -d
+else
+    echo -e "${BLUE}[4/5]${NC} Starting app containers..."
+    docker compose -f "$COMPOSE_FILE" up -d $SERVICES_TO_DEPLOY
+fi
 
 # Step 5: Cleanup old images
 echo -e "${BLUE}[5/5]${NC} Cleaning up unused images..."
