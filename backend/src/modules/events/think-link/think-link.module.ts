@@ -5,9 +5,9 @@ import { ThinkLinkPuzzle } from './think-link.entity';
 import { ThinkLinkService } from './think-link.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([ThinkLinkPuzzle])],
-    controllers: [ThinkLinkController],
-    providers: [ThinkLinkService],
-    exports: [ThinkLinkService],
+  imports: [TypeOrmModule.forFeature([ThinkLinkPuzzle])],
+  controllers: [ThinkLinkController],
+  providers: [ThinkLinkService],
+  exports: [ThinkLinkService],
 })
-export class ThinkLinkModule { }
+export class ThinkLinkModule {}
