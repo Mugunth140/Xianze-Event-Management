@@ -31,6 +31,10 @@ interface Stats {
   skipped: number;
 }
 
+interface User {
+  role: 'admin' | 'coordinator' | 'member';
+}
+
 export default function PaperPresentationPage() {
   const [submissions, setSubmissions] = useState<PaperSubmission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -40,6 +44,17 @@ export default function PaperPresentationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<User['role'] | null>(null);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    teamName: '',
+    teamMembers: '',
+    college: '',
+    topic: '',
+    phone: '',
+  });
 
   // Slideshow state - now using fullscreen viewer
   const [presentingSubmission, setPresentingSubmission] = useState<PaperSubmission | null>(null);
@@ -75,7 +90,19 @@ export default function PaperPresentationPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsed = JSON.parse(userData) as User;
+      setUserRole(parsed.role);
+    }
+  }, []);
+
+  const canEdit = userRole === 'admin' || userRole === 'coordinator';
+  const canDelete = userRole === 'admin';
+
   const handleStatusChange = async (id: number, newStatus: string) => {
+    if (!canEdit) return;
     const token = localStorage.getItem('token');
     setUpdatingId(id);
 
@@ -133,6 +160,68 @@ export default function PaperPresentationPage() {
       return;
     }
     setPresentingSubmission(sub);
+  };
+
+  const handleEditOpen = (sub: PaperSubmission) => {
+    setEditingId(sub.id);
+    setEditForm({
+      teamName: sub.teamName,
+      teamMembers: sub.teamMembers.join(', '),
+      college: sub.college,
+      topic: sub.topic,
+      phone: sub.phone,
+    });
+  };
+
+  const handleEditSave = async (id: number) => {
+    if (!canEdit) return;
+    const token = localStorage.getItem('token');
+    const members = editForm.teamMembers
+      .split(',')
+      .map((member) => member.trim())
+      .filter(Boolean);
+
+    setSavingEdit(true);
+    try {
+      const res = await fetch(getApiUrl(`/paper-presentation/submissions/${id}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          teamName: editForm.teamName,
+          teamMembers: members,
+          college: editForm.college,
+          topic: editForm.topic,
+          phone: editForm.phone,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Update failed');
+      setEditingId(null);
+      fetchData();
+    } catch {
+      setError('Failed to update submission');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteSubmission = async (id: number) => {
+    if (!canDelete) return;
+    if (!confirm('Delete this submission?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(getApiUrl(`/paper-presentation/submissions/${id}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      fetchData();
+    } catch {
+      setError('Failed to delete submission');
+    }
   };
 
   const filteredSubmissions = submissions.filter((sub) => {
@@ -331,6 +420,22 @@ export default function PaperPresentationPage() {
                     Download
                   </Button>
 
+                  {canEdit && (
+                    <Button size="sm" variant="secondary" onClick={() => handleEditOpen(sub)}>
+                      Edit
+                    </Button>
+                  )}
+
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="danger-soft"
+                      onClick={() => handleDeleteSubmission(sub.id)}
+                    >
+                      Delete
+                    </Button>
+                  )}
+
                   <Select
                     value={sub.status}
                     onChange={(e) => handleStatusChange(sub.id, e.target.value)}
@@ -340,10 +445,52 @@ export default function PaperPresentationPage() {
                       { value: 'skipped', label: 'Skipped' },
                       { value: 'disqualified', label: 'Disqualified' },
                     ]}
-                    disabled={updatingId === sub.id}
+                    disabled={updatingId === sub.id || !canEdit}
                   />
                 </div>
               </div>
+
+              {editingId === sub.id && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Input
+                      label="Team Name"
+                      value={editForm.teamName}
+                      onChange={(e) => setEditForm({ ...editForm, teamName: e.target.value })}
+                    />
+                    <Input
+                      label="Topic"
+                      value={editForm.topic}
+                      onChange={(e) => setEditForm({ ...editForm, topic: e.target.value })}
+                    />
+                    <Input
+                      label="College"
+                      value={editForm.college}
+                      onChange={(e) => setEditForm({ ...editForm, college: e.target.value })}
+                    />
+                    <Input
+                      label="Phone"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <Input
+                      label="Team Members (comma separated)"
+                      value={editForm.teamMembers}
+                      onChange={(e) => setEditForm({ ...editForm, teamMembers: e.target.value })}
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => handleEditSave(sub.id)} loading={savingEdit}>
+                      Save Changes
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card>
           ))
         )}

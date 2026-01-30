@@ -1,23 +1,23 @@
 import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  NotFoundException,
-  Param,
-  ParseFilePipe,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    BadRequestException,
+    Body,
+    ConflictException,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    NotFoundException,
+    Param,
+    ParseFilePipe,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Res,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
@@ -31,7 +31,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '../../users/user.entity';
-import { PaperPresentationService } from './paper-presentation.service';
+import { PaperPresentationService, UpdateSubmissionDto } from './paper-presentation.service';
 import { PaperSubmissionStatus } from './paper-submission.entity';
 
 const execAsync = promisify(exec);
@@ -242,6 +242,38 @@ export class PaperPresentationController {
     }
 
     const submission = await this.service.updateStatus(id, status);
+    return { success: true, data: submission };
+  }
+
+  /**
+   * PATCH /api/paper-presentation/submissions/:id
+   * Update submission details (Coordinator/Admin)
+   */
+  @Patch('submissions/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+  async updateSubmission(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSubmissionDto) {
+    if (dto.teamName !== undefined && !dto.teamName.trim()) {
+      throw new BadRequestException('Team name cannot be empty');
+    }
+    if (dto.college !== undefined && !dto.college.trim()) {
+      throw new BadRequestException('College cannot be empty');
+    }
+    if (dto.topic !== undefined && !dto.topic.trim()) {
+      throw new BadRequestException('Topic cannot be empty');
+    }
+    if (dto.phone !== undefined && !dto.phone.trim()) {
+      throw new BadRequestException('Phone cannot be empty');
+    }
+    if (dto.teamMembers !== undefined) {
+      const members = dto.teamMembers.map((member) => member.trim()).filter(Boolean);
+      if (members.length === 0) {
+        throw new BadRequestException('At least one team member is required');
+      }
+      dto.teamMembers = members;
+    }
+
+    const submission = await this.service.updateSubmission(id, dto);
     return { success: true, data: submission };
   }
 

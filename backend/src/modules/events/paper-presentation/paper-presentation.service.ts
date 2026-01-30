@@ -11,6 +11,14 @@ export interface CreateSubmissionDto {
   phone: string;
 }
 
+export interface UpdateSubmissionDto {
+  teamName?: string;
+  teamMembers?: string[];
+  college?: string;
+  topic?: string;
+  phone?: string;
+}
+
 export interface SubmissionStats {
   total: number;
   submitted: number;
@@ -79,6 +87,19 @@ export class PaperPresentationService {
   async updateStatus(id: number, status: PaperSubmissionStatus): Promise<PaperSubmission> {
     const submission = await this.findById(id);
     submission.status = status;
+    return this.submissionRepository.save(submission);
+  }
+
+  /**
+   * Update submission details
+   */
+  async updateSubmission(id: number, dto: UpdateSubmissionDto): Promise<PaperSubmission> {
+    const submission = await this.findById(id);
+    if (dto.teamName !== undefined) submission.teamName = dto.teamName;
+    if (dto.teamMembers !== undefined) submission.teamMembers = dto.teamMembers;
+    if (dto.college !== undefined) submission.college = dto.college;
+    if (dto.topic !== undefined) submission.topic = dto.topic;
+    if (dto.phone !== undefined) submission.phone = dto.phone;
     return this.submissionRepository.save(submission);
   }
 

@@ -9,6 +9,10 @@
       {
         "include": "modules/mail/templates/**/*.hbs",
         "outDir": "dist"
+      },
+      {
+        "include": "modules/events/buildathon/data/**/*.json",
+        "outDir": "dist"
       }
     ]
   }

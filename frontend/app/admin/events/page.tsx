@@ -40,6 +40,11 @@ const adminEvents: AdminEvent[] = [
     description: 'Manage quiz content and live session.',
     href: '/admin/ctrl-quiz',
   },
+  {
+    label: 'Buildathon',
+    description: 'Dashboard builder competition with API endpoints.',
+    href: '/admin/buildathon',
+  },
 ];
 
 const normalizeEvent = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
