@@ -143,6 +143,12 @@ export class RegistrationService {
       }
     }
 
+    if (dto.paymentMode === 'cash') {
+      dto.transactionId = undefined;
+      registration.transactionId = null;
+      registration.screenshotPath = null;
+    }
+
     // Update fields
     Object.assign(registration, dto);
 

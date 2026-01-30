@@ -119,6 +119,7 @@ export default function RegistrationsPage() {
       contact: reg.contact,
       event: reg.event,
       transactionId: reg.transactionId,
+      paymentMode: reg.paymentMode || 'online',
     });
     setActionError('');
   };
@@ -424,11 +425,31 @@ export default function RegistrationsPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[var(--admin-text-secondary)] mb-1">
+                Payment Mode
+              </label>
+              <Select
+                value={(editForm.paymentMode as 'online' | 'cash') || 'online'}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    paymentMode: e.target.value as 'online' | 'cash',
+                    transactionId: e.target.value === 'cash' ? '' : editForm.transactionId,
+                  })
+                }
+                options={[
+                  { value: 'online', label: 'Online' },
+                  { value: 'cash', label: 'Cash' },
+                ]}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-[var(--admin-text-secondary)] mb-1">
                 Transaction ID
               </label>
               <Input
                 value={editForm.transactionId || ''}
                 onChange={(e) => setEditForm({ ...editForm, transactionId: e.target.value })}
+                disabled={editForm.paymentMode === 'cash'}
               />
             </div>
           </div>

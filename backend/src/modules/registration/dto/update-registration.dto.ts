@@ -1,12 +1,12 @@
 import { Transform } from 'class-transformer';
 import {
-  IsEmail,
-  IsIn,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  MinLength,
+    IsEmail,
+    IsIn,
+    IsOptional,
+    IsString,
+    Matches,
+    MaxLength,
+    MinLength,
 } from 'class-validator';
 
 // Allowed events for validation
@@ -68,6 +68,10 @@ export class UpdateRegistrationDto {
   })
   @Transform(({ value }) => value?.trim())
   event?: string;
+
+  @IsOptional()
+  @IsIn(['online', 'cash'], { message: 'Payment mode must be online or cash' })
+  paymentMode?: 'online' | 'cash';
 
   @IsOptional()
   @IsString()

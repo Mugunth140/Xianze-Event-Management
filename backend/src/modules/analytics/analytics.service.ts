@@ -94,7 +94,18 @@ export class AnalyticsService {
     }
 
     const registrations = await query
-      .select(['r.id', 'r.name', 'r.email', 'r.college', 'r.event', 'r.paymentMode', 'r.transactionId'])
+      .select([
+        'r.id',
+        'r.name',
+        'r.email',
+        'r.college',
+        'r.course',
+        'r.branch',
+        'r.contact',
+        'r.event',
+        'r.paymentMode',
+        'r.transactionId',
+      ])
       .orderBy('r.createdAt', 'DESC')
       .getMany();
 
