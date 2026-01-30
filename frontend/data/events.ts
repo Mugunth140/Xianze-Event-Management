@@ -10,6 +10,8 @@ export interface Event {
   notes: string[];
   themes?: string[];
   noteTheme?: string;
+  submissionLink?: string;
+  submissionLabel?: string;
 }
 
 export const events: Event[] = [
@@ -67,7 +69,10 @@ export const events: Event[] = [
     instructions: [
       'PPT should consist of a minimum of 8 slides',
       '3 minutes for presentation followed by 2 minutes for Q&A',
+      'Upload your PPT/PPTX using the submission link below',
     ],
+    submissionLink: '/events/paper-presentation/paper-submission',
+    submissionLabel: 'Paper Submission Form',
     themes: [
       'Machine Learning',
       'Deep Learning',

@@ -4,6 +4,7 @@ import { Event } from '@/data/events';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 // Register ScrollTrigger
@@ -142,6 +143,17 @@ export default function EventCard({ event, index }: EventCardProps) {
                     </li>
                   ))}
                 </ul>
+                {event.submissionLink && (
+                  <div className="mt-5">
+                    <Link
+                      href={event.submissionLink}
+                      className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700 border border-primary-200 hover:bg-primary-100 transition-colors"
+                    >
+                      {event.submissionLabel || 'Open Submission Form'}
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

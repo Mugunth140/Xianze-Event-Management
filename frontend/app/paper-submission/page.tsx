@@ -101,6 +101,17 @@ export default function PaperSubmissionPage() {
           <p className="text-gray-600">
             Submit your research paper for XIANZE 2K26 Paper Presentation event
           </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-700 border border-amber-200">
+              PPT/PPTX only — ready for slideshow
+            </span>
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-4 py-1.5 text-sm font-semibold text-primary-700 border border-primary-200 hover:bg-primary-100 transition-colors"
+            >
+              View event rules →
+            </Link>
+          </div>
         </div>
 
         {/* Form */}
@@ -193,7 +204,7 @@ export default function PaperSubmissionPage() {
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-400 transition-colors">
               <input
                 type="file"
-                accept=".ppt,.pptx,.pdf"
+                accept=".ppt,.pptx"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="hidden"
                 id="file-upload"
@@ -217,10 +228,13 @@ export default function PaperSubmissionPage() {
                 {file ? (
                   <p className="text-primary-600 font-medium">{file.name}</p>
                 ) : (
-                  <p className="text-gray-500">Click to upload PPT, PPTX, or PDF (max 15MB)</p>
+                  <p className="text-gray-500">Click to upload PPT or PPTX (max 15MB)</p>
                 )}
               </label>
             </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Please upload a slideshow-ready PPT/PPTX. PDFs are not accepted.
+            </p>
           </div>
 
           {/* Submit Button */}

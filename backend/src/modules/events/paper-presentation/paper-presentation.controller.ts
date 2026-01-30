@@ -84,13 +84,12 @@ export class PaperPresentationController {
         const allowedMimes = [
           'application/vnd.ms-powerpoint',
           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          'application/pdf',
         ];
-        const allowedExts = ['.ppt', '.pptx', '.pdf'];
+        const allowedExts = ['.ppt', '.pptx'];
         const ext = extname(file.originalname).toLowerCase();
 
         if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
-          return cb(new BadRequestException('Only PPT, PPTX, and PDF files are allowed'), false);
+          return cb(new BadRequestException('Only PPT and PPTX files are allowed'), false);
         }
         cb(null, true);
       },
