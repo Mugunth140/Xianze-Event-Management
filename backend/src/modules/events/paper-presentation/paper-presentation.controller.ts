@@ -1,7 +1,6 @@
 import {
     BadRequestException,
     Body,
-    ConflictException,
     Controller,
     Delete,
     Get,
@@ -141,7 +140,6 @@ export class PaperPresentationController {
     }),
   )
   async submit(
-    @Body('teamName') teamName: string,
     @Body('member1') member1: string,
     @Body('member2') member2: string,
     @Body('college') college: string,
@@ -156,15 +154,11 @@ export class PaperPresentationController {
     file: MulterFile,
   ) {
     // Validate required fields
-    if (!teamName || !member1 || !college || !topic || !phone) {
+    if (!member1 || !college || !topic || !phone) {
       throw new BadRequestException('All required fields must be provided');
     }
 
-    // Check for duplicate team
-    const exists = await this.service.existsByTeamName(teamName);
-    if (exists) {
-      throw new ConflictException('A submission already exists for this team');
-    }
+    const derivedTeamName = member1.trim();
 
     // Build team members array
     const teamMembers = [member1];
@@ -178,7 +172,7 @@ export class PaperPresentationController {
     const pdfPath = await this.convertToPdf(file.path, '/data/presentations');
 
     const submission = await this.service.create(
-      { teamName, teamMembers, college, topic, phone },
+      { teamName: derivedTeamName, teamMembers, college, topic, phone },
       slidePath,
       pdfPath,
     );
@@ -253,9 +247,6 @@ export class PaperPresentationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
   async updateSubmission(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSubmissionDto) {
-    if (dto.teamName !== undefined && !dto.teamName.trim()) {
-      throw new BadRequestException('Team name cannot be empty');
-    }
     if (dto.college !== undefined && !dto.college.trim()) {
       throw new BadRequestException('College cannot be empty');
     }

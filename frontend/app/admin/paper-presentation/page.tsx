@@ -13,7 +13,6 @@ import { PageLoader } from '../components/ui/Spinner';
 
 interface PaperSubmission {
   id: number;
-  teamName: string;
   teamMembers: string[];
   college: string;
   topic: string;
@@ -49,7 +48,6 @@ export default function PaperPresentationPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editForm, setEditForm] = useState({
-    teamName: '',
     teamMembers: '',
     college: '',
     topic: '',
@@ -165,7 +163,6 @@ export default function PaperPresentationPage() {
   const handleEditOpen = (sub: PaperSubmission) => {
     setEditingId(sub.id);
     setEditForm({
-      teamName: sub.teamName,
       teamMembers: sub.teamMembers.join(', '),
       college: sub.college,
       topic: sub.topic,
@@ -190,7 +187,6 @@ export default function PaperPresentationPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          teamName: editForm.teamName,
           teamMembers: members,
           college: editForm.college,
           topic: editForm.topic,
@@ -226,9 +222,9 @@ export default function PaperPresentationPage() {
 
   const filteredSubmissions = submissions.filter((sub) => {
     const matchesSearch =
-      sub.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sub.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.college.toLowerCase().includes(searchQuery.toLowerCase());
+      sub.college.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.teamMembers.join(', ').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesTab = activeTab === 'all' || sub.status === activeTab;
 
@@ -339,7 +335,7 @@ export default function PaperPresentationPage() {
 
         <Card className="p-4">
           <Input
-            placeholder="Search by team name, topic, or college..."
+            placeholder="Search by topic, college, or member..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -357,7 +353,7 @@ export default function PaperPresentationPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900 truncate">{sub.teamName}</h3>
+                    <h3 className="text-lg font-bold text-gray-900 truncate">{sub.topic}</h3>
                     <Badge
                       variant={
                         sub.status === 'presented'
@@ -454,11 +450,6 @@ export default function PaperPresentationPage() {
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <Input
-                      label="Team Name"
-                      value={editForm.teamName}
-                      onChange={(e) => setEditForm({ ...editForm, teamName: e.target.value })}
-                    />
-                    <Input
                       label="Topic"
                       value={editForm.topic}
                       onChange={(e) => setEditForm({ ...editForm, topic: e.target.value })}
@@ -500,7 +491,7 @@ export default function PaperPresentationPage() {
       {presentingSubmission && (
         <SlideshowViewer
           submissionId={presentingSubmission.id}
-          teamName={presentingSubmission.teamName}
+          teamName={presentingSubmission.topic}
           onClose={() => setPresentingSubmission(null)}
         />
       )}

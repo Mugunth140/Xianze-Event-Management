@@ -5,7 +5,6 @@ import { FormEvent, useState } from 'react';
 
 export default function PaperSubmissionPage() {
   const [formData, setFormData] = useState({
-    teamName: '',
     member1: '',
     member2: '',
     college: '',
@@ -29,7 +28,6 @@ export default function PaperSubmissionPage() {
     }
 
     const data = new FormData();
-    data.append('teamName', formData.teamName);
     data.append('member1', formData.member1);
     data.append('member2', formData.member2);
     data.append('college', formData.college);
@@ -112,21 +110,6 @@ export default function PaperSubmissionPage() {
               {error}
             </div>
           )}
-
-          {/* Team Name */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Team Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.teamName}
-              onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-              placeholder="Enter your team name"
-            />
-          </div>
 
           {/* Team Members */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

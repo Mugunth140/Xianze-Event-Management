@@ -12,7 +12,6 @@ export interface CreateSubmissionDto {
 }
 
 export interface UpdateSubmissionDto {
-  teamName?: string;
   teamMembers?: string[];
   college?: string;
   topic?: string;
@@ -95,22 +94,11 @@ export class PaperPresentationService {
    */
   async updateSubmission(id: number, dto: UpdateSubmissionDto): Promise<PaperSubmission> {
     const submission = await this.findById(id);
-    if (dto.teamName !== undefined) submission.teamName = dto.teamName;
     if (dto.teamMembers !== undefined) submission.teamMembers = dto.teamMembers;
     if (dto.college !== undefined) submission.college = dto.college;
     if (dto.topic !== undefined) submission.topic = dto.topic;
     if (dto.phone !== undefined) submission.phone = dto.phone;
     return this.submissionRepository.save(submission);
-  }
-
-  /**
-   * Check if team already submitted
-   */
-  async existsByTeamName(teamName: string): Promise<boolean> {
-    const count = await this.submissionRepository.count({
-      where: { teamName },
-    });
-    return count > 0;
   }
 
   /**
