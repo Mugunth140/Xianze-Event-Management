@@ -124,6 +124,21 @@ const navItems: NavItem[] = [
     requiresTask: 'verify_payment',
   },
   {
+    href: '/admin/spot-registration',
+    label: 'Spot Registration',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4v4m0 0l3-3m-3 3L9 5m-5 7h16m-7 4v4m0 0l3-3m-3 3l-3-3"
+        />
+      </svg>
+    ),
+    requiresTask: 'spot_registration',
+  },
+  {
     href: '/admin/users',
     label: 'Users',
     icon: (

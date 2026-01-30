@@ -1,9 +1,9 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 
 export enum UserRole {
@@ -16,6 +16,9 @@ export enum UserRole {
 export enum UserTask {
   // Payment related
   VERIFY_PAYMENT = 'verify_payment',
+
+  // Spot registration
+  SPOT_REGISTRATION = 'spot_registration',
 
   // Attendance related
   MARK_ATTENDANCE = 'mark_attendance',
