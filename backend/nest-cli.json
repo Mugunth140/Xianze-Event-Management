@@ -13,6 +13,10 @@
       {
         "include": "modules/events/buildathon/data/**/*.json",
         "outDir": "dist"
+      },
+      {
+        "include": "public/**/*",
+        "outDir": "dist"
       }
     ]
   }

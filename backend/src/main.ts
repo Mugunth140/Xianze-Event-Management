@@ -1,7 +1,10 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import * as express from 'express';
+import { existsSync } from 'fs';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { corsConfig, helmetConfig } from './config/security.config';
 import { UsersService } from './modules/users/users.service';
@@ -44,6 +47,17 @@ async function bootstrap() {
 
   // CORS configuration
   app.enableCors(corsConfig(configService));
+
+  // Serve uploaded assets (QRs, documents)
+  const uploadsDir = existsSync('/data/uploads')
+    ? '/data/uploads'
+    : join(process.cwd(), 'data', 'uploads');
+  app.use('/api/uploads', express.static(uploadsDir));
+
+  const publicDir = join(process.cwd(), 'dist', 'public');
+  if (existsSync(publicDir)) {
+    app.use('/api/uploads/buildathon', express.static(publicDir));
+  }
 
   // Global API prefix
   app.setGlobalPrefix('api', {

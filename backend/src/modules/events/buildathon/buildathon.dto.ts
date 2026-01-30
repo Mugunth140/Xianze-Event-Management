@@ -36,6 +36,42 @@ export class CreateTeamDto {
   phone?: string;
 }
 
+export class UpdateTeamDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  teamName?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  participant1?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  participant2?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  participant3?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  participant4?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  phone?: string;
+}
+
 export class UploadDocumentDto {
   @IsString()
   @IsNotEmpty()

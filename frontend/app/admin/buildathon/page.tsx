@@ -65,6 +65,23 @@ export default function BuildathonPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [countdownSeconds, setCountdownSeconds] = useState(2 * 60 * 60);
+  const [isCountdownRunning, setIsCountdownRunning] = useState(false);
+  const [countdownEndTime, setCountdownEndTime] = useState<number | null>(null);
+  const [countdownLoaded, setCountdownLoaded] = useState(false);
+  const [resettingMetrics, setResettingMetrics] = useState(false);
+
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [editTeamForm, setEditTeamForm] = useState({
+    teamName: '',
+    participant1: '',
+    participant2: '',
+    participant3: '',
+    participant4: '',
+    email: '',
+    phone: '',
+  });
 
   // Document upload form
   const [docTitle, setDocTitle] = useState('');
@@ -108,6 +125,31 @@ export default function BuildathonPage() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('buildathonCountdown');
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as {
+        endTime?: number | null;
+        running?: boolean;
+        remaining?: number;
+      };
+      if (parsed.running && parsed.endTime) {
+        const remaining = Math.max(0, Math.floor((parsed.endTime - Date.now()) / 1000));
+        setCountdownSeconds(remaining);
+        setIsCountdownRunning(remaining > 0);
+        setCountdownEndTime(remaining > 0 ? parsed.endTime : null);
+      } else if (typeof parsed.remaining === 'number') {
+        setCountdownSeconds(parsed.remaining);
+        setIsCountdownRunning(false);
+        setCountdownEndTime(null);
+      }
+    } catch {
+      // ignore
+    }
+    setCountdownLoaded(true);
+  }, []);
 
   const handleUploadDocument = async () => {
     if (!docTitle || !docFile) {
@@ -172,6 +214,28 @@ export default function BuildathonPage() {
     fetchData();
   };
 
+  const handleToggleAllEndpoints = async () => {
+    const token = localStorage.getItem('token');
+    const currentState = apiState || stats?.apiState;
+    const allEnabled = currentState
+      ? currentState.customersEndpointEnabled &&
+        currentState.ordersEndpointEnabled &&
+        currentState.productsEndpointEnabled
+      : false;
+    const nextValue = !allEnabled;
+
+    await fetch(getApiUrl('/buildathon/api-state'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        customersEndpointEnabled: nextValue,
+        ordersEndpointEnabled: nextValue,
+        productsEndpointEnabled: nextValue,
+      }),
+    });
+    fetchData();
+  };
+
   const handleDeleteTeam = async (id: number) => {
     if (!confirm('Delete this team?')) return;
     const token = localStorage.getItem('token');
@@ -182,18 +246,114 @@ export default function BuildathonPage() {
     fetchData();
   };
 
-  const handleGenerateRegistrationQr = async () => {
-    const token = localStorage.getItem('token');
-    await fetch(getApiUrl('/buildathon/generate-registration-qr'), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+  const handleEditTeamOpen = (team: Team) => {
+    setEditingTeamId(team.id);
+    setEditTeamForm({
+      teamName: team.teamName,
+      participant1: team.participant1,
+      participant2: team.participant2 || '',
+      participant3: team.participant3 || '',
+      participant4: team.participant4 || '',
+      email: team.email || '',
+      phone: team.phone || '',
     });
-    fetchData();
+  };
+
+  const handleEditTeamSave = async (id: number) => {
+    const token = localStorage.getItem('token');
+    setSavingTeam(true);
+    try {
+      const res = await fetch(getApiUrl(`/buildathon/teams/${id}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          teamName: editTeamForm.teamName,
+          participant1: editTeamForm.participant1,
+          participant2: editTeamForm.participant2 || undefined,
+          participant3: editTeamForm.participant3 || undefined,
+          participant4: editTeamForm.participant4 || undefined,
+          email: editTeamForm.email || undefined,
+          phone: editTeamForm.phone || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      setEditingTeamId(null);
+      fetchData();
+    } catch {
+      setError('Failed to update team');
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
+  const persistCountdown = (payload: {
+    endTime: number | null;
+    running: boolean;
+    remaining: number;
+  }) => {
+    localStorage.setItem('buildathonCountdown', JSON.stringify(payload));
+  };
+
+  const handleResetMetrics = async () => {
+    if (!confirm('Reset all metrics? This will clear request logs.')) return;
+    const token = localStorage.getItem('token');
+    setResettingMetrics(true);
+    try {
+      const res = await fetch(getApiUrl('/buildathon/metrics/reset'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Reset failed');
+      fetchData();
+    } catch {
+      setError('Failed to reset metrics');
+    } finally {
+      setResettingMetrics(false);
+    }
   };
 
   const sortedTeams = [...teams].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  const activeDocument = documents.find((doc) => doc.isActive) || documents[0];
+
+  useEffect(() => {
+    if (!isCountdownRunning || !countdownEndTime) return;
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((countdownEndTime - Date.now()) / 1000));
+      setCountdownSeconds(remaining);
+      if (remaining === 0) {
+        setIsCountdownRunning(false);
+        setCountdownEndTime(null);
+      }
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [countdownEndTime, isCountdownRunning]);
+
+  useEffect(() => {
+    if (!countdownLoaded) return;
+    persistCountdown({
+      endTime: countdownEndTime,
+      running: isCountdownRunning,
+      remaining: countdownSeconds,
+    });
+  }, [countdownEndTime, countdownSeconds, countdownLoaded, isCountdownRunning]);
+
+  const formatCountdown = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  };
 
   if (loading) return <PageLoader message="Loading Buildathon..." />;
 
@@ -241,66 +401,149 @@ export default function BuildathonPage() {
       {/* ==================== OVERVIEW TAB ==================== */}
       {activeTab === 'overview' && stats && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <StatCard
-              icon={<span className="text-2xl">👥</span>}
-              value={stats.totalTeams}
-              label="Teams Registered"
-              iconColor="text-primary-600"
-            />
-            <StatCard
-              icon={<span className="text-2xl">📄</span>}
-              value={stats.totalDocuments}
-              label="Documents"
-              iconColor="text-blue-600"
-            />
-            <StatCard
-              icon={<span className="text-2xl">📊</span>}
-              value={stats.totalRequests}
-              label="API Requests"
-              iconColor="text-emerald-600"
-            />
-            <StatCard
-              icon={<span className="text-2xl">🔌</span>}
-              value={
-                (stats.apiState.customersEndpointEnabled ? 1 : 0) +
-                (stats.apiState.ordersEndpointEnabled ? 1 : 0) +
-                (stats.apiState.productsEndpointEnabled ? 1 : 0)
-              }
-              label="Active Endpoints"
-              iconColor="text-amber-600"
-            />
-          </div>
+          <Card className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  API Endpoints Status (Quick Control)
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Enable or disable all participant API endpoints with one click.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge
+                  variant={
+                    (apiState || stats.apiState).customersEndpointEnabled ? 'purple' : 'inactive'
+                  }
+                >
+                  /data/customers
+                </Badge>
+                <Badge
+                  variant={
+                    (apiState || stats.apiState).ordersEndpointEnabled ? 'purple' : 'inactive'
+                  }
+                >
+                  /data/orders
+                </Badge>
+                <Badge
+                  variant={
+                    (apiState || stats.apiState).productsEndpointEnabled ? 'purple' : 'inactive'
+                  }
+                >
+                  /data/products
+                </Badge>
+                <Button
+                  variant={
+                    (apiState || stats.apiState).customersEndpointEnabled &&
+                    (apiState || stats.apiState).ordersEndpointEnabled &&
+                    (apiState || stats.apiState).productsEndpointEnabled
+                      ? 'danger-soft'
+                      : 'primary'
+                  }
+                  onClick={handleToggleAllEndpoints}
+                >
+                  {(apiState || stats.apiState).customersEndpointEnabled &&
+                  (apiState || stats.apiState).ordersEndpointEnabled &&
+                  (apiState || stats.apiState).productsEndpointEnabled
+                    ? 'Disable All'
+                    : 'Enable All'}
+                </Button>
+              </div>
+            </div>
+          </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">API Endpoints Status</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Overview Stats</h3>
+              <p className="text-sm text-gray-500">Live totals for the current round</p>
+            </div>
             <div className="grid sm:grid-cols-3 gap-4">
-              <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50">
-                <div>
-                  <p className="font-medium text-gray-900">/data/customers</p>
-                  <p className="text-sm text-gray-500">Customer records</p>
-                </div>
-                <Badge variant={stats.apiState.customersEndpointEnabled ? 'purple' : 'inactive'}>
-                  {stats.apiState.customersEndpointEnabled ? 'LIVE' : 'OFF'}
-                </Badge>
+              <StatCard
+                icon={<span className="text-lg font-semibold">T</span>}
+                value={stats.totalTeams}
+                label="Teams Registered"
+                iconColor="text-primary-600"
+              />
+              <StatCard
+                icon={<span className="text-lg font-semibold">R</span>}
+                value={stats.totalRequests}
+                label="API Requests"
+                iconColor="text-emerald-600"
+              />
+              <StatCard
+                icon={<span className="text-lg font-semibold">E</span>}
+                value={
+                  (stats.apiState.customersEndpointEnabled ? 1 : 0) +
+                  (stats.apiState.ordersEndpointEnabled ? 1 : 0) +
+                  (stats.apiState.productsEndpointEnabled ? 1 : 0)
+                }
+                label="Active Endpoints"
+                iconColor="text-amber-600"
+              />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex flex-col lg:items-center lg:justify-between gap-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 text-center">
+                  Live Round Timer
+                </h3>
               </div>
-              <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50">
-                <div>
-                  <p className="font-medium text-gray-900">/data/orders</p>
-                  <p className="text-sm text-gray-500">Order records</p>
+              <div className="flex flex-col gap-5 w-full ">
+                <div className="w-full px-10 py-10 rounded-[2.5rem] bg-gray-900 text-white font-mono text-6xl md:text-7xl lg:text-8xl font-bold tracking-[0.2em] text-center shadow-lg min-h-[160px] flex items-center justify-center">
+                  {formatCountdown(countdownSeconds)}
                 </div>
-                <Badge variant={stats.apiState.ordersEndpointEnabled ? 'purple' : 'inactive'}>
-                  {stats.apiState.ordersEndpointEnabled ? 'LIVE' : 'OFF'}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50">
-                <div>
-                  <p className="font-medium text-gray-900">/data/products</p>
-                  <p className="text-sm text-gray-500">Product catalog</p>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <Button
+                    variant={isCountdownRunning ? 'danger-soft' : 'primary'}
+                    onClick={() => {
+                      if (isCountdownRunning) {
+                        const remaining = countdownEndTime
+                          ? Math.max(0, Math.floor((countdownEndTime - Date.now()) / 1000))
+                          : countdownSeconds;
+                        setCountdownSeconds(remaining);
+                        setIsCountdownRunning(false);
+                        setCountdownEndTime(null);
+                        persistCountdown({
+                          endTime: null,
+                          running: false,
+                          remaining,
+                        });
+                        return;
+                      }
+
+                      const nextSeconds = countdownSeconds === 0 ? 2 * 60 * 60 : countdownSeconds;
+                      const endTime = Date.now() + nextSeconds * 1000;
+                      setCountdownSeconds(nextSeconds);
+                      setCountdownEndTime(endTime);
+                      setIsCountdownRunning(true);
+                      persistCountdown({
+                        endTime,
+                        running: true,
+                        remaining: nextSeconds,
+                      });
+                    }}
+                  >
+                    {isCountdownRunning ? 'Pause' : 'Start'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setCountdownSeconds(2 * 60 * 60);
+                      setIsCountdownRunning(false);
+                      setCountdownEndTime(null);
+                      persistCountdown({
+                        endTime: null,
+                        running: false,
+                        remaining: 2 * 60 * 60,
+                      });
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </div>
-                <Badge variant={stats.apiState.productsEndpointEnabled ? 'purple' : 'inactive'}>
-                  {stats.apiState.productsEndpointEnabled ? 'LIVE' : 'OFF'}
-                </Badge>
               </div>
             </div>
           </Card>
@@ -327,9 +570,18 @@ export default function BuildathonPage() {
                       Registered {new Date(team.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  <Button variant="danger-soft" size="sm" onClick={() => handleDeleteTeam(team.id)}>
-                    Delete
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => handleEditTeamOpen(team)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="danger-soft"
+                      size="sm"
+                      onClick={() => handleDeleteTeam(team.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mt-4 space-y-4">
@@ -376,6 +628,74 @@ export default function BuildathonPage() {
                     </div>
                   </div>
                 </div>
+
+                {editingTeamId === team.id && (
+                  <div className="mt-4 border-t border-gray-100 pt-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Input
+                        label="Team Name"
+                        value={editTeamForm.teamName}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, teamName: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Lead Participant"
+                        value={editTeamForm.participant1}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, participant1: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Participant 2"
+                        value={editTeamForm.participant2}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, participant2: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Participant 3"
+                        value={editTeamForm.participant3}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, participant3: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Participant 4"
+                        value={editTeamForm.participant4}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, participant4: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Email"
+                        value={editTeamForm.email}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, email: e.target.value })
+                        }
+                      />
+                      <Input
+                        label="Phone"
+                        value={editTeamForm.phone}
+                        onChange={(e) =>
+                          setEditTeamForm({ ...editTeamForm, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleEditTeamSave(team.id)}
+                        loading={savingTeam}
+                      >
+                        Save Changes
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => setEditingTeamId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             ))}
 
@@ -402,28 +722,17 @@ export default function BuildathonPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-primary-200">
-                {apiState?.registrationQrPath ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/api/uploads/buildathon/registration-qr.png"
-                      alt="Registration QR Code"
-                      className="w-40 h-40"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </>
-                ) : (
-                  <div className="w-40 h-40 flex items-center justify-center bg-gray-50 text-gray-400 text-sm text-center">
-                    No QR generated yet
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/buildathon-team-qr.png"
+                  alt="Registration QR Code"
+                  className="w-40 h-40"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
               <div className="space-y-3">
-                <Button onClick={handleGenerateRegistrationQr} variant="primary">
-                  {apiState?.registrationQrPath ? 'Regenerate' : 'Generate'} Registration QR
-                </Button>
                 <p className="text-xs text-gray-400">Links to: /events/buildathon/register</p>
               </div>
             </div>
@@ -471,70 +780,66 @@ export default function BuildathonPage() {
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Uploaded Documents ({documents.length})
-            </h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className={`p-4 rounded-xl border ${
-                    doc.isActive ? 'border-primary-300 bg-primary-50' : 'border-gray-100 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{doc.title}</h4>
-                      {doc.description && (
-                        <p className="text-sm text-gray-500">{doc.description}</p>
-                      )}
-                    </div>
-                    {doc.isActive && <Badge variant="purple">ACTIVE</Badge>}
-                  </div>
-                  {doc.qrCodePath && (
-                    <div className="my-3 flex justify-center">
-                      <div className="p-2 bg-white rounded-lg shadow-sm border">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`/api/uploads/buildathon/qr-${doc.id}.png`}
-                          alt="QR Code"
-                          className="w-32 h-32"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-3">
-                    {!doc.isActive && (
-                      <Button
-                        variant="primary-soft"
-                        size="sm"
-                        onClick={() => handleActivateDocument(doc.id)}
-                      >
-                        Set Active
-                      </Button>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Problem Statement</h3>
+            {activeDocument ? (
+              <div
+                className={`p-4 rounded-xl border ${
+                  activeDocument.isActive
+                    ? 'border-primary-300 bg-primary-50'
+                    : 'border-gray-100 bg-white'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{activeDocument.title}</h4>
+                    {activeDocument.description && (
+                      <p className="text-sm text-gray-500">{activeDocument.description}</p>
                     )}
-                    <Button
-                      variant="danger-soft"
-                      size="sm"
-                      onClick={() => handleDeleteDocument(doc.id)}
-                    >
-                      Delete
-                    </Button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Uploaded: {new Date(doc.createdAt).toLocaleString()}
-                  </p>
+                  {activeDocument.isActive && <Badge variant="purple">ACTIVE</Badge>}
                 </div>
-              ))}
-              {documents.length === 0 && (
-                <div className="col-span-full py-8 text-center text-gray-400">
-                  No documents uploaded yet. Upload a problem statement above.
+                {activeDocument.qrCodePath && (
+                  <div className="my-3 flex justify-center">
+                    <div className="p-2 bg-white rounded-lg shadow-sm border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/uploads/buildathon/qr-${activeDocument.id}.png`}
+                        alt="QR Code"
+                        className="w-32 h-32"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2 mt-3">
+                  {!activeDocument.isActive && (
+                    <Button
+                      variant="primary-soft"
+                      size="sm"
+                      onClick={() => handleActivateDocument(activeDocument.id)}
+                    >
+                      Set Active
+                    </Button>
+                  )}
+                  <Button
+                    variant="danger-soft"
+                    size="sm"
+                    onClick={() => handleDeleteDocument(activeDocument.id)}
+                  >
+                    Delete
+                  </Button>
                 </div>
-              )}
-            </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  Uploaded: {new Date(activeDocument.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-400">
+                No document uploaded yet. Upload a problem statement above.
+              </div>
+            )}
           </Card>
         </div>
       )}
@@ -625,6 +930,12 @@ export default function BuildathonPage() {
       {/* ==================== METRICS TAB ==================== */}
       {activeTab === 'metrics' && metrics && (
         <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h3 className="text-lg font-semibold text-gray-900">Metrics Overview</h3>
+            <Button variant="danger-soft" onClick={handleResetMetrics} loading={resettingMetrics}>
+              Reset Metrics
+            </Button>
+          </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <StatCard
               icon={<span className="text-2xl">📈</span>}

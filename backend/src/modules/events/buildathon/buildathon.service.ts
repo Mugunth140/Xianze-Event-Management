@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-import { CreateTeamDto, UpdateApiStateDto, UploadDocumentDto } from './buildathon.dto';
+import { CreateTeamDto, UpdateApiStateDto, UpdateTeamDto, UploadDocumentDto } from './buildathon.dto';
 import {
-  BuildathonApiState,
-  BuildathonDocument,
-  BuildathonRequestLog,
-  BuildathonTeam,
+    BuildathonApiState,
+    BuildathonDocument,
+    BuildathonRequestLog,
+    BuildathonTeam,
 } from './buildathon.entity';
 
 // Load JSON data
@@ -56,6 +56,27 @@ export class BuildathonService {
     return team;
   }
 
+  async updateTeam(id: number, dto: UpdateTeamDto): Promise<BuildathonTeam> {
+    const team = await this.getTeamById(id);
+
+    if (dto.teamName && dto.teamName !== team.teamName) {
+      const existing = await this.teamRepo.findOne({ where: { teamName: dto.teamName } });
+      if (existing) {
+        throw new BadRequestException('Team name already exists');
+      }
+      team.teamName = dto.teamName;
+    }
+
+    if (dto.participant1 !== undefined) team.participant1 = dto.participant1;
+    if (dto.participant2 !== undefined) team.participant2 = dto.participant2;
+    if (dto.participant3 !== undefined) team.participant3 = dto.participant3;
+    if (dto.participant4 !== undefined) team.participant4 = dto.participant4;
+    if (dto.email !== undefined) team.email = dto.email;
+    if (dto.phone !== undefined) team.phone = dto.phone;
+
+    return this.teamRepo.save(team);
+  }
+
   async deleteTeam(id: number): Promise<void> {
     const result = await this.teamRepo.delete(id);
     if (result.affected === 0) {
@@ -68,6 +89,19 @@ export class BuildathonService {
   // ========================
 
   async createDocument(dto: UploadDocumentDto, filePath: string): Promise<BuildathonDocument> {
+    const existingDocs = await this.documentRepo.find();
+    for (const existing of existingDocs) {
+      if (existing.filePath && fs.existsSync(existing.filePath)) {
+        fs.unlinkSync(existing.filePath);
+      }
+      if (existing.qrCodePath && fs.existsSync(existing.qrCodePath)) {
+        fs.unlinkSync(existing.qrCodePath);
+      }
+    }
+    if (existingDocs.length > 0) {
+      await this.documentRepo.remove(existingDocs);
+    }
+
     const doc = this.documentRepo.create({
       title: dto.title,
       description: dto.description,
@@ -255,6 +289,10 @@ export class BuildathonService {
         count: parseInt(r.count, 10),
       })),
     };
+  }
+
+  async resetMetrics(): Promise<void> {
+    await this.requestLogRepo.clear();
   }
 
   async getStats(): Promise<{

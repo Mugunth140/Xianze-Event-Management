@@ -26,7 +26,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '../../users/user.entity';
-import { CreateTeamDto, UpdateApiStateDto, UploadDocumentDto } from './buildathon.dto';
+import { CreateTeamDto, UpdateApiStateDto, UpdateTeamDto, UploadDocumentDto } from './buildathon.dto';
 import { BuildathonService } from './buildathon.service';
 
 // File upload config - use /data in Docker, fallback to ./data locally
@@ -99,6 +99,14 @@ export class BuildathonController {
   async deleteTeam(@Param('id', ParseIntPipe) id: number) {
     await this.service.deleteTeam(id);
     return { success: true, message: 'Team deleted' };
+  }
+
+  @Patch('teams/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+  async updateTeam(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTeamDto) {
+    const team = await this.service.updateTeam(id, dto);
+    return { success: true, data: team };
   }
 
   // ========================
@@ -273,6 +281,15 @@ export class BuildathonController {
   async getMetrics() {
     const metrics = await this.service.getMetrics();
     return { success: true, data: metrics };
+  }
+
+  @Post('metrics/reset')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+  @HttpCode(HttpStatus.OK)
+  async resetMetrics() {
+    await this.service.resetMetrics();
+    return { success: true, message: 'Metrics reset' };
   }
 
   @Get('stats')
