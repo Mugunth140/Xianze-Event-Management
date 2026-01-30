@@ -8,7 +8,6 @@ import Button from '../components/ui/Button';
 import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
-import SlideshowViewer from '../components/ui/SlideshowViewer';
 import { PageLoader } from '../components/ui/Spinner';
 
 interface PaperSubmission {
@@ -43,6 +42,7 @@ export default function PaperPresentationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadedLinks, setDownloadedLinks] = useState<Record<number, string>>({});
   const [userRole, setUserRole] = useState<User['role'] | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -53,9 +53,6 @@ export default function PaperPresentationPage() {
     topic: '',
     phone: '',
   });
-
-  // Slideshow state - now using fullscreen viewer
-  const [presentingSubmission, setPresentingSubmission] = useState<PaperSubmission | null>(null);
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -134,12 +131,17 @@ export default function PaperPresentationPage() {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
+      setDownloadedLinks((prev) => {
+        if (prev[id]) {
+          window.URL.revokeObjectURL(prev[id]);
+        }
+        return { ...prev, [id]: url };
+      });
       const a = document.createElement('a');
       a.href = url;
       a.download = filename || `slides-${id}.pptx`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       a.remove();
     } catch {
       setError('Failed to download file');
@@ -148,16 +150,11 @@ export default function PaperPresentationPage() {
     }
   };
 
-  const handleStartPresentation = (sub: PaperSubmission) => {
-    // Check if PDF is available (either pdfPath exists or original is PDF)
-    const hasPdf = sub.pdfPath || sub.slidePath.toLowerCase().endsWith('.pdf');
-    if (!hasPdf) {
-      setError(
-        'PDF not available. This presentation was uploaded before PDF conversion was enabled. Please ask the team to re-upload in PDF format.'
-      );
-      return;
-    }
-    setPresentingSubmission(sub);
+  const handlePresent = (sub: PaperSubmission) => {
+    const fileUrl = downloadedLinks[sub.id];
+    if (!fileUrl) return;
+    const deepLink = `ms-powerpoint:ofe|u|${fileUrl}`;
+    window.location.href = deepLink;
   };
 
   const handleEditOpen = (sub: PaperSubmission) => {
@@ -352,8 +349,13 @@ export default function PaperPresentationPage() {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900 truncate">{sub.topic}</h3>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900 truncate">
+                      {sub.teamMembers.join(', ')}
+                    </h3>
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                      {sub.college}
+                    </span>
                     <Badge
                       variant={
                         sub.status === 'presented'
@@ -369,9 +371,6 @@ export default function PaperPresentationPage() {
                     </Badge>
                   </div>
                   <p className="text-sm text-primary-600 font-medium mb-1">{sub.topic}</p>
-                  <p className="text-sm text-gray-500">
-                    {sub.teamMembers.join(', ')} • {sub.college}
-                  </p>
                   <p className="text-xs text-gray-400 mt-1">
                     Submitted: {new Date(sub.createdAt).toLocaleString()}
                   </p>
@@ -379,23 +378,30 @@ export default function PaperPresentationPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                  <Button size="sm" onClick={() => handleStartPresentation(sub)}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    Present
-                  </Button>
+                  {downloadedLinks[sub.id] && (
+                    <Button size="sm" onClick={() => handlePresent(sub)}>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Present
+                    </Button>
+                  )}
 
                   <Button
                     size="sm"
@@ -413,7 +419,7 @@ export default function PaperPresentationPage() {
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                       />
                     </svg>
-                    Download
+                    {downloadedLinks[sub.id] ? 'Re-download' : 'Download'}
                   </Button>
 
                   {canEdit && (
@@ -486,15 +492,6 @@ export default function PaperPresentationPage() {
           ))
         )}
       </div>
-
-      {/* Fullscreen Slideshow Viewer */}
-      {presentingSubmission && (
-        <SlideshowViewer
-          submissionId={presentingSubmission.id}
-          teamName={presentingSubmission.topic}
-          onClose={() => setPresentingSubmission(null)}
-        />
-      )}
     </div>
   );
 }
