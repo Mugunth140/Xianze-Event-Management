@@ -215,11 +215,7 @@ export class PaymentController {
 
     let filtered = payments.filter((p) => p.paymentStatus === 'verified' && p.verifiedBy);
 
-    if (user.role === UserRole.COORDINATOR && user.assignedEvent) {
-      filtered = filtered.filter((p) => p.event === user.assignedEvent);
-    } else if (user.role === UserRole.MEMBER && user.assignedEvents?.length) {
-      filtered = filtered.filter((p) => user.assignedEvents?.includes(p.event));
-    } else if (event) {
+    if (event) {
       filtered = filtered.filter((p) => p.event === event);
     }
 

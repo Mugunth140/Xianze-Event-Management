@@ -41,10 +41,11 @@ COPY --from=builder /app/package.json ./
 
 RUN mkdir -p /data/transactions /data/presentations /data/think-link /data/uploads/buildathon && chown -R nestjs:bunjs /data
 
-USER nestjs
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-CMD ["bun", "run", "dist/main.js"]
+ENTRYPOINT ["/entrypoint.sh"]
