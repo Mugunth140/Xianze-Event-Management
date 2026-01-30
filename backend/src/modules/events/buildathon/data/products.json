@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "Pro Laptop X1",
+    "category": "Electronics",
+    "price": 500.00,
+    "stock": 150,
+    "rating": 4.5,
+    "description": "High-performance laptop for professionals"
+  },
+  {
+    "id": 2,
+    "name": "Wireless Mouse Elite",
+    "category": "Accessories",
+    "price": 150.00,
+    "stock": 500,
+    "rating": 4.2,
+    "description": "Ergonomic wireless mouse with precision tracking"
+  },
+  {
+    "id": 3,
+    "name": "USB-C Hub Pro",
+    "category": "Accessories",
+    "price": 250.00,
+    "stock": 300,
+    "rating": 4.7,
+    "description": "Multi-port USB-C hub with 10 ports"
+  },
+  {
+    "id": 4,
+    "name": "4K Monitor Ultra",
+    "category": "Electronics",
+    "price": 1200.00,
+    "stock": 75,
+    "rating": 4.8,
+    "description": "32-inch 4K monitor with HDR support"
+  },
+  {
+    "id": 5,
+    "name": "Mechanical Keyboard RGB",
+    "category": "Accessories",
+    "price": 400.50,
+    "stock": 200,
+    "rating": 4.6,
+    "description": "Mechanical keyboard with customizable RGB lighting"
+  },
+  {
+    "id": 6,
+    "name": "Noise-Cancelling Headphones",
+    "category": "Audio",
+    "price": 450.00,
+    "stock": 180,
+    "rating": 4.9,
+    "description": "Premium wireless headphones with ANC"
+  },
+  {
+    "id": 7,
+    "name": "Webcam HD Plus",
+    "category": "Accessories",
+    "price": 60.00,
+    "stock": 400,
+    "rating": 4.1,
+    "description": "1080p webcam with built-in microphone"
+  },
+  {
+    "id": 8,
+    "name": "External SSD 1TB",
+    "category": "Storage",
+    "price": 300.00,
+    "stock": 250,
+    "rating": 4.4,
+    "description": "Portable SSD with fast transfer speeds"
+  },
+  {
+    "id": 9,
+    "name": "Smart Desk Lamp",
+    "category": "Office",
+    "price": 375.00,
+    "stock": 120,
+    "rating": 4.3,
+    "description": "LED desk lamp with adjustable brightness and color"
+  },
+  {
+    "id": 10,
+    "name": "Ergonomic Chair Pro",
+    "category": "Furniture",
+    "price": 475.00,
+    "stock": 60,
+    "rating": 4.7,
+    "description": "Adjustable ergonomic office chair with lumbar support"
+  }
+]
