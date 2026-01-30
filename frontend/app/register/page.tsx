@@ -737,15 +737,6 @@ const Register = () => {
           </p>
 
           <div className="flex flex-col items-center gap-2">
-            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-green-100 shadow-xl shadow-green-100/50">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-400"></span>
-              </span>
-              <span className="font-bold text-green-700 tracking-wide text-sm sm:text-base">
-                Spot Registration Available
-              </span>
-            </div>
             <span className="text-sm text-gray-500 font-medium px-3 py-1 ">
               Lunch & Refreshment Included
             </span>

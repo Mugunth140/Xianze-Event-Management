@@ -2,10 +2,8 @@ import { ConflictException, Injectable, Logger, NotFoundException } from '@nestj
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
-import { CreateSpotRegistrationDto } from './dto/create-spot-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { PaymentStatus, Registration } from './registration.entity';
-import { SpotRegistrationState } from './spot-registration-state.entity';
 import { generatePassId, hashEmailForQR } from './utils/hash.util';
 
 @Injectable()
@@ -15,8 +13,6 @@ export class RegistrationService {
   constructor(
     @InjectRepository(Registration)
     private readonly registrationRepository: Repository<Registration>,
-    @InjectRepository(SpotRegistrationState)
-    private readonly spotStateRepository: Repository<SpotRegistrationState>,
   ) {}
 
   /**
@@ -45,7 +41,6 @@ export class RegistrationService {
    */
   async findAll(): Promise<Registration[]> {
     return this.registrationRepository.find({
-      where: { isSpotRegistration: false },
       order: { createdAt: 'DESC' },
     });
   }
@@ -55,7 +50,7 @@ export class RegistrationService {
    */
   async findByEvent(event: string): Promise<Registration[]> {
     return this.registrationRepository.find({
-      where: { event, isSpotRegistration: false },
+      where: { event },
       order: { createdAt: 'DESC' },
     });
   }
@@ -166,7 +161,6 @@ export class RegistrationService {
   async getPendingPayments(event?: string): Promise<Registration[]> {
     const query: Record<string, unknown> = {
       paymentStatus: PaymentStatus.PENDING,
-      isSpotRegistration: false,
     };
     if (event) {
       query.event = event;
@@ -195,91 +189,6 @@ export class RegistrationService {
     reg.qrCodeHash = qrCodeHash;
 
     this.logger.log(`Payment verified for registration ${id}, pass ID: ${passId}`);
-
-    return this.registrationRepository.save(reg);
-  }
-
-  // ==========================================
-  // Spot Registration Methods
-  // ==========================================
-
-  async getSpotRegistrationState(): Promise<SpotRegistrationState> {
-    let state = await this.spotStateRepository.findOne({
-      where: {},
-      order: { id: 'ASC' },
-    });
-    if (!state) {
-      await this.spotStateRepository.insert({ enabled: false });
-      state = await this.spotStateRepository.findOne({
-        where: {},
-        order: { id: 'ASC' },
-      });
-      if (!state) {
-        throw new NotFoundException('Spot registration state not found');
-      }
-    }
-    return state;
-  }
-
-  async updateSpotRegistrationState(enabled: boolean): Promise<SpotRegistrationState> {
-    const state = await this.getSpotRegistrationState();
-    await this.spotStateRepository
-      .createQueryBuilder()
-      .update(SpotRegistrationState)
-      .set({ enabled, updatedAt: new Date() })
-      .where('id = :id', { id: state.id })
-      .execute();
-    return this.getSpotRegistrationState();
-  }
-
-  async createSpotRegistration(dto: CreateSpotRegistrationDto): Promise<Registration> {
-    const registration = this.registrationRepository.create({
-      ...dto,
-      transactionId: null,
-      screenshotPath: null,
-      paymentStatus: PaymentStatus.PENDING,
-      isSpotRegistration: true,
-    });
-    return this.registrationRepository.save(registration);
-  }
-
-  async findSpotRegistrations(event?: string): Promise<Registration[]> {
-    const query: Record<string, unknown> = { isSpotRegistration: true };
-    if (event) {
-      query.event = event;
-    }
-    return this.registrationRepository.find({
-      where: query,
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findSpotRegistration(id: number): Promise<Registration> {
-    const reg = await this.findOne(id);
-    if (!reg.isSpotRegistration) {
-      throw new NotFoundException('Spot registration not found');
-    }
-    return reg;
-  }
-
-  async verifySpotRegistration(id: number, userId: number, note?: string): Promise<Registration> {
-    const reg = await this.findSpotRegistration(id);
-
-    if (reg.paymentStatus === PaymentStatus.VERIFIED && reg.passId && reg.qrCodeHash) {
-      return reg;
-    }
-
-    const passId = generatePassId();
-    const qrCodeHash = hashEmailForQR(reg.email, reg.id);
-
-    reg.paymentStatus = PaymentStatus.VERIFIED;
-    reg.verifiedBy = userId;
-    reg.verifiedAt = new Date();
-    reg.verificationNote = note || null;
-    reg.passId = passId;
-    reg.qrCodeHash = qrCodeHash;
-
-    this.logger.log(`Spot registration verified for ${id}, pass ID: ${passId}`);
 
     return this.registrationRepository.save(reg);
   }

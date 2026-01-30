@@ -90,13 +90,6 @@ const Eventschedule = () => {
 
     return () => ctx.revert();
   }, []);
-  // const schedule = [
-  //   { title: 'Spot Registration', time: '8:30 AM - 9:15 AM' },
-  //   { title: 'Inauguration', time: '9:15 AM - 10:30 AM' },
-  //   { title: 'Event Timing', time: '10:30 AM - 1:30 PM' },
-  //   { title: 'Lunch Timing', time: '1:30 PM - 2:30 PM' },
-  //   { title: 'Ceremony', time: '2:30 PM - 3:30 PM' },
-  // ];
   return (
     <section
       className="min-h-screen pt-28 pb-20"

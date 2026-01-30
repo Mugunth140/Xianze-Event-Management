@@ -14,11 +14,6 @@ const TASK_DEFINITIONS = {
     description: 'Can verify payment transactions',
     roles: ['coordinator', 'member'], // Available for these roles
   },
-  spot_registration: {
-    label: 'Spot Registration',
-    description: 'Can manage spot registrations and verify passes',
-    roles: ['coordinator'],
-  },
   mark_attendance: {
     label: 'Mark Attendance',
     description: 'Can mark participant attendance',

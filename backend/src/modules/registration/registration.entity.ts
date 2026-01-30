@@ -45,9 +45,6 @@ export class Registration {
   @Column({ type: 'varchar', length: 100 })
   event: string;
 
-  @Column({ type: 'boolean', default: false })
-  isSpotRegistration: boolean;
-
   // Payment verification fields
   @Column({ type: 'varchar', length: 100, nullable: true })
   transactionId: string | null;
