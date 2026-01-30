@@ -11,6 +11,7 @@ import { ConfirmModal } from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
+import useAuth from '../hooks/useAuth';
 
 interface Registration {
   id: number;
@@ -25,6 +26,17 @@ interface Registration {
   screenshotPath?: string;
 }
 
+interface VerifiedByGroup {
+  verifier: {
+    id: number;
+    name: string;
+    username: string;
+    role: 'admin' | 'coordinator' | 'member';
+  };
+  totalVerified: number;
+  registrations: Registration[];
+}
+
 const AVAILABLE_EVENTS = [
   'Paper Presentation',
   'Bug Smash',
@@ -36,7 +48,9 @@ const AVAILABLE_EVENTS = [
 ];
 
 export default function PaymentsPage() {
+  const { isAdmin } = useAuth();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [verifiedGroups, setVerifiedGroups] = useState<VerifiedByGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [eventFilter, setEventFilter] = useState('');
@@ -45,7 +59,7 @@ export default function PaymentsPage() {
   const [actionType, setActionType] = useState<'verify' | 'reject' | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'history' | 'verifiedBy'>('pending');
 
   // Screenshot viewing state
   const [viewingScreenshot, setViewingScreenshot] = useState<{ id: number; name: string } | null>(
@@ -59,16 +73,34 @@ export default function PaymentsPage() {
   const itemsPerPage = 15;
 
   const fetchPayments = useCallback(async () => {
+    if (activeTab === 'verifiedBy' && !isAdmin) {
+      setVerifiedGroups([]);
+      setRegistrations([]);
+      setLoading(false);
+      return;
+    }
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
-      const endpoint = activeTab === 'pending' ? '/payments/pending' : '/payments/history';
+      const endpoint =
+        activeTab === 'pending'
+          ? '/payments/pending'
+          : activeTab === 'history'
+            ? '/payments/history'
+            : '/payments/verified-by';
       const url = eventFilter ? `${endpoint}?event=${encodeURIComponent(eventFilter)}` : endpoint;
       const res = await fetch(getApiUrl(url), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to fetch payments');
-      setRegistrations(await res.json());
+      const data = await res.json();
+      if (activeTab === 'verifiedBy') {
+        setVerifiedGroups(data || []);
+        setRegistrations([]);
+      } else {
+        setRegistrations(data || []);
+        setVerifiedGroups([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load payments');
     } finally {
@@ -79,6 +111,12 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === 'verifiedBy') {
+      setActiveTab('pending');
+    }
+  }, [isAdmin, activeTab]);
 
   const handleViewScreenshot = async (reg: Registration) => {
     if (!reg.screenshotPath) {
@@ -176,6 +214,22 @@ export default function PaymentsPage() {
       reg.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return verifiedGroups;
+    const query = searchQuery.toLowerCase();
+    return verifiedGroups
+      .map((group) => {
+        const registrations = group.registrations.filter(
+          (reg) =>
+            reg.name.toLowerCase().includes(query) ||
+            reg.email.toLowerCase().includes(query) ||
+            reg.transactionId?.toLowerCase().includes(query)
+        );
+        return { ...group, registrations, totalVerified: registrations.length };
+      })
+      .filter((group) => group.totalVerified > 0);
+  }, [verifiedGroups, searchQuery]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -233,6 +287,18 @@ export default function PaymentsPage() {
         >
           History
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('verifiedBy')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'verifiedBy'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            Verified By
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -261,6 +327,66 @@ export default function PaymentsPage() {
       {/* Payments List */}
       {loading ? (
         <PageLoader message="Loading payments..." />
+      ) : activeTab === 'verifiedBy' && isAdmin ? (
+        <div className="space-y-4">
+          {filteredGroups.length === 0 ? (
+            <Card className="p-6 text-center text-gray-500">No verified payments found.</Card>
+          ) : (
+            filteredGroups.map((group) => (
+              <Card key={group.verifier.id} className="p-0 overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-6 border-b">
+                  <div>
+                    <p className="text-sm text-gray-500">Verified By</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-semibold text-gray-900">{group.verifier.name}</p>
+                      <Badge variant="purple" className="capitalize">
+                        {group.verifier.role}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-400">@{group.verifier.username}</p>
+                  </div>
+                  <Badge variant="success">{group.totalVerified} verified</Badge>
+                </div>
+
+                <div className="overflow-x-auto admin-scrollbar">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Participant</th>
+                        <th>Event</th>
+                        <th>Transaction ID</th>
+                        <th>Verified On</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.registrations.map((reg) => (
+                        <tr key={reg.id}>
+                          <td>
+                            <div>
+                              <p className="font-medium text-gray-900">{reg.name}</p>
+                              <p className="text-sm text-gray-500">{reg.email}</p>
+                            </div>
+                          </td>
+                          <td>
+                            <Badge variant="purple">{reg.event}</Badge>
+                          </td>
+                          <td>
+                            <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                              {reg.transactionId || 'N/A'}
+                            </code>
+                          </td>
+                          <td className="text-gray-500">
+                            {reg.verifiedAt ? new Date(reg.verifiedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       ) : (
         <Card className="overflow-hidden p-0">
           <table className="admin-table">

@@ -1,20 +1,23 @@
 import {
-  Body,
-  Controller,
-  Get,
-  Logger,
-  Param,
-  ParseIntPipe,
-  Post,
-  Query,
-  Request,
-  UseGuards,
+    Body,
+    Controller,
+    ForbiddenException,
+    Get,
+    Logger,
+    Param,
+    ParseIntPipe,
+    Post,
+    Query,
+    Request,
+    UseGuards,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TasksGuard } from '../auth/guards/tasks.guard';
 import { MailService } from '../mail/mail.service';
-import { UserRole, UserTask } from '../users/user.entity';
+import { User, UserRole, UserTask } from '../users/user.entity';
 import { Registration } from './registration.entity';
 import { RegistrationService } from './registration.service';
 
@@ -35,6 +38,8 @@ export class PaymentController {
   constructor(
     private readonly registrationService: RegistrationService,
     private readonly mailService: MailService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   /**
@@ -194,5 +199,64 @@ export class PaymentController {
     }
 
     return filtered;
+  }
+
+  /**
+   * Group verified payments by the user who verified them
+   */
+  @Get('verified-by')
+  @RequireTasks(UserTask.VERIFY_PAYMENT)
+  async getVerifiedBy(@Request() req: AuthRequest, @Query('event') event?: string) {
+    const user = req.user;
+    if (user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admins can access verified-by summary');
+    }
+    const payments = await this.registrationService.findAll();
+
+    let filtered = payments.filter((p) => p.paymentStatus === 'verified' && p.verifiedBy);
+
+    if (user.role === UserRole.COORDINATOR && user.assignedEvent) {
+      filtered = filtered.filter((p) => p.event === user.assignedEvent);
+    } else if (user.role === UserRole.MEMBER && user.assignedEvents?.length) {
+      filtered = filtered.filter((p) => user.assignedEvents?.includes(p.event));
+    } else if (event) {
+      filtered = filtered.filter((p) => p.event === event);
+    }
+
+    const verifierIds = Array.from(new Set(filtered.map((p) => p.verifiedBy).filter(Boolean))) as number[];
+    const users = verifierIds.length
+      ? await this.userRepository.find({ where: { id: In(verifierIds) } })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const grouped = new Map<number, Registration[]>();
+    filtered.forEach((payment) => {
+      const id = payment.verifiedBy as number;
+      if (!grouped.has(id)) grouped.set(id, []);
+      grouped.get(id)!.push(payment);
+    });
+
+    const result = Array.from(grouped.entries()).map(([verifierId, registrations]) => {
+      const verifier = userMap.get(verifierId);
+      return {
+        verifier: verifier
+          ? {
+              id: verifier.id,
+              name: verifier.name,
+              username: verifier.username,
+              role: verifier.role,
+            }
+          : {
+              id: verifierId,
+              name: 'Unknown User',
+              username: 'unknown',
+              role: 'member',
+            },
+        totalVerified: registrations.length,
+        registrations,
+      };
+    });
+
+    return result.sort((a, b) => b.totalVerified - a.totalVerified);
   }
 }

@@ -4,12 +4,12 @@ import { Repository } from 'typeorm';
 import { TrackPageViewDto, UpdateDurationDto } from './dto';
 import { PageView, Visitor } from './entities';
 import {
-  BrowserBreakdown,
-  DailyStats,
-  DeviceBreakdown,
-  TopPage,
-  TrafficSource,
-  VisitorStats,
+    BrowserBreakdown,
+    DailyStats,
+    DeviceBreakdown,
+    TopPage,
+    TrafficSource,
+    VisitorStats,
 } from './types';
 
 interface DateRange {
@@ -105,16 +105,19 @@ export class VisitorAnalyticsService {
    * Update page view duration
    */
   async updateDuration(dto: UpdateDurationDto): Promise<void> {
-    await this.pageViewRepository
-      .createQueryBuilder()
-      .update(PageView)
-      .set({ duration: dto.duration })
-      .where('visitorId = :visitorId', { visitorId: dto.visitorId })
-      .andWhere('sessionId = :sessionId', { sessionId: dto.sessionId })
-      .andWhere('path = :path', { path: dto.path })
-      .orderBy('createdAt', 'DESC')
+    const latest = await this.pageViewRepository
+      .createQueryBuilder('pv')
+      .select('pv.id', 'id')
+      .where('pv.visitorId = :visitorId', { visitorId: dto.visitorId })
+      .andWhere('pv.sessionId = :sessionId', { sessionId: dto.sessionId })
+      .andWhere('pv.path = :path', { path: dto.path })
+      .orderBy('pv.createdAt', 'DESC')
       .limit(1)
-      .execute();
+      .getRawOne();
+
+    if (!latest?.id) return;
+
+    await this.pageViewRepository.update({ id: latest.id }, { duration: dto.duration });
   }
 
   /**
