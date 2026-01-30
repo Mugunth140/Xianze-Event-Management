@@ -22,6 +22,7 @@ interface Registration {
   contact: string;
   event: string;
   transactionId: string | null;
+  paymentMode?: 'online' | 'cash';
 }
 
 interface User {
@@ -55,6 +56,7 @@ export default function RegistrationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('All Events');
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'all' | 'online' | 'cash'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<User | null>(null);
 
@@ -83,7 +85,11 @@ export default function RegistrationsPage() {
     try {
       const eventParam =
         selectedEvent !== 'All Events' ? `?event=${encodeURIComponent(selectedEvent)}` : '';
-      const res = await fetch(getApiUrl(`/analytics/registrations${eventParam}`), {
+      const paymentParam =
+        selectedPaymentMode !== 'all'
+          ? `${eventParam ? '&' : '?'}paymentMode=${encodeURIComponent(selectedPaymentMode)}`
+          : '';
+      const res = await fetch(getApiUrl(`/analytics/registrations${eventParam}${paymentParam}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -96,7 +102,7 @@ export default function RegistrationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedEvent]);
+  }, [selectedEvent, selectedPaymentMode]);
 
   useEffect(() => {
     fetchRegistrations();
@@ -171,15 +177,16 @@ export default function RegistrationsPage() {
 
   const filteredRegistrations = registrations.filter(
     (reg) =>
-      reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.college.toLowerCase().includes(searchQuery.toLowerCase())
+      (selectedPaymentMode === 'all' || reg.paymentMode === selectedPaymentMode) &&
+      (reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reg.college.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedEvent]);
+  }, [searchQuery, selectedEvent, selectedPaymentMode]);
 
   // Paginated data
   const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
@@ -235,6 +242,18 @@ export default function RegistrationsPage() {
               />
             </div>
           )}
+
+          <div className="w-full sm:w-48">
+            <Select
+              value={selectedPaymentMode}
+              onChange={(e) => setSelectedPaymentMode(e.target.value as 'all' | 'online' | 'cash')}
+              options={[
+                { value: 'all', label: 'All Modes' },
+                { value: 'online', label: 'Online' },
+                { value: 'cash', label: 'Cash' },
+              ]}
+            />
+          </div>
         </div>
       </Card>
 
@@ -253,6 +272,7 @@ export default function RegistrationsPage() {
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Event</th>
+                <th className="px-6 py-4">Mode</th>
                 <th className="px-6 py-4">College</th>
                 {isAdmin && <th className="px-6 py-4">Actions</th>}
               </tr>
@@ -268,6 +288,11 @@ export default function RegistrationsPage() {
                     <div className="max-w-[150px] overflow-x-auto whitespace-nowrap admin-scrollbar pb-1">
                       <Badge variant="purple">{reg.event}</Badge>
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge variant={reg.paymentMode === 'cash' ? 'warning' : 'success'}>
+                      {reg.paymentMode === 'cash' ? 'Cash' : 'Online'}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 max-w-[200px] truncate">{reg.college}</td>
                   {isAdmin && (
@@ -287,7 +312,7 @@ export default function RegistrationsPage() {
               {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td
-                    colSpan={isAdmin ? 5 : 4}
+                    colSpan={isAdmin ? 6 : 5}
                     className="px-6 py-12 text-center text-[var(--admin-text-muted)]"
                   >
                     No registrations found

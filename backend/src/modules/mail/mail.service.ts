@@ -10,6 +10,13 @@ export interface RegistrationEmailData {
   college: string;
 }
 
+export interface CashRegistrationEmailData {
+  name: string;
+  email: string;
+  event: string;
+  college: string;
+}
+
 export interface EventPassEmailData {
   name: string;
   email: string;
@@ -46,6 +53,30 @@ export class MailService {
       return true;
     } catch (error) {
       this.logger.error(`Failed to send registration confirmation to ${data.email}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send cash payment registration confirmation email
+   */
+  async sendCashRegistrationConfirmation(data: CashRegistrationEmailData): Promise<boolean> {
+    try {
+      await this.mailerService.sendMail({
+        to: data.email,
+        subject: '🎉 Cash Registration Received - XIANZE 2026',
+        template: './registration-confirmation-cash',
+        context: {
+          name: data.name,
+          event: data.event,
+          college: data.college,
+          year: new Date().getFullYear(),
+        },
+      });
+      this.logger.log(`Cash registration confirmation email sent to ${data.email}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send cash registration confirmation to ${data.email}`, error);
       return false;
     }
   }

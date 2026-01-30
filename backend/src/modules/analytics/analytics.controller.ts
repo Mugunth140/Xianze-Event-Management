@@ -25,14 +25,15 @@ export class AnalyticsController {
   @Get('registrations')
   @Roles(UserRole.ADMIN, UserRole.COORDINATOR, UserRole.MEMBER)
   getRegistrations(
-    @Query('event') event: string,
     @Request() req: { user: { role: UserRole; assignedEvent?: string } },
+    @Query('event') event?: string,
+    @Query('paymentMode') paymentMode?: string,
   ) {
     // Members can only see their assigned event
     if (req.user.role === UserRole.MEMBER) {
-      return this.analyticsService.getEventBreakdown(req.user.assignedEvent);
+      return this.analyticsService.getEventBreakdown(req.user.assignedEvent, paymentMode);
     }
-    return this.analyticsService.getEventBreakdown(event);
+    return this.analyticsService.getEventBreakdown(event, paymentMode);
   }
 
   @Get('recent')

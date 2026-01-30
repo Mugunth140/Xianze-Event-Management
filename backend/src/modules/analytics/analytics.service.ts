@@ -78,15 +78,23 @@ export class AnalyticsService {
     return trends;
   }
 
-  async getEventBreakdown(eventName?: string) {
+  async getEventBreakdown(eventName?: string, paymentMode?: string) {
     const query = this.registrationRepository.createQueryBuilder('r');
 
     if (eventName) {
       query.where('r.event = :eventName', { eventName });
     }
 
+    if (paymentMode) {
+      if (eventName) {
+        query.andWhere('r.paymentMode = :paymentMode', { paymentMode });
+      } else {
+        query.where('r.paymentMode = :paymentMode', { paymentMode });
+      }
+    }
+
     const registrations = await query
-      .select(['r.id', 'r.name', 'r.email', 'r.college', 'r.event'])
+      .select(['r.id', 'r.name', 'r.email', 'r.college', 'r.event', 'r.paymentMode', 'r.transactionId'])
       .orderBy('r.createdAt', 'DESC')
       .getMany();
 

@@ -28,6 +28,7 @@ interface FormData {
   otherCourse: string;
   otherBranch: string;
   transactionId: string;
+  paymentMode: 'online' | 'cash';
 }
 
 interface DropdownProps {
@@ -113,6 +114,7 @@ const Register = () => {
     otherCourse: '',
     otherBranch: '',
     transactionId: '',
+    paymentMode: 'online',
   });
 
   const [screenshot, setScreenshot] = useState<File | null>(null);
@@ -120,6 +122,7 @@ const Register = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [submittedPaymentMode, setSubmittedPaymentMode] = useState<'online' | 'cash' | null>(null);
 
   const router = useRouter();
 
@@ -471,6 +474,19 @@ const Register = () => {
     setFormData((prev) => ({ ...prev, transactionId: value }));
   };
 
+  const handlePaymentModeChange = (mode: 'online' | 'cash') => {
+    setFormData((prev) => ({
+      ...prev,
+      paymentMode: mode,
+      transactionId: mode === 'cash' ? '' : prev.transactionId,
+    }));
+    if (mode === 'cash') {
+      setScreenshot(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setErrorMessage('');
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -534,18 +550,20 @@ const Register = () => {
     const eventResult = validateSelection(formData.event, 'event');
     if (!eventResult.isValid) errors.event = eventResult.error!;
 
-    // Validate transaction ID - exactly 12 digits
-    if (!formData.transactionId.trim()) {
-      errors.transactionId = 'Transaction ID is required';
-    } else if (formData.transactionId.length !== 12) {
-      errors.transactionId = 'Transaction ID must be exactly 12 digits';
-    } else if (!/^\d{12}$/.test(formData.transactionId)) {
-      errors.transactionId = 'Transaction ID must contain only digits';
+    if (formData.paymentMode === 'online') {
+      // Validate transaction ID - exactly 12 digits
+      if (!formData.transactionId.trim()) {
+        errors.transactionId = 'Transaction ID is required';
+      } else if (formData.transactionId.length !== 12) {
+        errors.transactionId = 'Transaction ID must be exactly 12 digits';
+      } else if (!/^\d{12}$/.test(formData.transactionId)) {
+        errors.transactionId = 'Transaction ID must contain only digits';
+      }
     }
 
     // Track screenshot error separately (not part of FormData type)
     let screenshotError = '';
-    if (!screenshot) {
+    if (formData.paymentMode === 'online' && !screenshot) {
       screenshotError = 'Payment screenshot is required';
     }
 
@@ -589,9 +607,12 @@ const Register = () => {
     data.append('college', sanitizeInput(formData.college));
     data.append('contact', formData.contact.replace(/[^\d]/g, ''));
     data.append('event', formData.event);
-    data.append('transactionId', sanitizeInput(formData.transactionId));
-    if (screenshot) {
-      data.append('screenshot', screenshot);
+    data.append('paymentMode', formData.paymentMode);
+    if (formData.paymentMode === 'online') {
+      data.append('transactionId', sanitizeInput(formData.transactionId));
+      if (screenshot) {
+        data.append('screenshot', screenshot);
+      }
     }
 
     try {
@@ -605,6 +626,7 @@ const Register = () => {
 
       if (res.ok) {
         setSubmitStatus('success');
+        setSubmittedPaymentMode(formData.paymentMode);
         triggerConfetti();
 
         // Scroll to top with timeout for mobile reliability
@@ -629,6 +651,7 @@ const Register = () => {
           otherCourse: '',
           otherBranch: '',
           transactionId: '',
+          paymentMode: 'online',
         });
         setScreenshot(null);
         if (fileInputRef.current) {
@@ -762,7 +785,9 @@ const Register = () => {
 
               {/* Success Title */}
               <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3">
-                Payment Submitted! 🎉
+                {submittedPaymentMode === 'cash'
+                  ? 'Registration Confirmed! 🎉'
+                  : 'Payment Submitted! 🎉'}
               </h3>
 
               {/* Status Badge */}
@@ -772,14 +797,21 @@ const Register = () => {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                 </span>
                 <span className="text-sm font-semibold text-amber-700">
-                  Verification in Progress
+                  {submittedPaymentMode === 'cash'
+                    ? 'Cash Payment Pending'
+                    : 'Verification in Progress'}
                 </span>
               </div>
 
               {/* Description */}
               <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
-                We&apos;ve received your registration and payment details. Our team will verify your
-                payment within <strong className="text-primary-600">8 hours</strong>.
+                {submittedPaymentMode === 'cash'
+                  ? 'We’ve received your registration. Please pay the fee at the event venue to receive your event pass.'
+                  : 'We&apos;ve received your registration and payment details. Our team will verify your payment within '}
+                {submittedPaymentMode === 'cash' ? null : (
+                  <strong className="text-primary-600">8 hours</strong>
+                )}
+                {submittedPaymentMode === 'cash' ? null : '.'}
               </p>
 
               {/* What&apos;s Next Card */}
@@ -795,14 +827,29 @@ const Register = () => {
                       Promotions)
                     </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-500 mt-0.5">⏳</span>
-                    <span>Payment verification within 8 hours</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary-500 mt-0.5">🎟️</span>
-                    <span>Event pass with QR code will be emailed after verification</span>
-                  </li>
+                  {submittedPaymentMode === 'cash' ? (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">💵</span>
+                        <span>Pay the registration fee at the event venue</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-0.5">🎟️</span>
+                        <span>Receive your event pass after payment</span>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">⏳</span>
+                        <span>Payment verification within 8 hours</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary-500 mt-0.5">🎟️</span>
+                        <span>Event pass with QR code will be emailed after verification</span>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -1056,6 +1103,13 @@ const Register = () => {
                 </div>
 
                 <div>
+                  <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-800">
+                    Please check the
+                    <a href="/events" className="mx-1 font-semibold underline hover:text-amber-900">
+                      Events page
+                    </a>
+                    before choosing your event.
+                  </div>
                   <label className="block text-sm font-medium text-gray-700 mb-4">
                     Choose an Event
                   </label>
@@ -1142,177 +1196,126 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-6">
+                  <div className="flex items-center justify-center">
+                    <div className="inline-flex bg-gray-100 rounded-xl p-1">
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentModeChange('online')}
+                        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                          formData.paymentMode === 'online'
+                            ? 'bg-white text-primary-700 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Online
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentModeChange('cash')}
+                        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                          formData.paymentMode === 'cash'
+                            ? 'bg-white text-primary-700 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Cash
+                      </button>
+                    </div>
+                  </div>
+
+                  {formData.paymentMode === 'cash' && (
+                    <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <p className="text-sm text-emerald-800 font-medium text-center">
+                        💵 You chose cash payment. Please pay the registration fee at the event
+                        venue to receive your event pass.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
                     <p className="text-center text-sm text-primary-800 mb-2 font-medium">
                       Registration Fee: ₹100 per participant
                     </p>
 
-                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                      {/* Mobile Payment Section - Inline */}
-                      <div className="lg:hidden w-full">
-                        <div
-                          className={`rounded-2xl border shadow-sm p-5 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
-                        >
-                          {/* Toggle between UPI ID and QR */}
-                          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
-                            <button
-                              type="button"
-                              onClick={() => setShowQRMobile(false)}
-                              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
-                                !showQRMobile
-                                  ? 'bg-white text-primary-700 shadow-sm'
-                                  : 'text-gray-500 hover:text-gray-700'
-                              }`}
-                            >
-                              UPI ID
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowQRMobile(true)}
-                              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
-                                showQRMobile
-                                  ? 'bg-white text-primary-700 shadow-sm'
-                                  : 'text-gray-500 hover:text-gray-700'
-                              }`}
-                            >
-                              QR Code
-                            </button>
-                          </div>
-
-                          {/* QR Code View */}
-                          {showQRMobile && (
-                            <div className="flex flex-col items-center mb-4">
-                              <div
-                                className={`relative w-44 h-44 bg-white p-2 rounded-2xl shadow-md border mb-3 ${
-                                  showAlternativeQR ? 'border-amber-200' : 'border-gray-200'
-                                }`}
-                              >
-                                <NextImage
-                                  src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
-                                  alt="Scan to Pay"
-                                  fill
-                                  className="object-contain rounded-xl"
-                                />
-                              </div>
-                              <div
-                                className={`px-3 py-1.5 rounded-full border ${
-                                  showAlternativeQR
-                                    ? 'bg-amber-100 border-amber-200'
-                                    : 'bg-primary-50 border-primary-100'
-                                }`}
-                              >
-                                <p
-                                  className={`text-xs font-bold uppercase tracking-widest ${
-                                    showAlternativeQR ? 'text-amber-800' : 'text-primary-700'
-                                  }`}
-                                >
-                                  Scan with any UPI App
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* UPI ID View */}
-                          {!showQRMobile && (
-                            <div className="mb-4">
-                              <p className="text-xs text-gray-500 font-medium mb-2 text-center">
-                                Copy and pay via any UPI app
-                              </p>
-                              <div className="flex flex-col gap-2">
-                                <code
-                                  className={`w-full px-3 py-3 rounded-xl text-xs font-mono border text-center break-all ${
-                                    showAlternativeQR
-                                      ? 'bg-amber-100 border-amber-200 text-amber-900'
-                                      : 'bg-gray-100 border-gray-200 text-gray-700'
-                                  }`}
-                                >
-                                  {showAlternativeQR ? upiId2 : upiId1}
-                                </code>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(
-                                      showAlternativeQR ? upiId2 : upiId1
-                                    );
-                                    setCopiedMobile(true);
-                                    setTimeout(() => setCopiedMobile(false), 2000);
-                                  }}
-                                  className={`w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                                    copiedMobile
-                                      ? 'bg-green-500 text-white'
-                                      : showAlternativeQR
-                                        ? 'bg-amber-600 text-white hover:bg-amber-700'
-                                        : 'bg-primary-600 text-white hover:bg-primary-700'
-                                  }`}
-                                >
-                                  {copiedMobile ? 'Copied!' : 'Copy UPI ID'}
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Alternative UPI Toggle */}
-                          <button
-                            type="button"
-                            onClick={() => setShowAlternativeQR(!showAlternativeQR)}
-                            className={`w-full p-3 rounded-xl transition-all active:scale-95 ${
-                              showAlternativeQR
-                                ? 'bg-amber-100 hover:bg-amber-200 border-2 border-amber-300'
-                                : 'bg-orange-50 hover:bg-orange-100 border-2 border-orange-200'
-                            }`}
+                    {formData.paymentMode === 'online' && (
+                      <div className="flex flex-col md:flex-row gap-6 items-center">
+                        {/* Mobile Payment Section - Inline */}
+                        <div className="lg:hidden w-full">
+                          <div
+                            className={`rounded-2xl border shadow-sm p-5 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
                           >
-                            <div className="flex items-center justify-center gap-2">
-                              <p
-                                className={`text-sm font-bold ${
-                                  showAlternativeQR ? 'text-amber-900' : 'text-orange-900'
+                            {/* Toggle between UPI ID and QR */}
+                            <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+                              <button
+                                type="button"
+                                onClick={() => setShowQRMobile(false)}
+                                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
+                                  !showQRMobile
+                                    ? 'bg-white text-primary-700 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
                                 }`}
                               >
-                                {showAlternativeQR
-                                  ? 'Back to Primary UPI'
-                                  : 'Payment Failing? Try Alternative'}
-                              </p>
+                                UPI ID
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowQRMobile(true)}
+                                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all ${
+                                  showQRMobile
+                                    ? 'bg-white text-primary-700 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                              >
+                                QR Code
+                              </button>
                             </div>
-                          </button>
-                        </div>
-                      </div>
 
-                      {/* Desktop QR - Clean Centered Layout */}
-                      <div className="hidden lg:block w-full">
-                        <div
-                          className={`rounded-2xl border shadow-sm p-8 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
-                        >
-                          {/* Main Content - Two Column on XL */}
-                          <div className="flex flex-col gap-8 ">
-                            {/* QR Code Section */}
-                            <div className="flex flex-col items-center flex-shrink-0">
-                              <div
-                                className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-4 transition-transform hover:scale-105 ${showAlternativeQR ? 'border-amber-200' : 'border-gray-200'}`}
-                              >
-                                <NextImage
-                                  src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
-                                  alt="Scan to Pay"
-                                  fill
-                                  className="object-contain rounded-xl"
-                                />
-                              </div>
-                              <div
-                                className={`px-4 py-2 rounded-full border ${showAlternativeQR ? 'bg-amber-100 border-amber-200' : 'bg-primary-50 border-primary-100'}`}
-                              >
-                                <p
-                                  className={`text-xs font-bold uppercase tracking-widest ${showAlternativeQR ? 'text-amber-800' : 'text-primary-700'}`}
+                            {/* QR Code View */}
+                            {showQRMobile && (
+                              <div className="flex flex-col items-center mb-4">
+                                <div
+                                  className={`relative w-44 h-44 bg-white p-2 rounded-2xl shadow-md border mb-3 ${
+                                    showAlternativeQR ? 'border-amber-200' : 'border-gray-200'
+                                  }`}
                                 >
-                                  Scan with any UPI App
-                                </p>
+                                  <NextImage
+                                    src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
+                                    alt="Scan to Pay"
+                                    fill
+                                    className="object-contain rounded-xl"
+                                  />
+                                </div>
+                                <div
+                                  className={`px-3 py-1.5 rounded-full border ${
+                                    showAlternativeQR
+                                      ? 'bg-amber-100 border-amber-200'
+                                      : 'bg-primary-50 border-primary-100'
+                                  }`}
+                                >
+                                  <p
+                                    className={`text-xs font-bold uppercase tracking-widest ${
+                                      showAlternativeQR ? 'text-amber-800' : 'text-primary-700'
+                                    }`}
+                                  >
+                                    Scan with any UPI App
+                                  </p>
+                                </div>
                               </div>
-                            </div>
+                            )}
 
-                            {/* Instructions Section */}
-                            <div className="flex-1 w-full max-w-lg">
-                              {/* UPI ID - Full Width */}
-                              <div className="mb-6">
-                                <div className="flex items-center gap-3">
+                            {/* UPI ID View */}
+                            {!showQRMobile && (
+                              <div className="mb-4">
+                                <p className="text-xs text-gray-500 font-medium mb-2 text-center">
+                                  Copy and pay via any UPI app
+                                </p>
+                                <div className="flex flex-col gap-2">
                                   <code
-                                    className={`flex-1 px-4 py-3 rounded-xl text-sm font-mono border ${showAlternativeQR ? 'bg-amber-100 border-amber-200 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-700'}`}
+                                    className={`w-full px-3 py-3 rounded-xl text-xs font-mono border text-center break-all ${
+                                      showAlternativeQR
+                                        ? 'bg-amber-100 border-amber-200 text-amber-900'
+                                        : 'bg-gray-100 border-gray-200 text-gray-700'
+                                    }`}
                                   >
                                     {showAlternativeQR ? upiId2 : upiId1}
                                   </code>
@@ -1322,146 +1325,236 @@ const Register = () => {
                                       navigator.clipboard.writeText(
                                         showAlternativeQR ? upiId2 : upiId1
                                       );
-                                      const btn = document.getElementById('copy-btn-desktop');
-                                      if (btn) {
-                                        const originalHTML = btn.innerHTML;
-                                        btn.innerHTML =
-                                          '<span class="text-green-600 font-bold">✓ Copied</span>';
-                                        setTimeout(() => (btn.innerHTML = originalHTML), 2000);
-                                      }
+                                      setCopiedMobile(true);
+                                      setTimeout(() => setCopiedMobile(false), 2000);
                                     }}
-                                    id="copy-btn-desktop"
-                                    className={`px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap ${
-                                      showAlternativeQR
-                                        ? 'bg-amber-600 text-white hover:bg-amber-700'
-                                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                                    className={`w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                      copiedMobile
+                                        ? 'bg-green-500 text-white'
+                                        : showAlternativeQR
+                                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                          : 'bg-primary-600 text-white hover:bg-primary-700'
                                     }`}
                                   >
-                                    Copy ID
+                                    {copiedMobile ? 'Copied!' : 'Copy UPI ID'}
                                   </button>
                                 </div>
                               </div>
+                            )}
 
-                              {/* Toggle Button - Made More Prominent */}
-                              <button
-                                type="button"
-                                onClick={() => setShowAlternativeQR(!showAlternativeQR)}
-                                className={`w-full py-4 px-6 rounded-xl font-bold text-base transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
-                                  showAlternativeQR
-                                    ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200'
-                                    : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
-                                }`}
-                              >
-                                {showAlternativeQR
-                                  ? 'Back to Primary UPI'
-                                  : 'Payment Failing? Try Alternative'}
-                              </button>
+                            {/* Alternative UPI Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                              className={`w-full p-3 rounded-xl transition-all active:scale-95 ${
+                                showAlternativeQR
+                                  ? 'bg-amber-100 hover:bg-amber-200 border-2 border-amber-300'
+                                  : 'bg-orange-50 hover:bg-orange-100 border-2 border-orange-200'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-2">
+                                <p
+                                  className={`text-sm font-bold ${
+                                    showAlternativeQR ? 'text-amber-900' : 'text-orange-900'
+                                  }`}
+                                >
+                                  {showAlternativeQR
+                                    ? 'Back to Primary UPI'
+                                    : 'Payment Failing? Try Alternative'}
+                                </p>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Desktop QR - Clean Centered Layout */}
+                        <div className="hidden lg:block w-full">
+                          <div
+                            className={`rounded-2xl border shadow-sm p-8 transition-colors duration-300 ${showAlternativeQR ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}
+                          >
+                            {/* Main Content - Two Column on XL */}
+                            <div className="flex flex-col gap-8 ">
+                              {/* QR Code Section */}
+                              <div className="flex flex-col items-center flex-shrink-0">
+                                <div
+                                  className={`relative w-48 h-48 bg-white p-3 rounded-2xl shadow-md border mb-4 transition-transform hover:scale-105 ${showAlternativeQR ? 'border-amber-200' : 'border-gray-200'}`}
+                                >
+                                  <NextImage
+                                    src={showAlternativeQR ? '/qr2.png' : '/upi_qr.jpeg'}
+                                    alt="Scan to Pay"
+                                    fill
+                                    className="object-contain rounded-xl"
+                                  />
+                                </div>
+                                <div
+                                  className={`px-4 py-2 rounded-full border ${showAlternativeQR ? 'bg-amber-100 border-amber-200' : 'bg-primary-50 border-primary-100'}`}
+                                >
+                                  <p
+                                    className={`text-xs font-bold uppercase tracking-widest ${showAlternativeQR ? 'text-amber-800' : 'text-primary-700'}`}
+                                  >
+                                    Scan with any UPI App
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Instructions Section */}
+                              <div className="flex-1 w-full max-w-lg">
+                                {/* UPI ID - Full Width */}
+                                <div className="mb-6">
+                                  <div className="flex items-center gap-3">
+                                    <code
+                                      className={`flex-1 px-4 py-3 rounded-xl text-sm font-mono border ${showAlternativeQR ? 'bg-amber-100 border-amber-200 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-700'}`}
+                                    >
+                                      {showAlternativeQR ? upiId2 : upiId1}
+                                    </code>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(
+                                          showAlternativeQR ? upiId2 : upiId1
+                                        );
+                                        const btn = document.getElementById('copy-btn-desktop');
+                                        if (btn) {
+                                          const originalHTML = btn.innerHTML;
+                                          btn.innerHTML =
+                                            '<span class="text-green-600 font-bold">✓ Copied</span>';
+                                          setTimeout(() => (btn.innerHTML = originalHTML), 2000);
+                                        }
+                                      }}
+                                      id="copy-btn-desktop"
+                                      className={`px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap ${
+                                        showAlternativeQR
+                                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                          : 'bg-primary-600 text-white hover:bg-primary-700'
+                                      }`}
+                                    >
+                                      Copy ID
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Toggle Button - Made More Prominent */}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAlternativeQR(!showAlternativeQR)}
+                                  className={`w-full py-4 px-6 rounded-xl font-bold text-base transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
+                                    showAlternativeQR
+                                      ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200'
+                                      : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'
+                                  }`}
+                                >
+                                  {showAlternativeQR
+                                    ? 'Back to Primary UPI'
+                                    : 'Payment Failing? Try Alternative'}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Transaction Details - Desktop Grid Layout */}
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* Transaction ID */}
-                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                      <label
-                        htmlFor="transactionId"
-                        className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
-                      >
-                        Transaction ID (UTR)
-                      </label>
-                      <input
-                        id="transactionId"
-                        type="text"
-                        name="transactionId"
-                        placeholder="e.g. 123456789012"
-                        value={formData.transactionId}
-                        onChange={handleTransactionIdChange}
-                        maxLength={12}
-                        pattern="\d{12}"
-                        inputMode="numeric"
-                        required
-                        className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.transactionId ? 'border-red-400' : 'border-gray-200'}`}
-                      />
-                      <div className="flex justify-between mt-2">
-                        <p className="text-xs text-gray-500">
-                          {formData.transactionId.length}/12 digits
-                        </p>
-                        {fieldErrors.transactionId && (
-                          <p className="text-xs text-red-500">{fieldErrors.transactionId}</p>
+                  {formData.paymentMode === 'online' && (
+                    <div className="grid grid-cols-1 gap-6">
+                      {/* Transaction ID */}
+                      <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                        <label
+                          htmlFor="transactionId"
+                          className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
+                        >
+                          Transaction ID (UTR)
+                        </label>
+                        <input
+                          id="transactionId"
+                          type="text"
+                          name="transactionId"
+                          placeholder="e.g. 123456789012"
+                          value={formData.transactionId}
+                          onChange={handleTransactionIdChange}
+                          maxLength={12}
+                          pattern="\d{12}"
+                          inputMode="numeric"
+                          required
+                          className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 placeholder:text-gray-400 transition-all duration-300 hover:border-primary-200 focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/10 focus:outline-none ${fieldErrors.transactionId ? 'border-red-400' : 'border-gray-200'}`}
+                        />
+                        <div className="flex justify-between mt-2">
+                          <p className="text-xs text-gray-500">
+                            {formData.transactionId.length}/12 digits
+                          </p>
+                          {fieldErrors.transactionId && (
+                            <p className="text-xs text-red-500">{fieldErrors.transactionId}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Screenshot */}
+                      <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                        <label
+                          htmlFor="screenshot"
+                          className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
+                        >
+                          Payment Screenshot
+                        </label>
+
+                        {!screenshot ? (
+                          <div className="relative">
+                            <input
+                              ref={fileInputRef}
+                              id="screenshot"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleScreenshotChange}
+                              required
+                              className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
+                                errorMessage && errorMessage.includes('File')
+                                  ? 'border-red-400 bg-red-50'
+                                  : 'border-gray-300 hover:border-primary-400'
+                              }`}
+                            />
+                            <p className="mt-2 text-xs text-gray-500">
+                              Max size: 5MB (any resolution). Formats: JPG, PNG.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between p-4 bg-white border border-primary-200 rounded-xl">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-xl shrink-0">
+                                🖼️
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {screenshot.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(screenshot.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setScreenshot(null);
+                                if (fileInputRef.current) fileInputRef.current.value = '';
+                                setErrorMessage('');
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remove file"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+
+                        {errorMessage && errorMessage.includes('File') && (
+                          <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2">
+                            <span className="text-red-500 mt-0.5">⚠️</span>
+                            <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    {/* Screenshot */}
-                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                      <label
-                        htmlFor="screenshot"
-                        className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3"
-                      >
-                        Payment Screenshot
-                      </label>
-
-                      {!screenshot ? (
-                        <div className="relative">
-                          <input
-                            ref={fileInputRef}
-                            id="screenshot"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleScreenshotChange}
-                            required
-                            className={`w-full p-4 rounded-xl text-gray-800 bg-white border-2 border-dashed transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 ${
-                              errorMessage && errorMessage.includes('File')
-                                ? 'border-red-400 bg-red-50'
-                                : 'border-gray-300 hover:border-primary-400'
-                            }`}
-                          />
-                          <p className="mt-2 text-xs text-gray-500">
-                            Max size: 5MB (any resolution). Formats: JPG, PNG.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between p-4 bg-white border border-primary-200 rounded-xl">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-xl shrink-0">
-                              🖼️
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {screenshot.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {(screenshot.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setScreenshot(null);
-                              if (fileInputRef.current) fileInputRef.current.value = '';
-                              setErrorMessage('');
-                            }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Remove file"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-
-                      {errorMessage && errorMessage.includes('File') && (
-                        <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2">
-                          <span className="text-red-500 mt-0.5">⚠️</span>
-                          <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

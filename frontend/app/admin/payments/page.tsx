@@ -21,6 +21,7 @@ interface Registration {
   event: string;
   transactionId: string | null;
   paymentStatus: 'pending' | 'verified' | 'rejected';
+  paymentMode?: 'online' | 'cash';
   verifiedAt: string | null;
   createdAt: string;
   screenshotPath?: string;
@@ -54,6 +55,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [eventFilter, setEventFilter] = useState('');
+  const [paymentModeFilter, setPaymentModeFilter] = useState<'all' | 'online' | 'cash'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
   const [actionType, setActionType] = useState<'verify' | 'reject' | null>(null);
@@ -209,9 +211,10 @@ export default function PaymentsPage() {
 
   const filteredRegistrations = registrations.filter(
     (reg) =>
-      reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reg.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
+      (paymentModeFilter === 'all' || reg.paymentMode === paymentModeFilter) &&
+      (reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reg.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reg.transactionId?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredGroups = useMemo(() => {
@@ -221,19 +224,20 @@ export default function PaymentsPage() {
       .map((group) => {
         const registrations = group.registrations.filter(
           (reg) =>
-            reg.name.toLowerCase().includes(query) ||
-            reg.email.toLowerCase().includes(query) ||
-            reg.transactionId?.toLowerCase().includes(query)
+            (paymentModeFilter === 'all' || reg.paymentMode === paymentModeFilter) &&
+            (reg.name.toLowerCase().includes(query) ||
+              reg.email.toLowerCase().includes(query) ||
+              reg.transactionId?.toLowerCase().includes(query))
         );
         return { ...group, registrations, totalVerified: registrations.length };
       })
       .filter((group) => group.totalVerified > 0);
-  }, [verifiedGroups, searchQuery]);
+  }, [verifiedGroups, searchQuery, paymentModeFilter]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, eventFilter, activeTab]);
+  }, [searchQuery, eventFilter, paymentModeFilter, activeTab]);
 
   // Paginated data
   const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
@@ -321,6 +325,17 @@ export default function PaymentsPage() {
               ]}
             />
           </div>
+          <div className="w-full sm:w-40">
+            <Select
+              value={paymentModeFilter}
+              onChange={(e) => setPaymentModeFilter(e.target.value as 'all' | 'online' | 'cash')}
+              options={[
+                { value: 'all', label: 'All Modes' },
+                { value: 'online', label: 'Online' },
+                { value: 'cash', label: 'Cash' },
+              ]}
+            />
+          </div>
         </div>
       </Card>
 
@@ -354,6 +369,7 @@ export default function PaymentsPage() {
                       <tr>
                         <th>Participant</th>
                         <th>Event</th>
+                        <th>Mode</th>
                         <th>Transaction ID</th>
                         <th>Verified On</th>
                       </tr>
@@ -369,6 +385,11 @@ export default function PaymentsPage() {
                           </td>
                           <td>
                             <Badge variant="purple">{reg.event}</Badge>
+                          </td>
+                          <td>
+                            <Badge variant={reg.paymentMode === 'cash' ? 'warning' : 'success'}>
+                              {reg.paymentMode === 'cash' ? 'Cash' : 'Online'}
+                            </Badge>
                           </td>
                           <td>
                             <code className="text-sm bg-gray-100 px-2 py-1 rounded">
@@ -394,6 +415,7 @@ export default function PaymentsPage() {
               <tr>
                 <th>Participant</th>
                 <th>Event</th>
+                <th>Mode</th>
                 <th>Transaction ID</th>
                 <th>Status</th>
                 <th>Date</th>
@@ -411,6 +433,11 @@ export default function PaymentsPage() {
                   </td>
                   <td>
                     <Badge variant="purple">{reg.event}</Badge>
+                  </td>
+                  <td>
+                    <Badge variant={reg.paymentMode === 'cash' ? 'warning' : 'success'}>
+                      {reg.paymentMode === 'cash' ? 'Cash' : 'Online'}
+                    </Badge>
                   </td>
                   <td>
                     <code className="text-sm bg-gray-100 px-2 py-1 rounded">
@@ -493,7 +520,7 @@ export default function PaymentsPage() {
               ))}
               {paginatedRegistrations.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">
+                  <td colSpan={7} className="py-8 text-center text-gray-500">
                     {activeTab === 'pending' ? 'No pending payments' : 'No payment history'}
                   </td>
                 </tr>

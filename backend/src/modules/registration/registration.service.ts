@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
-import { PaymentStatus, Registration } from './registration.entity';
+import { PaymentMode, PaymentStatus, Registration } from './registration.entity';
 import { generatePassId, hashEmailForQR } from './utils/hash.util';
 
 @Injectable()
@@ -18,10 +18,18 @@ export class RegistrationService {
   /**
    * Create a new registration
    */
-  async create(dto: CreateRegistrationDto, screenshotPath?: string): Promise<Registration> {
+  async create(dto: CreateRegistrationDto, screenshotPath?: string | null): Promise<Registration> {
     const registration = this.registrationRepository.create({
-      ...dto,
-      screenshotPath,
+      name: dto.name,
+      email: dto.email,
+      course: dto.course,
+      branch: dto.branch,
+      college: dto.college,
+      contact: dto.contact,
+      event: dto.event,
+      paymentMode: dto.paymentMode === 'cash' ? PaymentMode.CASH : PaymentMode.ONLINE,
+      transactionId: dto.transactionId ?? null,
+      screenshotPath: screenshotPath ?? null,
     });
     return this.registrationRepository.save(registration);
   }

@@ -1,13 +1,14 @@
 import { Transform } from 'class-transformer';
 import {
-  IsEmail,
-  IsIn,
-  IsNotEmpty,
-  IsString,
-  Length,
-  Matches,
-  MaxLength,
-  MinLength,
+    IsEmail,
+    IsIn,
+    IsNotEmpty,
+    IsString,
+    Length,
+    Matches,
+    MaxLength,
+    MinLength,
+    ValidateIf,
 } from 'class-validator';
 
 // Allowed events for validation
@@ -69,6 +70,11 @@ export class CreateRegistrationDto {
   @IsIn(ALLOWED_EVENTS, { message: 'Please select a valid event' })
   event: string;
 
+  @IsNotEmpty({ message: 'Payment mode is required' })
+  @IsIn(['online', 'cash'], { message: 'Payment mode must be online or cash' })
+  paymentMode: 'online' | 'cash';
+
+  @ValidateIf((o) => o.paymentMode === 'online')
   @IsString()
   @IsNotEmpty({ message: 'Transaction ID is required' })
   @Length(5, 50, { message: 'Transaction ID must be 5-50 characters' })
@@ -76,5 +82,5 @@ export class CreateRegistrationDto {
     message: 'Transaction ID can only contain letters and numbers',
   })
   @Transform(({ value }) => value?.trim().toUpperCase())
-  transactionId: string;
+  transactionId?: string;
 }

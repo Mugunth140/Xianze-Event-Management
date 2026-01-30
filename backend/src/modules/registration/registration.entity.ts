@@ -14,6 +14,11 @@ export enum PaymentStatus {
   REJECTED = 'rejected',
 }
 
+export enum PaymentMode {
+  ONLINE = 'online',
+  CASH = 'cash',
+}
+
 @Entity('registration')
 @Unique(['email'])
 @Index(['transactionId'], { unique: true })
@@ -44,6 +49,9 @@ export class Registration {
 
   @Column({ type: 'varchar', length: 100 })
   event: string;
+
+  @Column({ type: 'varchar', length: 10, default: PaymentMode.ONLINE })
+  paymentMode: PaymentMode;
 
   // Payment verification fields
   @Column({ type: 'varchar', length: 100, nullable: true })

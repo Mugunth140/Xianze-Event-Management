@@ -1,24 +1,24 @@
 import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  MaxFileSizeValidator,
-  NotFoundException,
-  Param,
-  ParseFilePipe,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    BadRequestException,
+    Body,
+    ConflictException,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    MaxFileSizeValidator,
+    NotFoundException,
+    Param,
+    ParseFilePipe,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Res,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
@@ -115,7 +115,7 @@ export class RegistrationController {
     @Body() dto: CreateRegistrationDto,
     @UploadedFile(
       new ParseFilePipe({
-        fileIsRequired: true,
+        fileIsRequired: false,
         errorHttpStatusCode: HttpStatus.BAD_REQUEST,
         validators: [
           new MaxFileSizeValidator({
@@ -137,27 +137,35 @@ export class RegistrationController {
       });
     }
 
-    // Check for duplicate transaction ID
-    const transactionExists = await this.registrationService.existsByTransactionId(
-      dto.transactionId,
-    );
+    if (dto.paymentMode === 'online') {
+      if (!dto.transactionId) {
+        throw new BadRequestException({
+          success: false,
+          message: 'Transaction ID is required',
+        });
+      }
+      // Check for duplicate transaction ID
+      const transactionExists = await this.registrationService.existsByTransactionId(
+        dto.transactionId,
+      );
 
-    if (transactionExists) {
-      throw new ConflictException({
-        success: false,
-        message: 'This transaction ID is already used',
-      });
+      if (transactionExists) {
+        throw new ConflictException({
+          success: false,
+          message: 'This transaction ID is already used',
+        });
+      }
+
+      // Validate screenshot is provided
+      if (!file) {
+        throw new BadRequestException({
+          success: false,
+          message: 'Payment screenshot is required',
+        });
+      }
     }
 
-    // Validate screenshot is provided
-    if (!file) {
-      throw new BadRequestException({
-        success: false,
-        message: 'Payment screenshot is required',
-      });
-    }
-
-    const screenshotPath = `/transactions/${file.filename}`;
+    const screenshotPath = file ? `/transactions/${file.filename}` : undefined;
     const registration = await this.registrationService.create(dto, screenshotPath);
 
     // Send confirmation email (async, non-blocking)
@@ -167,8 +175,11 @@ export class RegistrationController {
 
     return {
       success: true,
-      message: 'Registration successful! Payment verification in progress.',
-      status: 'pending_verification',
+      message:
+        dto.paymentMode === 'cash'
+          ? 'Registration successful! Please pay at the event venue to receive your pass.'
+          : 'Registration successful! Payment verification in progress.',
+      status: dto.paymentMode === 'cash' ? 'cash_payment_pending' : 'pending_verification',
     };
   }
 
@@ -176,13 +187,21 @@ export class RegistrationController {
    * Send registration confirmation email
    */
   private async sendConfirmationEmail(registration: Registration): Promise<void> {
-    const emailSent = await this.mailService.sendRegistrationConfirmation({
-      name: registration.name,
-      email: registration.email,
-      event: registration.event,
-      transactionId: registration.transactionId || 'N/A',
-      college: registration.college,
-    });
+    const emailSent =
+      registration.paymentMode === 'cash'
+        ? await this.mailService.sendCashRegistrationConfirmation({
+            name: registration.name,
+            email: registration.email,
+            event: registration.event,
+            college: registration.college,
+          })
+        : await this.mailService.sendRegistrationConfirmation({
+            name: registration.name,
+            email: registration.email,
+            event: registration.event,
+            transactionId: registration.transactionId || 'N/A',
+            college: registration.college,
+          });
 
     if (emailSent) {
       await this.registrationService.markConfirmationEmailSent(registration.id);
