@@ -22,6 +22,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bun run build
 
+# Copy assets that nest build might miss (JSON data files, templates)
+RUN cp -r src/modules/events/buildathon/data dist/modules/events/buildathon/ 2>/dev/null || true
+RUN cp -r src/modules/mail/templates dist/modules/mail/ 2>/dev/null || true
+
 # Stage 3: Production
 FROM oven/bun:1-alpine AS runner
 # Install curl for health checks

@@ -8,15 +8,15 @@
     "assets": [
       {
         "include": "modules/mail/templates/**/*.hbs",
-        "outDir": "dist"
+        "watchAssets": true
       },
       {
-        "include": "modules/events/buildathon/data/**/*.json",
-        "outDir": "dist"
+        "include": "modules/events/buildathon/data/*.json",
+        "watchAssets": true
       },
       {
         "include": "public/**/*",
-        "outDir": "dist"
+        "watchAssets": true
       }
     ]
   }
