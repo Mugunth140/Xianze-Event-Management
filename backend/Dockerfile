@@ -23,8 +23,11 @@ COPY . .
 RUN bun run build
 
 # Copy assets that nest build might miss (JSON data files, templates)
-RUN cp -r src/modules/events/buildathon/data dist/modules/events/buildathon/ 2>/dev/null || true
-RUN cp -r src/modules/mail/templates dist/modules/mail/ 2>/dev/null || true
+# Ensure directories exist and copy files
+RUN mkdir -p dist/modules/events/buildathon/data && \
+    cp src/modules/events/buildathon/data/*.json dist/modules/events/buildathon/data/
+RUN mkdir -p dist/modules/mail/templates && \
+    cp -r src/modules/mail/templates/* dist/modules/mail/templates/ 2>/dev/null || true
 
 # Stage 3: Production
 FROM oven/bun:1-alpine AS runner
