@@ -1,14 +1,14 @@
 import { Transform } from 'class-transformer';
 import {
-    IsEmail,
-    IsIn,
-    IsNotEmpty,
-    IsString,
-    Length,
-    Matches,
-    MaxLength,
-    MinLength,
-    ValidateIf,
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsString,
+  Length,
+  Matches,
+  MaxLength,
+  MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 // Allowed events for validation

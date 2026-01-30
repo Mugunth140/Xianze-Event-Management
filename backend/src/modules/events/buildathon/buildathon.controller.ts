@@ -26,7 +26,12 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '../../users/user.entity';
-import { CreateTeamDto, UpdateApiStateDto, UpdateTeamDto, UploadDocumentDto } from './buildathon.dto';
+import {
+  CreateTeamDto,
+  UpdateApiStateDto,
+  UpdateTeamDto,
+  UploadDocumentDto,
+} from './buildathon.dto';
 import { BuildathonService } from './buildathon.service';
 
 // File upload config - use /data in Docker, fallback to ./data locally

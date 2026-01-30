@@ -1,15 +1,15 @@
 import {
-    Body,
-    Controller,
-    ForbiddenException,
-    Get,
-    Logger,
-    Param,
-    ParseIntPipe,
-    Post,
-    Query,
-    Request,
-    UseGuards,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -219,7 +219,9 @@ export class PaymentController {
       filtered = filtered.filter((p) => p.event === event);
     }
 
-    const verifierIds = Array.from(new Set(filtered.map((p) => p.verifiedBy).filter(Boolean))) as number[];
+    const verifierIds = Array.from(
+      new Set(filtered.map((p) => p.verifiedBy).filter(Boolean)),
+    ) as number[];
     const users = verifierIds.length
       ? await this.userRepository.find({ where: { id: In(verifierIds) } })
       : [];

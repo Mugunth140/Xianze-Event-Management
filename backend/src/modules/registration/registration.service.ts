@@ -28,8 +28,8 @@ export class RegistrationService {
       contact: dto.contact,
       event: dto.event,
       paymentMode: dto.paymentMode === 'cash' ? PaymentMode.CASH : PaymentMode.ONLINE,
-      transactionId: dto.paymentMode === 'cash' ? null : dto.transactionId ?? null,
-      screenshotPath: dto.paymentMode === 'cash' ? null : screenshotPath ?? null,
+      transactionId: dto.paymentMode === 'cash' ? null : (dto.transactionId ?? null),
+      screenshotPath: dto.paymentMode === 'cash' ? null : (screenshotPath ?? null),
     });
     return this.registrationRepository.save(registration);
   }

@@ -1,12 +1,12 @@
 import { Transform } from 'class-transformer';
 import {
-    IsEmail,
-    IsIn,
-    IsOptional,
-    IsString,
-    Matches,
-    MaxLength,
-    MinLength,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 
 // Allowed events for validation

@@ -12,7 +12,9 @@ import {
 import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TasksGuard } from '../auth/guards/tasks.guard';
-import { UserRole, UserTask } from '../users/user.entity';
+import { UserRole, UserTask, userCanAccessEvent } from '../users/user.entity';
+import { ScanEventParticipationDto, ScanRoundParticipationDto } from './dto/participation.dto';
+import { EventParticipationService } from './event-participation.service';
 import { RegistrationService } from './registration.service';
 
 interface AuthRequest {
@@ -27,7 +29,10 @@ interface AuthRequest {
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, TasksGuard)
 export class AttendanceController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  constructor(
+    private readonly registrationService: RegistrationService,
+    private readonly eventParticipationService: EventParticipationService,
+  ) {}
 
   /**
    * Validate a participant for check-in (QR scan)
@@ -166,5 +171,133 @@ export class AttendanceController {
     }
 
     return [];
+  }
+
+  // ==========================================
+  // EVENT PARTICIPATION ENDPOINTS
+  // ==========================================
+
+  /**
+   * Scan participant QR at event hall to record event participation
+   * Coordinators scan participants entering their assigned event
+   */
+  @Post('event-scan')
+  @RequireTasks(UserTask.SCAN_EVENT_PARTICIPATION)
+  async scanEventParticipation(
+    @Body() dto: ScanEventParticipationDto,
+    @Request() req: AuthRequest,
+  ) {
+    const user = req.user;
+
+    // Check if user can access this event (coordinators only scan for their event)
+    if (
+      user.role !== UserRole.ADMIN &&
+      !userCanAccessEvent(user, dto.eventSlug)
+    ) {
+      return {
+        success: false,
+        message: `You are not authorized to scan for event: ${dto.eventSlug}`,
+      };
+    }
+
+    return this.eventParticipationService.scanEventParticipation(
+      dto.qrHash,
+      dto.eventSlug,
+      user.id,
+    );
+  }
+
+  /**
+   * Scan participant QR for a specific round within an event
+   */
+  @Post('round-scan')
+  @RequireTasks(UserTask.SCAN_EVENT_PARTICIPATION)
+  async scanRoundParticipation(
+    @Body() dto: ScanRoundParticipationDto,
+    @Request() req: AuthRequest,
+  ) {
+    const user = req.user;
+
+    // Check if user can access this event
+    if (
+      user.role !== UserRole.ADMIN &&
+      !userCanAccessEvent(user, dto.eventSlug)
+    ) {
+      return {
+        success: false,
+        message: `You are not authorized to scan for event: ${dto.eventSlug}`,
+      };
+    }
+
+    return this.eventParticipationService.scanRoundParticipation(
+      dto.qrHash,
+      dto.eventSlug,
+      dto.roundNumber,
+      user.id,
+    );
+  }
+
+  /**
+   * Get participation history for a specific participant
+   */
+  @Get('participation/history/:registrationId')
+  @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
+  async getParticipantHistory(
+    @Param('registrationId', ParseIntPipe) registrationId: number,
+  ) {
+    return this.eventParticipationService.getParticipantHistory(registrationId);
+  }
+
+  /**
+   * Get all participants for a specific event
+   */
+  @Get('participation/event/:eventSlug')
+  @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
+  async getEventParticipants(
+    @Param('eventSlug') eventSlug: string,
+    @Request() req: AuthRequest,
+  ) {
+    const user = req.user;
+
+    // Check if user can access this event
+    if (
+      user.role !== UserRole.ADMIN &&
+      !userCanAccessEvent(user, eventSlug)
+    ) {
+      return [];
+    }
+
+    return this.eventParticipationService.getEventParticipants(eventSlug);
+  }
+
+  /**
+   * Get event participation statistics
+   */
+  @Get('participation/stats/:eventSlug')
+  @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
+  async getEventStats(
+    @Param('eventSlug') eventSlug: string,
+    @Request() req: AuthRequest,
+  ) {
+    const user = req.user;
+
+    // Check if user can access this event
+    if (
+      user.role !== UserRole.ADMIN &&
+      !userCanAccessEvent(user, eventSlug)
+    ) {
+      return { totalParticipants: 0, roundStats: [] };
+    }
+
+    return this.eventParticipationService.getEventStats(eventSlug);
+  }
+
+  /**
+   * Get venue check-in summary with event participation
+   */
+  @Get('participation/summary')
+  @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.CHECK_IN_PARTICIPANT)
+  async getVenueCheckInSummary() {
+    return this.eventParticipationService.getVenueCheckInSummary();
   }
 }

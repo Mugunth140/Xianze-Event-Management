@@ -9,6 +9,8 @@ interface User {
   name: string;
   role: 'admin' | 'coordinator' | 'member';
   assignedEvent?: string;
+  assignedEvents?: string[];
+  tasks?: string[];
 }
 
 interface UseAuthReturn {

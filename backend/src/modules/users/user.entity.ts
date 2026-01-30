@@ -21,6 +21,9 @@ export enum UserTask {
   MARK_ATTENDANCE = 'mark_attendance',
   CHECK_IN_PARTICIPANT = 'check_in_participant',
 
+  // Event participation scanning (coordinators scan QR at event halls)
+  SCAN_EVENT_PARTICIPATION = 'scan_event_participation',
+
   // Participant management (admin default, optional for others)
   EDIT_PARTICIPANT = 'edit_participant',
   DELETE_PARTICIPANT = 'delete_participant',
@@ -29,7 +32,7 @@ export enum UserTask {
 // Default tasks per role (these are implicit, not stored)
 export const DEFAULT_TASKS: Record<UserRole, UserTask[]> = {
   [UserRole.ADMIN]: Object.values(UserTask), // Admin has all tasks
-  [UserRole.COORDINATOR]: [], // No default optional tasks
+  [UserRole.COORDINATOR]: [UserTask.SCAN_EVENT_PARTICIPATION], // Coordinators can scan for their event
   [UserRole.MEMBER]: [UserTask.CHECK_IN_PARTICIPANT, UserTask.MARK_ATTENDANCE],
 };
 

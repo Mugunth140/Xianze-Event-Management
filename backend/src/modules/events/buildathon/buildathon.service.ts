@@ -3,12 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
-import { CreateTeamDto, UpdateApiStateDto, UpdateTeamDto, UploadDocumentDto } from './buildathon.dto';
 import {
-    BuildathonApiState,
-    BuildathonDocument,
-    BuildathonRequestLog,
-    BuildathonTeam,
+  CreateTeamDto,
+  UpdateApiStateDto,
+  UpdateTeamDto,
+  UploadDocumentDto,
+} from './buildathon.dto';
+import {
+  BuildathonApiState,
+  BuildathonDocument,
+  BuildathonRequestLog,
+  BuildathonTeam,
 } from './buildathon.entity';
 
 // Load JSON data
