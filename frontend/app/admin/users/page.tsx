@@ -117,6 +117,15 @@ export default function UsersPage() {
     const token = localStorage.getItem('token');
 
     try {
+      // Validate password for new users
+      if (!editingUser && !formData.password) {
+        throw new Error('Password is required for new users');
+      }
+
+      if (!editingUser && formData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
       const body: Record<string, unknown> = {
         username: formData.username,
         name: formData.name,
@@ -128,20 +137,17 @@ export default function UsersPage() {
         body.password = formData.password;
       }
 
-      // Handle event assignment based on role
-      if (formData.role === 'coordinator') {
-        body.assignedEvent = formData.assignedEvent || null;
-        body.assignedEvents = null;
-      } else if (formData.role === 'member') {
-        body.assignedEvent = null;
-        body.assignedEvents = formData.assignedEvents.length > 0 ? formData.assignedEvents : null;
-      } else {
-        body.assignedEvent = null;
-        body.assignedEvents = null;
+      // Handle event assignment based on role - only include if not empty
+      if (formData.role === 'coordinator' && formData.assignedEvent) {
+        body.assignedEvent = formData.assignedEvent;
+      } else if (formData.role === 'member' && formData.assignedEvents.length > 0) {
+        body.assignedEvents = formData.assignedEvents;
       }
 
-      // Include tasks
-      body.tasks = formData.tasks.length > 0 ? formData.tasks : null;
+      // Include tasks only if there are any
+      if (formData.tasks.length > 0) {
+        body.tasks = formData.tasks;
+      }
 
       const url = editingUser ? getApiUrl(`/users/${editingUser.id}`) : getApiUrl('/users');
       const method = editingUser ? 'PATCH' : 'POST';

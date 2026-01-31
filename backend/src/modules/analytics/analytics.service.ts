@@ -4,6 +4,45 @@ import { Repository } from 'typeorm';
 import { Contact } from '../contact/contact.entity';
 import { Registration } from '../registration/registration.entity';
 
+// Canonical event names - normalize variations to these
+const CANONICAL_EVENTS: Record<string, string> = {
+  // Buildathon variations
+  buildathon: 'Buildathon',
+  buildathlon: 'Buildathon',
+  'build a thon': 'Buildathon',
+  // Ctrl+ Quiz variations
+  'ctrl + quiz': 'Ctrl+ Quiz',
+  'ctrl+ quiz': 'Ctrl+ Quiz',
+  'ctrl+quiz': 'Ctrl+ Quiz',
+  'ctrl quiz': 'Ctrl+ Quiz',
+  // Bug Smash
+  'bug smash': 'Bug Smash',
+  bugsmash: 'Bug Smash',
+  // Paper Presentation
+  'paper presentation': 'Paper Presentation',
+  paperpresentation: 'Paper Presentation',
+  // Think & Link
+  'think & link': 'Think & Link',
+  'think and link': 'Think & Link',
+  thinklink: 'Think & Link',
+  'think&link': 'Think & Link',
+  // Code Hunt
+  'code hunt': 'Code Hunt: Word Edition',
+  'code hunt: word edition': 'Code Hunt: Word Edition',
+  codehunt: 'Code Hunt: Word Edition',
+  // Gaming
+  gaming: 'Gaming',
+  // Fun Games
+  'fun games': 'Fun Games',
+  fungames: 'Fun Games',
+};
+
+function normalizeEventName(eventName: string): string {
+  if (!eventName) return eventName;
+  const key = eventName.toLowerCase().trim();
+  return CANONICAL_EVENTS[key] || eventName;
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -17,12 +56,24 @@ export class AnalyticsService {
     const totalRegistrations = await this.registrationRepository.count();
     const totalContacts = await this.contactRepository.count();
 
-    const registrationsByEvent = await this.registrationRepository
+    const rawRegistrationsByEvent = await this.registrationRepository
       .createQueryBuilder('r')
       .select('r.event', 'event')
       .addSelect('COUNT(*)', 'count')
       .groupBy('r.event')
       .getRawMany();
+
+    // Normalize and consolidate event names
+    const eventCountMap = new Map<string, number>();
+    for (const item of rawRegistrationsByEvent) {
+      const normalizedName = normalizeEventName(item.event);
+      const currentCount = eventCountMap.get(normalizedName) || 0;
+      eventCountMap.set(normalizedName, currentCount + parseInt(item.count));
+    }
+
+    const registrationsByEvent = Array.from(eventCountMap.entries())
+      .map(([event, count]) => ({ event, count: count.toString() }))
+      .sort((a, b) => parseInt(b.count) - parseInt(a.count));
 
     const registrationsByCollege = await this.registrationRepository
       .createQueryBuilder('r')
