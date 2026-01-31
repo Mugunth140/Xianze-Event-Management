@@ -28,9 +28,15 @@ type SessionState = 'idle' | 'active' | 'buzzer-enabled' | 'winner';
 
 interface BuzzerPanelProps {
   defaultEvent?: string;
+  showEventSelector?: boolean;
+  buzzerPath?: string;
 }
 
-export default function BuzzerPanel({ defaultEvent = 'think-link' }: BuzzerPanelProps) {
+export default function BuzzerPanel({
+  defaultEvent = 'think-link',
+  showEventSelector = false,
+  buzzerPath,
+}: BuzzerPanelProps) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [teams, setTeams] = useState<Team[]>([]);
@@ -48,9 +54,10 @@ export default function BuzzerPanel({ defaultEvent = 'think-link' }: BuzzerPanel
 
   const getBuzzerUrl = () => {
     if (typeof window !== 'undefined') {
-      return `${window.location.origin}/events/think-link/buzzer`;
+      const path = buzzerPath || `/events/${defaultEvent}/buzzer`;
+      return `${window.location.origin}${path}`;
     }
-    return 'https://xianze.tech/events/think-link/buzzer';
+    return `https://xianze.tech/events/${defaultEvent}/buzzer`;
   };
 
   useEffect(() => {
@@ -67,7 +74,18 @@ export default function BuzzerPanel({ defaultEvent = 'think-link' }: BuzzerPanel
       setConnectionState('connected');
       setError('');
       socket.emit('coordinator:join', (response: { success: boolean }) => {
-        if (!response.success) {
+        if (response.success) {
+          // Set the default event for this panel
+          socket.emit(
+            'coordinator:select-event',
+            { eventSlug: defaultEvent },
+            (res: { success: boolean }) => {
+              if (!res.success) {
+                console.warn('Failed to set default event');
+              }
+            }
+          );
+        } else {
           setError('Failed to join as coordinator');
         }
       });
@@ -395,7 +413,7 @@ export default function BuzzerPanel({ defaultEvent = 'think-link' }: BuzzerPanel
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-semibold text-gray-900">Buzzer Controls</h3>
-            {availableEvents.length > 0 && sessionState === 'idle' && (
+            {showEventSelector && availableEvents.length > 0 && sessionState === 'idle' && (
               <select
                 value={currentEvent}
                 onChange={(e) => handleEventChange(e.target.value)}
@@ -408,7 +426,7 @@ export default function BuzzerPanel({ defaultEvent = 'think-link' }: BuzzerPanel
                 ))}
               </select>
             )}
-            {currentEvent && sessionState !== 'idle' && (
+            {showEventSelector && currentEvent && sessionState !== 'idle' && (
               <span className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium">
                 {availableEvents.find((e) => e.slug === currentEvent)?.name || currentEvent}
               </span>

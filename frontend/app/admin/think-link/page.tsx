@@ -450,10 +450,10 @@ export default function ThinkLinkPage() {
       )}
 
       {/* Buzzer Tab */}
-      {activeTab === 'buzzer' && <BuzzerPanel />}
+      {activeTab === 'buzzer' && <BuzzerPanel defaultEvent="think-link" />}
 
       {/* Leaderboard Tab */}
-      {activeTab === 'leaderboard' && <LeaderboardPanel />}
+      {activeTab === 'leaderboard' && <LeaderboardPanel defaultEvent="think-link" />}
     </div>
   );
 }

@@ -71,8 +71,8 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
         'coordinator:join',
         (response: { success: boolean; eventSlug?: string; availableEvents?: BuzzerEvent[] }) => {
           if (response.success) {
-            // Fetch initial leaderboard
-            fetchLeaderboard(socket);
+            // Fetch initial leaderboard for the default event
+            fetchLeaderboard(socket, defaultEvent);
           } else {
             setError('Failed to join as coordinator');
           }
