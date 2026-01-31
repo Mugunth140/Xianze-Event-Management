@@ -224,9 +224,30 @@ const navItems: NavItem[] = [
   },
 ];
 
-// Helper to check if user has a task (admin has all tasks implicitly)
+// Default tasks per role (must match backend DEFAULT_TASKS)
+const DEFAULT_TASKS: Record<string, string[]> = {
+  admin: [
+    'verify_payment',
+    'mark_attendance',
+    'check_in_participant',
+    'scan_event_participation',
+    'manage_rounds',
+    'edit_participant',
+    'delete_participant',
+  ],
+  coordinator: ['scan_event_participation', 'manage_rounds'],
+  member: ['check_in_participant'],
+};
+
+// Helper to check if user has a task (checks default tasks + explicitly assigned tasks)
 const userHasTask = (user: User, task: string): boolean => {
   if (user.role === 'admin') return true;
+
+  // Check default tasks for the user's role
+  const defaultTasks = DEFAULT_TASKS[user.role] || [];
+  if (defaultTasks.includes(task)) return true;
+
+  // Check explicitly assigned tasks
   return user.tasks?.includes(task) ?? false;
 };
 
