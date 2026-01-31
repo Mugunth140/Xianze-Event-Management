@@ -39,6 +39,7 @@ const EVENTS: EventOption[] = [
   { slug: 'ctrl-quiz', name: 'Ctrl+ Quiz' },
   { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'think-link', name: 'Think & Link' },
+  { slug: 'gaming', name: 'Gaming' },
   { slug: 'fun-games', name: 'Fun Games' },
 ];
 
@@ -68,7 +69,7 @@ const findEventSlug = (eventName: string): string | null => {
     'bug smash': 'bug-smash',
     'paper presentation': 'paper-presentation',
     'fun games': 'fun-games',
-    gaming: 'fun-games',
+    gaming: 'gaming',
   };
 
   return fuzzyMap[normalizedInput] || null;

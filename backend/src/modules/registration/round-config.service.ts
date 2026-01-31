@@ -13,7 +13,8 @@ const DEFAULT_EVENTS = [
   { eventSlug: 'ctrl-quiz', eventName: 'Ctrl+ Quiz', totalRounds: 3 },
   { eventSlug: 'code-hunt', eventName: 'Code Hunt', totalRounds: 2 },
   { eventSlug: 'think-link', eventName: 'Think & Link', totalRounds: 2 },
-  { eventSlug: 'gaming', eventName: 'Fun Games', totalRounds: 0 },
+  { eventSlug: 'gaming', eventName: 'Gaming', totalRounds: 0 },
+  { eventSlug: 'fun-games', eventName: 'Fun Games', totalRounds: 0 },
 ];
 
 export interface RoundAnalytics {

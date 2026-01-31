@@ -1,13 +1,13 @@
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseIntPipe,
-    Post,
-    Query,
-    Request,
-    UseGuards,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -190,10 +190,7 @@ export class AttendanceController {
     const user = req.user;
 
     // Check if user can access this event (coordinators only scan for their event)
-    if (
-      user.role !== UserRole.ADMIN &&
-      !userCanAccessEvent(user, dto.eventSlug)
-    ) {
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, dto.eventSlug)) {
       return {
         success: false,
         message: `You are not authorized to scan for event: ${dto.eventSlug}`,
@@ -219,10 +216,7 @@ export class AttendanceController {
     const user = req.user;
 
     // Check if user can access this event
-    if (
-      user.role !== UserRole.ADMIN &&
-      !userCanAccessEvent(user, dto.eventSlug)
-    ) {
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, dto.eventSlug)) {
       return {
         success: false,
         message: `You are not authorized to scan for event: ${dto.eventSlug}`,
@@ -242,9 +236,7 @@ export class AttendanceController {
    */
   @Get('participation/history/:registrationId')
   @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
-  async getParticipantHistory(
-    @Param('registrationId', ParseIntPipe) registrationId: number,
-  ) {
+  async getParticipantHistory(@Param('registrationId', ParseIntPipe) registrationId: number) {
     return this.eventParticipationService.getParticipantHistory(registrationId);
   }
 
@@ -253,17 +245,11 @@ export class AttendanceController {
    */
   @Get('participation/event/:eventSlug')
   @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
-  async getEventParticipants(
-    @Param('eventSlug') eventSlug: string,
-    @Request() req: AuthRequest,
-  ) {
+  async getEventParticipants(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
     const user = req.user;
 
     // Check if user can access this event
-    if (
-      user.role !== UserRole.ADMIN &&
-      !userCanAccessEvent(user, eventSlug)
-    ) {
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, eventSlug)) {
       return [];
     }
 
@@ -275,17 +261,11 @@ export class AttendanceController {
    */
   @Get('participation/stats/:eventSlug')
   @RequireTasks(UserTask.MARK_ATTENDANCE, UserTask.SCAN_EVENT_PARTICIPATION)
-  async getEventStats(
-    @Param('eventSlug') eventSlug: string,
-    @Request() req: AuthRequest,
-  ) {
+  async getEventStats(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
     const user = req.user;
 
     // Check if user can access this event
-    if (
-      user.role !== UserRole.ADMIN &&
-      !userCanAccessEvent(user, eventSlug)
-    ) {
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, eventSlug)) {
       return { totalParticipants: 0, roundStats: [] };
     }
 

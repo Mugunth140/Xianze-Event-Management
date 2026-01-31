@@ -163,7 +163,12 @@ export class EventParticipationService {
     let roundRecorded: number | undefined;
 
     // Auto-record round participation if event has rounds and is started
-    if (roundConfig && roundConfig.totalRounds > 0 && roundConfig.isStarted && roundConfig.currentRound > 0) {
+    if (
+      roundConfig &&
+      roundConfig.totalRounds > 0 &&
+      roundConfig.isStarted &&
+      roundConfig.currentRound > 0
+    ) {
       const currentRound = roundConfig.currentRound;
 
       // Check if not already recorded for this round

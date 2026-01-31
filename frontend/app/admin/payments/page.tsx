@@ -44,6 +44,7 @@ const AVAILABLE_EVENTS = [
   'Buildathon',
   'Think & Link',
   'Ctrl + Quiz',
+  'Gaming',
   'Fun Games',
   'Code Hunt',
 ];
