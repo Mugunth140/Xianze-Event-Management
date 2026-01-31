@@ -109,7 +109,7 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, eventFilter]);
+  }, [activeTab, eventFilter, isAdmin]);
 
   useEffect(() => {
     fetchPayments();

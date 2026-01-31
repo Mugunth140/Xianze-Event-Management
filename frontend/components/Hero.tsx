@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiUrl } from '@/lib/api';
 import gsap from 'gsap';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -14,6 +15,23 @@ export default function Hero() {
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const [isVideoVisible, setIsVideoVisible] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+
+  // Check registration status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(getApiUrl('/settings/registration-status'));
+        if (res.ok) {
+          const data = await res.json();
+          setRegistrationOpen(data.isOpen);
+        }
+      } catch {
+        // Fail open - assume registrations are open if API fails
+      }
+    };
+    checkStatus();
+  }, []);
 
   // Intersection Observer for lazy video loading
   useEffect(() => {
@@ -155,12 +173,18 @@ export default function Hero() {
 
             {/* CTA Buttons */}
             <div ref={ctaRef} className="flex flex-wrap items-center gap-4 opacity-0">
-              <Link
-                href="/register"
-                className="liquid-glass-btn inline-flex items-center justify-center px-7 py-3.5 text-white font-semibold rounded-full"
-              >
-                Register Now
-              </Link>
+              {registrationOpen ? (
+                <Link
+                  href="/register"
+                  className="liquid-glass-btn inline-flex items-center justify-center px-7 py-3.5 text-white font-semibold rounded-full"
+                >
+                  Register Now
+                </Link>
+              ) : (
+                <span className="inline-flex items-center justify-center px-7 py-3.5 bg-gray-400 text-white font-semibold rounded-full cursor-not-allowed">
+                  Registration Closed
+                </span>
+              )}
               <Link
                 href="/events"
                 className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-gray-700 transition-all duration-300 bg-white/50 border border-gray-200/50 hover:bg-white/80 hover:border-primary-200/50 hover:text-primary-600 rounded-full backdrop-blur-sm shadow-sm hover:shadow-md hover:shadow-primary-500/10"

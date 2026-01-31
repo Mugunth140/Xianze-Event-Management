@@ -15,6 +15,7 @@ import { CtrlQuizModule } from './modules/events/ctrl-quiz/ctrl-quiz.module';
 import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
 import { ThinkLinkModule } from './modules/events/think-link/think-link.module';
 import { RegistrationModule } from './modules/registration/registration.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { UsersModule } from './modules/users/users.module';
 
 /**
@@ -57,6 +58,7 @@ import { UsersModule } from './modules/users/users.module';
     ContactModule,
     RegistrationModule,
     AnalyticsModule,
+    SettingsModule,
     PaperPresentationModule,
     ThinkLinkModule,
     BugSmashModule,

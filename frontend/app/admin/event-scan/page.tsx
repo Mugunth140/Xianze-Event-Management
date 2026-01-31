@@ -123,8 +123,8 @@ export default function EventScanPage() {
         const data: RoundConfig = await res.json();
         setRoundConfig(data);
       }
-    } catch (err) {
-      console.error('Failed to fetch round config:', err);
+    } catch {
+      // Ignore fetch errors; UI will show fallback state
     } finally {
       setLoadingConfig(false);
     }

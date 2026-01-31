@@ -11,8 +11,6 @@ import {
   validateSelection,
 } from '@/lib/validation';
 import confetti from 'canvas-confetti';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -98,11 +96,16 @@ const CustomDropdown = ({ label, options, selected, setSelected, placeholder }: 
 const submitDebounce = createSubmitDebounce(3000);
 
 const Register = () => {
-  // Hydration safety - prevent SSR/client mismatch
-  const [hasMounted, setHasMounted] = useState(false);
   const [showAlternativeQR, setShowAlternativeQR] = useState(false);
   const [showQRMobile, setShowQRMobile] = useState(false);
   const [copiedMobile, setCopiedMobile] = useState(false);
+
+  // Registration status (open/closed)
+  const [registrationStatus, setRegistrationStatus] = useState<{
+    isOpen: boolean;
+    loading: boolean;
+  }>({ isOpen: true, loading: true });
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -126,66 +129,32 @@ const Register = () => {
 
   const router = useRouter();
 
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Mark as mounted after hydration
+  // Check if registrations are open
   useEffect(() => {
-    setHasMounted(true);
-    gsap.registerPlugin(ScrollTrigger);
+    const checkRegistrationStatus = async () => {
+      try {
+        const res = await fetch(getApiUrl('/settings/registration-status'));
+        if (res.ok) {
+          const data = await res.json();
+          setRegistrationStatus({
+            isOpen: data.isOpen,
+            loading: false,
+          });
+        } else {
+          // If endpoint fails, assume open (fail-open)
+          setRegistrationStatus({ isOpen: true, loading: false });
+        }
+      } catch {
+        // Network error - assume open to not block registrations
+        setRegistrationStatus({ isOpen: true, loading: false });
+      }
+    };
+    checkRegistrationStatus();
   }, []);
 
-  useEffect(() => {
-    if (!hasMounted) return;
-    const section = sectionRef.current;
-    if (!section) return;
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 85%',
-          once: true,
-        },
-      });
-
-      if (headerRef.current) {
-        tl.fromTo(
-          headerRef.current,
-          { opacity: 0, y: 32 },
-          { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
-        );
-      }
-
-      const formSections = gsap.utils.toArray<HTMLElement>('.form-section-item');
-      if (formSections.length > 0) {
-        tl.fromTo(
-          formSections,
-          { opacity: 0, y: 24 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.45,
-            stagger: 0.07,
-            ease: 'power2.out',
-          },
-          '-=0.25'
-        );
-      }
-
-      const submitButton = section.querySelector('.register-submit');
-      if (submitButton) {
-        tl.fromTo(
-          submitButton,
-          { opacity: 0, y: 16 },
-          { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' },
-          '-=0.2'
-        );
-      }
-    }, section);
-
-    return () => ctx.revert();
-  }, [hasMounted]);
+  // Animation effects removed for performance
 
   const eventsList = [
     'Buildathon',
@@ -712,9 +681,118 @@ const Register = () => {
   const upiId1 = 'gomathichandramohan2010@okhdfcbank';
   const upiId2 = 'klganesh78@okicici';
 
+  // Show loading state while checking registration status
+  if (registrationStatus.loading) {
+    return (
+      <section
+        className="min-h-screen pt-28 pb-20 flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(180deg, #ffffff 0%, #f8f5ff 30%, #f0e8ff 100%)',
+        }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Show closed message if registrations are closed
+  if (!registrationStatus.isOpen) {
+    return (
+      <section
+        className="min-h-screen pt-28 pb-20"
+        style={{
+          background: 'linear-gradient(180deg, #ffffff 0%, #f8f5ff 30%, #f0e8ff 100%)',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div
+          className="fixed top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="fixed bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
+          }}
+        />
+
+        <div className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 mb-6 shadow-sm">
+              <span className="text-2xl">🚫</span>
+              <span className="text-sm font-semibold text-amber-700 uppercase tracking-wider">
+                Closed
+              </span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-gray-900 mb-4">
+              Registration{' '}
+              <span className="relative inline-block">
+                <span className="relative z-10 text-amber-600">Closed</span>
+                <span className="absolute bottom-1 left-0 w-full h-3 bg-amber-200/60 -rotate-1 -z-0" />
+              </span>{' '}
+              !
+            </h1>
+
+            <p className="text-lg text-gray-600 max-w-lg mx-auto my-2">
+              Registrations are currently closed. Please check back later or contact us for more
+              information.
+            </p>
+          </div>
+
+          {/* Closed Info Card */}
+          <div className="max-w-lg mx-auto">
+            <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-gray-100 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-amber-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+                We&apos;re Not Accepting Registrations
+              </h2>
+              <p className="text-gray-600 mb-8">
+                The registration period has ended. Stay tuned for future events!
+              </p>
+              <a
+                href="/"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Return Home
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      ref={sectionRef}
       className="min-h-screen pt-28 pb-20"
       style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #f8f5ff 30%, #f0e8ff 100%)',
@@ -736,7 +814,7 @@ const Register = () => {
 
       <div className="max-w-xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div ref={headerRef} className="text-center mb-12">
+        <div className="text-center mb-12">
           {/* Badge Removed */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">📢</span>
@@ -917,7 +995,7 @@ const Register = () => {
           {submitStatus !== 'success' && (
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
               {/* SECTION 1: Personal Details */}
-              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30">
+              <div className="form-section-item bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-30">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center text-2xl">
                     👤
@@ -994,7 +1072,7 @@ const Register = () => {
               </div>
 
               {/* SECTION 2: Academic Details */}
-              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-20">
+              <div className="form-section-item bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-20">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl">
                     🎓
@@ -1037,7 +1115,7 @@ const Register = () => {
                   </div>
 
                   {formData.course === 'Others' && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Specific Course Name
                       </label>
@@ -1056,7 +1134,7 @@ const Register = () => {
 
                   {!['Others', 'BDS', 'MS', 'B.Ed'].includes(formData.course) &&
                     formData.course !== '' && (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Branch / Specialization
                         </label>
@@ -1074,7 +1152,7 @@ const Register = () => {
                     )}
 
                   {formData.branch === 'Others' && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Specific Branch Name
                       </label>
@@ -1094,7 +1172,7 @@ const Register = () => {
               </div>
 
               {/* SECTION 3: Event Selection */}
-              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
+              <div className="form-section-item bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">
                     🏆
@@ -1170,7 +1248,7 @@ const Register = () => {
                             </div>
                           </div>
                           {formData.event === event && eventData && (
-                            <div className="mt-3 pt-3 border-t border-primary-100/50 animate-in fade-in slide-in-from-top-1">
+                            <div className="mt-3 pt-3 border-t border-primary-100/50">
                               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-medium">
                                 {eventData.tagline}
                               </p>
@@ -1187,7 +1265,7 @@ const Register = () => {
               </div>
 
               {/* SECTION 4: Payment Details */}
-              <div className="form-section-item opacity-0 bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
+              <div className="form-section-item bg-white/80 backdrop-blur-sm border-2 border-gray-100 rounded-2xl p-6 sm:p-8 shadow-sm transition-all duration-300 hover:border-primary-200 hover:shadow-md relative z-10">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl">
                     ₹

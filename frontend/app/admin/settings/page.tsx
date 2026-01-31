@@ -1,13 +1,14 @@
 'use client';
 
 import { API_URL } from '@/lib/api';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
+import useAuth from '../hooks/useAuth';
 
 interface User {
   id: number;
@@ -121,10 +122,16 @@ function ToggleRow({
 }
 
 export default function SettingsPage() {
+  const { token, isAdmin } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<SettingsState>(defaultSettings);
   const [savedAt, setSavedAt] = useState<string>('');
   const [siteUrl, setSiteUrl] = useState<string>('');
+
+  // Registration control state
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [registrationSaving, setRegistrationSaving] = useState(false);
 
   const assignedEventsLabel = useMemo(() => {
     if (!user) return 'Not assigned';
@@ -132,6 +139,52 @@ export default function SettingsPage() {
     if (user.assignedEvents?.length) return user.assignedEvents.join(', ');
     return 'Not assigned';
   }, [user]);
+
+  // Fetch registration status
+  const fetchRegistrationStatus = useCallback(async () => {
+    if (!token) return;
+    setRegistrationLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/settings/registration-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRegistrationOpen(data.isOpen);
+      }
+    } catch {
+      // Ignore errors; UI will remain in last known state
+    } finally {
+      setRegistrationLoading(false);
+    }
+  }, [token]);
+
+  // Toggle registration status
+  const toggleRegistration = async () => {
+    if (!token || !isAdmin) return;
+    setRegistrationSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/settings/registration-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isOpen: !registrationOpen }),
+      });
+      if (res.ok) {
+        setRegistrationOpen(!registrationOpen);
+      }
+    } catch {
+      // Ignore errors; UI will remain in last known state
+    } finally {
+      setRegistrationSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegistrationStatus();
+  }, [fetchRegistrationStatus]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -225,6 +278,42 @@ export default function SettingsPage() {
           </>
         }
       />
+
+      {/* Registration Control - Admin Only */}
+      {isAdmin && (
+        <Card className="border-2 border-primary-100 bg-primary-50/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Registration Control</h2>
+              <p className="text-sm text-gray-500">
+                Open or close event registrations for participants.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              {registrationLoading ? (
+                <div className="w-8 h-8 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Badge variant={registrationOpen ? 'green' : 'red'} className="text-sm px-3 py-1">
+                    {registrationOpen ? 'Open' : 'Closed'}
+                  </Badge>
+                  <Button
+                    variant={registrationOpen ? 'danger' : 'primary'}
+                    onClick={toggleRegistration}
+                    disabled={registrationSaving}
+                  >
+                    {registrationSaving
+                      ? 'Saving...'
+                      : registrationOpen
+                        ? 'Close Registrations'
+                        : 'Open Registrations'}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

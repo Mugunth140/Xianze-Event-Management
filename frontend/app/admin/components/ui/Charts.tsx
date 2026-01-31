@@ -106,6 +106,12 @@ export function PaymentPieChart({ data }: ChartProps) {
     rejected: 'Rejected',
   };
 
+  interface LegendEntry {
+    payload?: {
+      status?: string;
+    };
+  }
+
   const RADIAN = Math.PI / 180;
 
   interface LabelProps {
@@ -180,7 +186,7 @@ export function PaymentPieChart({ data }: ChartProps) {
           <Legend
             verticalAlign="bottom"
             height={36}
-            formatter={(value, entry: any) => {
+            formatter={(value, entry: LegendEntry) => {
               const status = entry.payload?.status;
               return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || value;
             }}

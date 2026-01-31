@@ -55,8 +55,8 @@ export default function RoundsPage() {
         const data = await res.json();
         setConfigs(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch round configs:', error);
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to load round configurations' });
     }
   }, [token]);
 
@@ -89,8 +89,8 @@ export default function RoundsPage() {
           setAnalytics(results.filter(Boolean));
         }
       }
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to load round analytics' });
     }
   }, [token, isAdmin]);
 
