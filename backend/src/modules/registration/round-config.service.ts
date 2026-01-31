@@ -63,7 +63,9 @@ export class RoundConfigService {
         // Fix incorrect event names (e.g., 'gaming' slug had 'Fun Games' name before)
         existing.eventName = event.eventName;
         await this.roundConfigRepo.save(existing);
-        this.logger.log(`Fixed event name for ${event.eventSlug}: ${existing.eventName} -> ${event.eventName}`);
+        this.logger.log(
+          `Fixed event name for ${event.eventSlug}: ${existing.eventName} -> ${event.eventName}`,
+        );
       }
     }
   }
