@@ -1,44 +1,115 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
 
-interface Puzzle {
-  id: number;
-  imagePath: string;
-  roundNumber: number;
-  hint: string | null;
-  result: 'pending' | 'correct' | 'wrong';
+// Set worker path
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 }
 
 interface ThinkLinkPresenterProps {
-  puzzles: Puzzle[];
+  presentationId: number;
+  presentationName: string;
   timerDuration: number;
-  onMarkResult: (id: number, result: 'correct' | 'wrong') => Promise<void>;
   onClose: () => void;
 }
 
 /**
- * Fullscreen Think & Link Presenter
- * - Arrow key navigation (← →)
- * - Countdown timer
- * - Mark correct/wrong buttons
- * - Visual overlays for results
- * - ESC to exit
+ * Fullscreen PDF Presenter for Think & Link
+ * - Loads PDF and renders slides on canvas
+ * - 60-second countdown timer per slide
+ * - Blank screen with "Time's Up!" after timer expires
+ * - Next/Previous navigation
+ * - Keyboard shortcuts: ← → Space Esc
  */
 export default function ThinkLinkPresenter({
-  puzzles,
+  presentationId,
+  presentationName,
   timerDuration,
-  onMarkResult,
   onClose,
 }: ThinkLinkPresenterProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timerDuration);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
+  const [isTimedOut, setIsTimedOut] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const currentPuzzle = puzzles[currentIndex];
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+
+  // Load PDF document
+  useEffect(() => {
+    const loadPdf = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          getApiUrl(`/think-link/presentations/${presentationId}/file`),
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!response.ok) throw new Error('Failed to load PDF');
+
+        const arrayBuffer = await response.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        pdfDocRef.current = pdf;
+        setTotalPages(pdf.numPages);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load PDF');
+        setLoading(false);
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      if (pdfDocRef.current) {
+        pdfDocRef.current.destroy();
+      }
+    };
+  }, [presentationId]);
+
+  // Render current page
+  useEffect(() => {
+    const renderPage = async () => {
+      if (!pdfDocRef.current || !canvasRef.current || loading) return;
+
+      try {
+        const page = await pdfDocRef.current.getPage(currentPage);
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        // Scale to fit container while maintaining aspect ratio
+        const containerWidth = window.innerWidth * 0.9;
+        const containerHeight = window.innerHeight * 0.7;
+        const viewport = page.getViewport({ scale: 1 });
+
+        const scaleX = containerWidth / viewport.width;
+        const scaleY = containerHeight / viewport.height;
+        const scale = Math.min(scaleX, scaleY);
+
+        const scaledViewport = page.getViewport({ scale });
+
+        canvas.width = scaledViewport.width;
+        canvas.height = scaledViewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: scaledViewport,
+        }).promise;
+      } catch (err) {
+        console.error('Error rendering page:', err);
+      }
+    };
+
+    renderPage();
+  }, [currentPage, loading]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
@@ -48,18 +119,22 @@ export default function ThinkLinkPresenter({
           document.exitFullscreen();
         }
         onClose();
-      } else if (e.key === 'ArrowRight' && currentIndex < puzzles.length - 1) {
+      } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
         goToNext();
-      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+      } else if (e.key === 'ArrowLeft' && currentPage > 1) {
         goToPrevious();
       } else if (e.key === ' ') {
-        // Space to start/pause timer
         e.preventDefault();
-        setTimerRunning((prev) => !prev);
+        if (isTimedOut) {
+          // If timed out, space advances to next
+          goToNext();
+        } else {
+          setTimerRunning((prev) => !prev);
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentIndex, puzzles.length]
+    [currentPage, totalPages, isTimedOut]
   );
 
   useEffect(() => {
@@ -75,7 +150,7 @@ export default function ThinkLinkPresenter({
       setTimeLeft((prev) => {
         if (prev <= 1) {
           setTimerRunning(false);
-          handleTimeout();
+          setIsTimedOut(true);
           return 0;
         }
         return prev - 1;
@@ -83,7 +158,6 @@ export default function ThinkLinkPresenter({
     }, 1000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerRunning]);
 
   // Fullscreen tracking
@@ -96,33 +170,16 @@ export default function ThinkLinkPresenter({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const handleTimeout = async () => {
-    setShowResult('wrong');
-    await onMarkResult(currentPuzzle.id, 'wrong');
-  };
-
-  const handleMarkCorrect = async () => {
-    setTimerRunning(false);
-    setShowResult('correct');
-    await onMarkResult(currentPuzzle.id, 'correct');
-  };
-
-  const handleMarkWrong = async () => {
-    setTimerRunning(false);
-    setShowResult('wrong');
-    await onMarkResult(currentPuzzle.id, 'wrong');
-  };
-
   const goToNext = () => {
-    if (currentIndex < puzzles.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
       resetTimer();
     }
   };
 
   const goToPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
       resetTimer();
     }
   };
@@ -130,11 +187,11 @@ export default function ThinkLinkPresenter({
   const resetTimer = () => {
     setTimeLeft(timerDuration);
     setTimerRunning(false);
-    setShowResult(null);
+    setIsTimedOut(false);
   };
 
   const startTimer = () => {
-    setShowResult(null);
+    setIsTimedOut(false);
     setTimeLeft(timerDuration);
     setTimerRunning(true);
   };
@@ -153,15 +210,37 @@ export default function ThinkLinkPresenter({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading presentation...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <div className="text-red-500 text-xl">{error}</div>
+        <button
+          onClick={onClose}
+          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div id="think-link-presenter" className="fixed inset-0 z-[100] bg-gray-900 flex flex-col">
       {/* Header - Hidden in fullscreen */}
       {!isFullscreen && (
         <div className="flex items-center justify-between px-6 py-4 bg-gray-800">
           <div className="flex items-center gap-4">
-            <h2 className="text-white font-bold text-xl">Think & Link</h2>
+            <h2 className="text-white font-bold text-xl">{presentationName}</h2>
             <span className="text-gray-400">
-              Puzzle {currentIndex + 1} of {puzzles.length}
+              Slide {currentPage} of {totalPages}
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -183,54 +262,35 @@ export default function ThinkLinkPresenter({
 
       {/* Main content */}
       <div className="flex-1 relative flex items-center justify-center p-8">
-        {/* Puzzle Image */}
-        <div className="relative max-w-6xl max-h-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={getApiUrl(`/think-link/puzzles/${currentPuzzle.id}/image`)}
-            alt={`Puzzle ${currentPuzzle.roundNumber}`}
-            className="max-h-[70vh] object-contain rounded-xl shadow-2xl"
-          />
-
-          {/* Result overlay */}
-          {showResult && (
-            <div
-              className={`absolute inset-0 flex items-center justify-center rounded-xl ${
-                showResult === 'correct' ? 'bg-emerald-500/80' : 'bg-red-500/80'
-              } animate-pulse`}
-            >
-              {showResult === 'correct' ? (
-                <svg
-                  className="w-32 h-32 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-32 h-32 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              )}
+        {/* Timed Out Overlay - Blank Screen */}
+        {isTimedOut ? (
+          <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center z-10">
+            <div className="text-6xl font-bold text-red-500 mb-8 animate-pulse">
+              Time&apos;s Up!
             </div>
-          )}
-        </div>
+            <button
+              onClick={goToNext}
+              disabled={currentPage >= totalPages}
+              className="px-8 py-4 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl rounded-lg font-semibold transition-colors flex items-center gap-3"
+            >
+              Next Slide
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            {currentPage >= totalPages && (
+              <p className="text-gray-400 mt-4">This was the last slide</p>
+            )}
+          </div>
+        ) : (
+          /* PDF Slide Canvas */
+          <canvas ref={canvasRef} className="max-h-[70vh] rounded-xl shadow-2xl" />
+        )}
 
         {/* Timer display - bottom right */}
         <div className="absolute bottom-8 right-8">
@@ -247,20 +307,12 @@ export default function ThinkLinkPresenter({
           </div>
         </div>
 
-        {/* Round number - top left */}
+        {/* Slide number - top left */}
         <div className="absolute top-8 left-8">
-          <div className="text-4xl font-bold text-white/70">#{currentPuzzle.roundNumber}</div>
-        </div>
-
-        {/* Hint - coordinator only, top right */}
-        {currentPuzzle.hint && (
-          <div className="absolute top-8 right-8 max-w-xs">
-            <div className="px-4 py-2 bg-black/60 rounded-lg text-white/80 text-sm">
-              <span className="text-xs text-gray-400 block mb-1">Hint:</span>
-              {currentPuzzle.hint}
-            </div>
+          <div className="text-4xl font-bold text-white/70">
+            {currentPage} / {totalPages}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Controls - bottom */}
@@ -269,7 +321,7 @@ export default function ThinkLinkPresenter({
         <div className="flex items-center gap-4">
           <button
             onClick={goToPrevious}
-            disabled={currentIndex === 0}
+            disabled={currentPage === 1}
             className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +335,7 @@ export default function ThinkLinkPresenter({
           </button>
           <button
             onClick={goToNext}
-            disabled={currentIndex === puzzles.length - 1}
+            disabled={currentPage === totalPages}
             className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,39 +367,25 @@ export default function ThinkLinkPresenter({
             </svg>
             Start Timer
           </button>
+          <button
+            onClick={resetTimer}
+            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          >
+            Reset
+          </button>
         </div>
 
-        {/* Result buttons */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleMarkCorrect}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            Correct
-          </button>
-          <button
-            onClick={handleMarkWrong}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Wrong
-          </button>
-        </div>
+        {/* Next button */}
+        <button
+          onClick={goToNext}
+          disabled={currentPage >= totalPages}
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+        >
+          Next Slide
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* Keyboard hints - bottom */}
