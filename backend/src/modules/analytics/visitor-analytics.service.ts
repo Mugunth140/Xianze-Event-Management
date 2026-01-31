@@ -4,12 +4,12 @@ import { Repository } from 'typeorm';
 import { TrackPageViewDto, UpdateDurationDto } from './dto';
 import { PageView, Visitor } from './entities';
 import {
-  BrowserBreakdown,
-  DailyStats,
-  DeviceBreakdown,
-  TopPage,
-  TrafficSource,
-  VisitorStats,
+    BrowserBreakdown,
+    DailyStats,
+    DeviceBreakdown,
+    TopPage,
+    TrafficSource,
+    VisitorStats,
 } from './types';
 
 interface DateRange {
