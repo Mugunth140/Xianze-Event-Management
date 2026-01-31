@@ -200,6 +200,8 @@ const Register = () => {
       'Mathematics',
       'Physics',
       'Computer Science',
+      'Computer Technology',
+      'Artificial Intelligence',
       'Information Technology',
       'Biology',
       'Chemistry',
@@ -774,14 +776,6 @@ const Register = () => {
                 href="/"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                  />
-                </svg>
                 Return Home
               </a>
             </div>
@@ -1304,8 +1298,8 @@ const Register = () => {
                   {formData.paymentMode === 'cash' && (
                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                       <p className="text-sm text-emerald-800 font-medium text-center">
-                        💵 You chose cash payment. Please pay the registration fee at the event
-                        venue to receive your event pass.
+                        You&asop;ve chosen to pay by cash. Please visit the registration desk at the
+                        event venue to complete your payment and collect your event pass.
                       </p>
                     </div>
                   )}
