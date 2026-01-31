@@ -162,15 +162,25 @@ export class VisitorAnalyticsService {
 
     const totalVisitors = parseInt(totalVisitorsResult?.count || '0');
 
-    // New visitors (first visit in period)
+    // New visitors (first visit in period AND only 1 total visit)
     const newVisitorsResult = await this.visitorRepository
       .createQueryBuilder('v')
       .select('COUNT(*)', 'count')
       .where('v.firstVisit BETWEEN :start AND :end', { start, end })
+      .andWhere('v.totalVisits = 1')
       .getRawOne();
 
     const newVisitors = parseInt(newVisitorsResult?.count || '0');
-    const returningVisitors = Math.max(0, totalVisitors - newVisitors);
+
+    // Returning visitors (visited in period AND have more than 1 total visit)
+    const returningVisitorsResult = await this.visitorRepository
+      .createQueryBuilder('v')
+      .select('COUNT(*)', 'count')
+      .where('v.lastVisit BETWEEN :start AND :end', { start, end })
+      .andWhere('v.totalVisits > 1')
+      .getRawOne();
+
+    const returningVisitors = parseInt(returningVisitorsResult?.count || '0');
 
     // Total page views
     const totalPageViewsResult = await this.pageViewRepository
