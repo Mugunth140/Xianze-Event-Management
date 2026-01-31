@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventParticipation } from './entities/event-participation.entity';
+import { EventRoundConfig } from './entities/event-round-config.entity';
 import { RoundParticipation } from './entities/round-participation.entity';
 import { PaymentStatus, Registration } from './registration.entity';
 
@@ -18,6 +19,7 @@ export interface ScanResult {
     passId: string;
   };
   participation?: EventParticipation | RoundParticipation;
+  roundRecorded?: number; // If a round was automatically recorded
 }
 
 export interface ParticipationHistory {
@@ -48,6 +50,8 @@ export class EventParticipationService {
     private readonly eventParticipationRepo: Repository<EventParticipation>,
     @InjectRepository(RoundParticipation)
     private readonly roundParticipationRepo: Repository<RoundParticipation>,
+    @InjectRepository(EventRoundConfig)
+    private readonly roundConfigRepo: Repository<EventRoundConfig>,
   ) {}
 
   /**
@@ -89,6 +93,7 @@ export class EventParticipationService {
   /**
    * Scan a participant at an event hall
    * Creates event participation record if not already exists
+   * Also auto-records round participation if event has rounds and is started
    */
   async scanEventParticipation(
     qrHash: string,
@@ -115,6 +120,11 @@ export class EventParticipationService {
     }
 
     const registration = validation.registration!;
+
+    // Get round config for this event
+    const roundConfig = await this.roundConfigRepo.findOne({
+      where: { eventSlug },
+    });
 
     // Check if already participated in this event
     const existing = await this.eventParticipationRepo.findOne({
@@ -150,12 +160,45 @@ export class EventParticipationService {
     });
 
     const saved = await this.eventParticipationRepo.save(participation);
+    let roundRecorded: number | undefined;
+
+    // Auto-record round participation if event has rounds and is started
+    if (roundConfig && roundConfig.totalRounds > 0 && roundConfig.isStarted && roundConfig.currentRound > 0) {
+      const currentRound = roundConfig.currentRound;
+
+      // Check if not already recorded for this round
+      const existingRound = await this.roundParticipationRepo.findOne({
+        where: {
+          registrationId: registration.id,
+          eventSlug,
+          roundNumber: currentRound,
+        },
+      });
+
+      if (!existingRound) {
+        const roundParticipation = this.roundParticipationRepo.create({
+          registrationId: registration.id,
+          eventSlug,
+          roundNumber: currentRound,
+          scannedBy,
+        });
+        await this.roundParticipationRepo.save(roundParticipation);
+        roundRecorded = currentRound;
+        this.logger.log(
+          `Auto-recorded Round ${currentRound} for ${registration.name} -> ${eventSlug}`,
+        );
+      }
+    }
 
     this.logger.log(`Event participation recorded: ${registration.name} -> ${eventSlug}`);
 
+    const message = roundRecorded
+      ? `${registration.name} registered for ${eventSlug} (Round ${roundRecorded})`
+      : `${registration.name} registered for ${eventSlug}`;
+
     return {
       success: true,
-      message: `${registration.name} registered for ${eventSlug}`,
+      message,
       registration: {
         id: registration.id,
         name: registration.name,
@@ -165,6 +208,7 @@ export class EventParticipationService {
         passId: registration.passId || '',
       },
       participation: saved,
+      roundRecorded,
     };
   }
 

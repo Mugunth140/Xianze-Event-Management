@@ -18,6 +18,15 @@ interface ScanResult {
   };
 }
 
+interface RoundConfig {
+  eventSlug: string;
+  currentRound: number;
+  totalRounds: number;
+  isStarted: boolean;
+  isCompleted: boolean;
+  hasRounds: boolean;
+}
+
 interface EventOption {
   slug: string;
   name: string;
@@ -33,8 +42,6 @@ const EVENTS: EventOption[] = [
   { slug: 'gaming', name: 'Gaming' },
 ];
 
-type ScanMode = 'event' | 'round';
-
 export default function EventScanPage() {
   const { token, user } = useAuth();
   const [isScanning, setIsScanning] = useState(false);
@@ -42,30 +49,56 @@ export default function EventScanPage() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Event and round selection
+  // Event selection (auto-set for coordinators)
   const [selectedEvent, setSelectedEvent] = useState<string>('');
-  const [scanMode, setScanMode] = useState<ScanMode>('event');
-  const [roundNumber, setRoundNumber] = useState<number>(1);
+  const [roundConfig, setRoundConfig] = useState<RoundConfig | null>(null);
+  const [loadingConfig, setLoadingConfig] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isProcessingRef = useRef(false);
 
-  // Determine available events based on user role
-  const availableEvents =
-    user?.role === 'admin'
-      ? EVENTS
-      : EVENTS.filter(
-          (e) => user?.assignedEvent === e.slug || user?.assignedEvents?.includes(e.slug)
-        );
+  // Determine if user is a coordinator with assigned event
+  const isCoordinator = user?.role === 'coordinator';
+  const coordinatorEvent = user?.assignedEvent;
+
+  // For admin: all events; for coordinator: only their assigned event
+  const canSelectEvent = user?.role === 'admin';
 
   // Auto-select event for coordinators
   useEffect(() => {
-    if (user?.role === 'coordinator' && user.assignedEvent) {
-      setSelectedEvent(user.assignedEvent);
-    } else if (availableEvents.length === 1) {
-      setSelectedEvent(availableEvents[0].slug);
+    if (isCoordinator && coordinatorEvent) {
+      setSelectedEvent(coordinatorEvent);
     }
-  }, [user, availableEvents]);
+  }, [isCoordinator, coordinatorEvent]);
+
+  // Fetch round configuration when event is selected
+  const fetchRoundConfig = useCallback(async () => {
+    if (!token || !selectedEvent) return;
+
+    setLoadingConfig(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/rounds/current/${selectedEvent}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.ok) {
+        const data: RoundConfig = await res.json();
+        setRoundConfig(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch round config:', err);
+    } finally {
+      setLoadingConfig(false);
+    }
+  }, [token, selectedEvent]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchRoundConfig();
+    }
+  }, [selectedEvent, fetchRoundConfig]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -93,12 +126,10 @@ export default function EventScanPage() {
       await stopScanner();
 
       try {
-        const endpoint = scanMode === 'event' ? '/attendance/event-scan' : '/attendance/round-scan';
-
-        const body =
-          scanMode === 'event'
-            ? { qrHash: decodedText, eventSlug: selectedEvent }
-            : { qrHash: decodedText, eventSlug: selectedEvent, roundNumber };
+        // Always use event-scan endpoint
+        // Round participation is handled automatically based on current round config
+        const endpoint = '/attendance/event-scan';
+        const body = { qrHash: decodedText, eventSlug: selectedEvent };
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
           method: 'POST',
@@ -129,12 +160,12 @@ export default function EventScanPage() {
         isProcessingRef.current = false;
       }
     },
-    [token, stopScanner, selectedEvent, scanMode, roundNumber]
+    [token, stopScanner, selectedEvent]
   );
 
   const startScanner = useCallback(async () => {
     if (!selectedEvent) {
-      setError('Please select an event first');
+      setError('No event assigned. Contact admin.');
       return;
     }
 
@@ -181,79 +212,116 @@ export default function EventScanPage() {
     return EVENTS.find((e) => e.slug === slug)?.name || slug;
   };
 
+  // If coordinator has no assigned event
+  if (isCoordinator && !coordinatorEvent) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-amber-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Event Assigned</h2>
+          <p className="text-gray-500 text-sm">
+            You don&apos;t have an event assigned. Please contact an administrator to assign you to
+            an event.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4">
         <h1 className="text-xl font-bold text-gray-900">Event Participation Scanner</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Scan QR codes to record event and round participation
+          {isCoordinator
+            ? `Scanning for ${getEventName(coordinatorEvent || '')}`
+            : 'Select an event and scan participant QR codes'}
         </p>
       </div>
 
-      {/* Event & Mode Selection */}
+      {/* Event Info & Selection (Admin only) */}
       {!isScanning && !isProcessing && (
         <div className="bg-white border-b border-gray-200 px-4 py-4 space-y-4">
-          {/* Event Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Event</label>
-            <select
-              value={selectedEvent}
-              onChange={(e) => setSelectedEvent(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              disabled={user?.role === 'coordinator' && !!user?.assignedEvent}
-            >
-              <option value="">Choose an event...</option>
-              {availableEvents.map((event) => (
-                <option key={event.slug} value={event.slug}>
-                  {event.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Scan Mode Toggle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Scan Mode</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setScanMode('event')}
-                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
-                  scanMode === 'event' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Event Entry
-              </button>
-              <button
-                onClick={() => setScanMode('round')}
-                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
-                  scanMode === 'round' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Round Scan
-              </button>
-            </div>
-          </div>
-
-          {/* Round Selection (only visible in round mode) */}
-          {scanMode === 'round' && (
+          {/* Admin Event Selection */}
+          {canSelectEvent && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Round Number</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setRoundNumber(num)}
-                    className={`flex-1 py-3 rounded-xl font-bold transition-colors ${
-                      roundNumber === num
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {num}
-                  </button>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Event</label>
+              <select
+                value={selectedEvent}
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="">Choose an event...</option>
+                {EVENTS.map((event) => (
+                  <option key={event.slug} value={event.slug}>
+                    {event.name}
+                  </option>
                 ))}
-              </div>
+              </select>
+            </div>
+          )}
+
+          {/* Round Status Display */}
+          {selectedEvent && (
+            <div className="bg-gray-50 rounded-xl p-4">
+              {loadingConfig ? (
+                <div className="text-center text-gray-500">Loading event configuration...</div>
+              ) : roundConfig ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Event</span>
+                    <span className="text-sm text-gray-900">{getEventName(selectedEvent)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Status</span>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        roundConfig.isCompleted
+                          ? 'bg-green-100 text-green-700'
+                          : roundConfig.isStarted
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {roundConfig.isCompleted
+                        ? 'Completed'
+                        : roundConfig.isStarted
+                          ? 'In Progress'
+                          : 'Not Started'}
+                    </span>
+                  </div>
+                  {roundConfig.hasRounds && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Current Round</span>
+                      <span className="text-sm font-bold text-primary-600">
+                        Round {roundConfig.currentRound} of {roundConfig.totalRounds}
+                      </span>
+                    </div>
+                  )}
+                  {!roundConfig.hasRounds && (
+                    <div className="text-sm text-gray-500 italic">
+                      Single session event (no rounds)
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">No configuration found</div>
+              )}
             </div>
           )}
         </div>
@@ -278,18 +346,19 @@ export default function EventScanPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              {scanMode === 'event' ? 'Event Entry Scanner' : `Round ${roundNumber} Scanner`}
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Event Entry Scanner</h2>
             <p className="text-gray-500 text-sm mb-2">
               {selectedEvent
                 ? `Recording for: ${getEventName(selectedEvent)}`
-                : 'Select an event above to begin'}
+                : 'Select an event to begin'}
             </p>
+            {roundConfig && roundConfig.hasRounds && roundConfig.isStarted && (
+              <p className="text-primary-600 text-sm font-medium mb-2">
+                Currently scanning for Round {roundConfig.currentRound}
+              </p>
+            )}
             <p className="text-gray-400 text-xs mb-6">
-              {scanMode === 'event'
-                ? 'Scan at event hall entrance'
-                : `Scan to mark Round ${roundNumber} participation`}
+              Scan at event hall entrance to record participation
             </p>
             <button
               onClick={startScanner}
@@ -309,8 +378,10 @@ export default function EventScanPage() {
           <div className="w-full max-w-sm">
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-center">
               <span className="text-blue-800 font-medium">
-                {getEventName(selectedEvent)} -{' '}
-                {scanMode === 'event' ? 'Entry' : `Round ${roundNumber}`}
+                {getEventName(selectedEvent)}
+                {roundConfig?.hasRounds &&
+                  roundConfig.isStarted &&
+                  ` - Round ${roundConfig.currentRound}`}
               </span>
             </div>
             <div
