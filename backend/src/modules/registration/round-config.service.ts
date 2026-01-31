@@ -13,8 +13,8 @@ const DEFAULT_EVENTS = [
   { eventSlug: 'ctrl-quiz', eventName: 'Ctrl+ Quiz', totalRounds: 3 },
   { eventSlug: 'code-hunt', eventName: 'Code Hunt', totalRounds: 2 },
   { eventSlug: 'think-link', eventName: 'Think & Link', totalRounds: 2 },
-  { eventSlug: 'gaming', eventName: 'Gaming', totalRounds: 0 },
-  { eventSlug: 'fun-games', eventName: 'Fun Games', totalRounds: 0 },
+  { eventSlug: 'gaming', eventName: 'Gaming', totalRounds: 3 }, // Mobile gaming competition with 2-3 rounds
+  { eventSlug: 'fun-games', eventName: 'Fun Games', totalRounds: 0 }, // Mini games, no rounds
 ];
 
 export interface RoundAnalytics {
@@ -47,6 +47,7 @@ export class RoundConfigService {
 
   /**
    * Initialize default round configurations if not exists
+   * Also fixes existing records with incorrect event names
    */
   async initializeDefaults(): Promise<void> {
     for (const event of DEFAULT_EVENTS) {
@@ -58,6 +59,11 @@ export class RoundConfigService {
         const config = this.roundConfigRepo.create(event);
         await this.roundConfigRepo.save(config);
         this.logger.log(`Initialized round config for ${event.eventName}`);
+      } else if (existing.eventName !== event.eventName) {
+        // Fix incorrect event names (e.g., 'gaming' slug had 'Fun Games' name before)
+        existing.eventName = event.eventName;
+        await this.roundConfigRepo.save(existing);
+        this.logger.log(`Fixed event name for ${event.eventSlug}: ${existing.eventName} -> ${event.eventName}`);
       }
     }
   }
@@ -66,11 +72,8 @@ export class RoundConfigService {
    * Get all round configurations
    */
   async findAll(): Promise<EventRoundConfig[]> {
-    // Initialize defaults if empty
-    const count = await this.roundConfigRepo.count();
-    if (count === 0) {
-      await this.initializeDefaults();
-    }
+    // Always ensure all default events exist (handles new events added later)
+    await this.initializeDefaults();
 
     return this.roundConfigRepo.find({
       order: { eventName: 'ASC' },

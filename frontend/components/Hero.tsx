@@ -136,7 +136,7 @@ export default function Hero() {
                   {Math.max(
                     0,
                     Math.floor(
-                      (new Date('2026-02-07').getTime() - new Date().getTime()) /
+                      (new Date('2026-02-08').getTime() - new Date().getTime()) /
                         (1000 * 60 * 60 * 24)
                     )
                   )}
