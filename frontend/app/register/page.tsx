@@ -831,7 +831,11 @@ const Register = () => {
             Ensure team members register individually ahead of time and meet up on arrival.
           </p>
 
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 mt-5">
+            <span className="text-md text-green-500/90 font-medium flex items-center justify-center px-4 py-2 bg-green-50/50 border border-opacity-30 border-green-400 rounded-full shadow-lg shadow-green-500/30 ">
+              <span className="h-2.5 w-2.5 bg-green-400 rounded-full inline-block mr-2 animate-pulse"></span>
+              Spot Registration Available
+            </span>
             <span className="text-sm text-gray-500 font-medium px-3 py-1 ">
               Lunch & Refreshment Included
             </span>
