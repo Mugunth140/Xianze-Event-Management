@@ -17,20 +17,30 @@ const TASK_DEFINITIONS = {
   mark_attendance: {
     label: 'Mark Attendance',
     description: 'Can mark participant attendance',
-    roles: ['coordinator'], // Member has this by default
+    roles: ['coordinator', 'member'], // Optional for both
   },
   check_in_participant: {
     label: 'Check-in Participants',
     description: 'Can scan QR and check-in participants',
     roles: ['coordinator'], // Member has this by default
   },
+  scan_event_participation: {
+    label: 'Scan Event Participation',
+    description: 'Can scan participant QR at event halls',
+    roles: ['member'], // Coordinator has this by default
+  },
+  manage_rounds: {
+    label: 'Manage Rounds',
+    description: 'Can start events and advance rounds',
+    roles: ['member'], // Coordinator has this by default
+  },
 };
 
 // Default tasks per role (these are always enabled, shown as readonly)
 const DEFAULT_TASKS: Record<string, string[]> = {
-  admin: ['verify_payment', 'mark_attendance', 'check_in_participant'],
-  coordinator: [], // No default optional tasks
-  member: ['mark_attendance', 'check_in_participant'],
+  admin: Object.keys(TASK_DEFINITIONS),
+  coordinator: ['scan_event_participation', 'manage_rounds'],
+  member: ['check_in_participant'],
 };
 
 export default function TaskCheckboxes({

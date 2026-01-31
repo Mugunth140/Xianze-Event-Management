@@ -39,8 +39,40 @@ const EVENTS: EventOption[] = [
   { slug: 'ctrl-quiz', name: 'Ctrl+ Quiz' },
   { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'think-link', name: 'Think & Link' },
-  { slug: 'gaming', name: 'Gaming' },
+  { slug: 'fun-games', name: 'Fun Games' },
 ];
+
+// Helper to find event slug from name (handles various formats)
+const findEventSlug = (eventName: string): string | null => {
+  if (!eventName) return null;
+  const normalizedInput = eventName.toLowerCase().trim();
+
+  // Direct slug match
+  const directMatch = EVENTS.find((e) => e.slug === normalizedInput);
+  if (directMatch) return directMatch.slug;
+
+  // Name match (case insensitive)
+  const nameMatch = EVENTS.find((e) => e.name.toLowerCase() === normalizedInput);
+  if (nameMatch) return nameMatch.slug;
+
+  // Fuzzy match for common variations
+  const fuzzyMap: Record<string, string> = {
+    'ctrl + quiz': 'ctrl-quiz',
+    'ctrl quiz': 'ctrl-quiz',
+    'ctrl+ quiz': 'ctrl-quiz',
+    'think and link': 'think-link',
+    'think & link': 'think-link',
+    'code hunt': 'code-hunt',
+    'code hunt : word edition': 'code-hunt',
+    'code hunt: word edition': 'code-hunt',
+    'bug smash': 'bug-smash',
+    'paper presentation': 'paper-presentation',
+    'fun games': 'fun-games',
+    gaming: 'fun-games',
+  };
+
+  return fuzzyMap[normalizedInput] || null;
+};
 
 export default function EventScanPage() {
   const { token, user } = useAuth();
@@ -64,10 +96,13 @@ export default function EventScanPage() {
   // For admin: all events; for coordinator: only their assigned event
   const canSelectEvent = user?.role === 'admin';
 
-  // Auto-select event for coordinators
+  // Auto-select event for coordinators (convert name to slug)
   useEffect(() => {
     if (isCoordinator && coordinatorEvent) {
-      setSelectedEvent(coordinatorEvent);
+      const slug = findEventSlug(coordinatorEvent);
+      if (slug) {
+        setSelectedEvent(slug);
+      }
     }
   }, [isCoordinator, coordinatorEvent]);
 
@@ -249,7 +284,7 @@ export default function EventScanPage() {
         <h1 className="text-xl font-bold text-gray-900">Event Participation Scanner</h1>
         <p className="text-sm text-gray-500 mt-1">
           {isCoordinator
-            ? `Scanning for ${getEventName(coordinatorEvent || '')}`
+            ? `Scanning for ${selectedEvent ? getEventName(selectedEvent) : 'loading...'}`
             : 'Select an event and scan participant QR codes'}
         </p>
       </div>

@@ -88,10 +88,8 @@ export class RoundConfigService {
   /**
    * Update round configuration for an event (admin only)
    */
-  async updateConfig(
-    eventSlug: string,
-    totalRounds: number,
-  ): Promise<EventRoundConfig> {
+  async updateConfig(eventSlug: string, totalRounds: number): Promise<EventRoundConfig> {
+    // eslint-disable-next-line prefer-const
     let config = await this.roundConfigRepo.findOne({
       where: { eventSlug },
     });

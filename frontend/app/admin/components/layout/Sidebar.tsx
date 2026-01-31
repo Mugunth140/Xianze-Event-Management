@@ -199,6 +199,7 @@ const navItems: NavItem[] = [
       </svg>
     ),
     requiresEventAccess: true,
+    requiresTask: 'manage_rounds',
   },
   {
     href: '/admin/settings',

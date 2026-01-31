@@ -1,17 +1,10 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    Patch,
-    Post,
-    Request,
-    UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole, userCanAccessEvent } from '../users/user.entity';
+import { TasksGuard } from '../auth/guards/tasks.guard';
+import { UserRole, UserTask, userCanAccessEvent } from '../users/user.entity';
 import { AdvanceRoundDto, UpdateEventRoundConfigDto } from './dto/round-config.dto';
 import { RoundConfigService } from './round-config.service';
 
@@ -25,7 +18,7 @@ interface AuthRequest {
 }
 
 @Controller('rounds')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TasksGuard)
 export class RoundsController {
   constructor(private readonly roundConfigService: RoundConfigService) {}
 
@@ -34,6 +27,7 @@ export class RoundsController {
    * Admin sees all, coordinators see their assigned event
    */
   @Get()
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
   async getAllConfigs(@Request() req: AuthRequest) {
     const user = req.user;
 
@@ -50,6 +44,7 @@ export class RoundsController {
    * Get round configuration for a specific event
    */
   @Get('config/:eventSlug')
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
   async getEventConfig(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
     const user = req.user;
 
@@ -87,9 +82,10 @@ export class RoundsController {
   }
 
   /**
-   * Start an event (Admin or assigned Coordinator)
+   * Start an event (requires MANAGE_ROUNDS task + event access)
    */
   @Post('start/:eventSlug')
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
   async startEvent(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
     const user = req.user;
 
@@ -102,9 +98,10 @@ export class RoundsController {
   }
 
   /**
-   * Advance to next round (Admin or assigned Coordinator)
+   * Advance to next round (requires MANAGE_ROUNDS task + event access)
    */
   @Post('advance')
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
   async advanceRound(@Body() dto: AdvanceRoundDto, @Request() req: AuthRequest) {
     const user = req.user;
 
@@ -130,6 +127,7 @@ export class RoundsController {
    * Get analytics for a specific event
    */
   @Get('analytics/:eventSlug')
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
   async getEventAnalytics(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
     const user = req.user;
 

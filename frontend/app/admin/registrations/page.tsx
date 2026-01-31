@@ -38,7 +38,7 @@ const events = [
   { value: 'Ctrl+ Quiz', label: 'Ctrl+ Quiz' },
   { value: 'Code Hunt: Word Edition', label: 'Code Hunt: Word Edition' },
   { value: 'Think & Link', label: 'Think & Link' },
-  { value: 'Gaming', label: 'Gaming' },
+  { value: 'Fun Games', label: 'Fun Games' },
 ];
 
 const eventOptions = [
@@ -48,7 +48,7 @@ const eventOptions = [
   { value: 'Ctrl + Quiz', label: 'Ctrl + Quiz' },
   { value: 'Code Hunt : Word Edition', label: 'Code Hunt : Word Edition' },
   { value: 'Think & Link', label: 'Think & Link' },
-  { value: 'Gaming', label: 'Gaming' },
+  { value: 'Fun Games', label: 'Fun Games' },
 ];
 
 export default function RegistrationsPage() {
