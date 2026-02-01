@@ -29,10 +29,11 @@ export const events: Event[] = [
       'No pre-existing prototypes or modules are allowed',
     ],
     instructions: [
+      'Using of AI tools is Strictly Prohibited',
       'Participants must build a prototype using the provided APIs',
       'Judging will be based on creativity and implementation',
     ],
-    notes: ['Bring your own laptop; Wi-Fi will not be provided.'],
+    notes: ['Bring your own laptop, Wi-Fi will not be provided.'],
   },
   {
     id: 2,
@@ -42,9 +43,9 @@ export const events: Event[] = [
     color: 'bg-yellow-500',
     bgColor: 'bg-yellow-50',
     rules: [
-      'Team consists of 2 members',
+      'Teams consist of maximum 2 members',
       'No smart devices allowed',
-      'C, C++, Java, Python, and JavaScript only',
+      'C, C++, Java, Python, and JavaScript.',
     ],
     instructions: [
       'One elimination round',
@@ -62,7 +63,7 @@ export const events: Event[] = [
     color: 'bg-pink-500',
     bgColor: 'bg-pink-50',
     rules: [
-      'Teams consist of a maximum of 2 members',
+      'Team can consist of maximum 2 members',
       'Strict time limit enforcement',
       'Original research work only',
     ],
@@ -97,12 +98,12 @@ export const events: Event[] = [
     color: 'bg-orange-500',
     bgColor: 'bg-orange-50',
     rules: [
-      'Team consists of 2 members',
+      'Team can consist of maximum 2 members',
       'No smart devices allowed',
       'Tie-breaker rounds available',
     ],
     instructions: [
-      'The quiz consists of 2 rounds',
+      'The event consists of 2 rounds',
       'Questions are MCQ-based',
       'Top scorers advance to the finals',
     ],
@@ -117,7 +118,7 @@ export const events: Event[] = [
     color: 'bg-green-500',
     bgColor: 'bg-green-50',
     rules: [
-      'Team consists of 2 members',
+      'Team should have 2 members',
       'Round 1: 15 fun and technical MCQs (Riddles, Jumbled Words)',
       'Round 2: Act and find technical words (Dumb Charades)',
     ],
@@ -133,11 +134,11 @@ export const events: Event[] = [
     color: 'bg-purple-500',
     bgColor: 'bg-purple-50',
     rules: [
-      'Teams consist of 2 members',
+      'Team can consist of maximum 2 members',
       'Players are expected to play fairly',
       "Judges' decisions are final",
     ],
-    instructions: ['30-minute time limit for Round 1', 'Top scorers advance to Round 2'],
+    instructions: ['30 minutes per Round', 'Top scorers advance to Round 2'],
     notes: ['No external resources allowed'],
   },
   {
@@ -154,8 +155,8 @@ export const events: Event[] = [
       'Use of panels or exploiting glitches is strictly prohibited',
     ],
     instructions: [
-      'Players will qualify through Battle Royale and Clash Squad modes',
-      'Skills and gun skins are permitted only in Battle Royale mode, not in Clash Squad mode',
+      'Players will qualify through Battle Royale and Clash Squad.',
+      'Skills and gun skins are permitted only in Battle Royale, not in Clash Squad.',
       'Final decisions rest solely with the coordinators',
       'The committee is not responsible for network issues during the event',
     ],
