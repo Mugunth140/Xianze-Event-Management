@@ -2,6 +2,7 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useState } from 'react';
 import '../admin.css';
 
@@ -72,8 +73,8 @@ export default function AdminLoginPage() {
         <div className="admin-glass-card p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-2xl bg-gradient-to-br from-primary-600 to-purple-600 shadow-lg shadow-primary-500/25">
-              <span className="text-white font-bold text-2xl">X</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-2xl shadow-lg shadow-primary-500/25">
+              <Image src="/favicon/favicon.svg" alt="Xianze logo" width={64} height={64} />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
             <p className="text-gray-500">Sign in to access the admin dashboard</p>
@@ -143,9 +144,7 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Footer */}
-          <p className="mt-8 text-center text-xs text-gray-400">
-            XIANZE 2K26 • Technical Symposium
-          </p>
+          <p className="mt-8 text-center text-xs text-gray-400">XIANZE 2K26</p>
         </div>
       </div>
     </div>
