@@ -105,7 +105,7 @@ export default function AdminEventsPage() {
                   </div>
                   <Badge variant="purple">Open</Badge>
                 </div>
-                <div className="mt-4 text-sm font-medium text-primary-600">View details →</div>
+                <div className="mt-4 text-sm font-medium text-primary-600">View details</div>
               </Card>
             </Link>
           ))}

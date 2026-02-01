@@ -35,6 +35,10 @@ export class UsersService {
       throw new BadRequestException('At least one assigned event is required for members');
     }
 
+    if (dto.role === UserRole.MEMBER && dto.assignedEvents && dto.assignedEvents.length > 1) {
+      throw new BadRequestException('Members can only be assigned to one event');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const user = this.userRepository.create({
       ...dto,
@@ -82,6 +86,10 @@ export class UsersService {
 
     if (nextRole === UserRole.MEMBER && (!nextAssignedEvents || nextAssignedEvents.length === 0)) {
       throw new BadRequestException('At least one assigned event is required for members');
+    }
+
+    if (nextRole === UserRole.MEMBER && nextAssignedEvents && nextAssignedEvents.length > 1) {
+      throw new BadRequestException('Members can only be assigned to one event');
     }
 
     if (dto.password) {

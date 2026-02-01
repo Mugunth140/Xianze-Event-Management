@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsEnum,
@@ -38,6 +39,7 @@ export class CreateUserDto {
   @ValidateIf((o) => o.role === UserRole.MEMBER)
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayMaxSize(1)
   @IsString({ each: true })
   assignedEvents?: string[];
 

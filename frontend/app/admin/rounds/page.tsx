@@ -309,6 +309,30 @@ export default function RoundsPage() {
     );
   }
 
+  const getRoundStatusPill = (config: EventRoundConfig) => {
+    const currentRoundCompleted = Boolean(config.roundCompletedAt?.[config.currentRound]);
+
+    if (config.isCompleted) {
+      return { label: 'Completed', className: 'bg-green-100 text-green-700' };
+    }
+
+    if (config.isStarted) {
+      return {
+        label: config.totalRounds > 0 ? `Round ${config.currentRound} Active` : 'In Progress',
+        className: 'bg-blue-100 text-blue-700',
+      };
+    }
+
+    if (config.currentRound > 0 && currentRoundCompleted) {
+      return {
+        label: `Round ${config.currentRound} Completed`,
+        className: 'bg-amber-100 text-amber-700',
+      };
+    }
+
+    return { label: 'Not Started', className: 'bg-gray-100 text-gray-600' };
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -370,27 +394,24 @@ export default function RoundsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h3 className="text-lg font-semibold text-gray-900">{config.eventName}</h3>
-                    {config.isCompleted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                        Completed
-                      </span>
-                    )}
-                    {config.isStarted && !config.isCompleted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                        In Progress - Round {config.currentRound}
-                      </span>
-                    )}
-                    {!config.isStarted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                        Not Started
-                      </span>
-                    )}
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        getRoundStatusPill(config).className
+                      }`}
+                    >
+                      {getRoundStatusPill(config).label}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {config.totalRounds === 0
                       ? 'No rounds (single session event)'
                       : `${config.totalRounds} round${config.totalRounds > 1 ? 's' : ''}`}
                   </p>
+                  {config.totalRounds > 0 && !config.isStarted && !config.isCompleted && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Select a round to start or resume from the buttons below.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -416,7 +437,7 @@ export default function RoundsPage() {
 
                   {/* Action buttons */}
                   <div className="flex gap-2">
-                    {!config.isStarted && (
+                    {!config.isStarted && config.currentRound === 0 && (
                       <button
                         onClick={() => startEvent(config.eventSlug)}
                         disabled={updating === config.eventSlug}
@@ -484,7 +505,7 @@ export default function RoundsPage() {
                       >
                         {updating === `${config.eventSlug}-set-${roundNumber}`
                           ? 'Setting...'
-                          : `Set Round ${roundNumber}`}
+                          : `Start Round ${roundNumber}`}
                       </button>
                     );
                   })}

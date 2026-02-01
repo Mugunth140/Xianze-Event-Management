@@ -165,9 +165,11 @@ export class RoundConfigService {
     if (config.currentRound >= config.totalRounds) {
       // All rounds completed
       config.isCompleted = true;
+      config.isStarted = false;
     } else {
-      // Do not auto-advance; keep current round until manually set
+      // Pause after completing the round; next round must be started manually
       config.isCompleted = false;
+      config.isStarted = false;
     }
 
     return this.roundConfigRepo.save(config);
