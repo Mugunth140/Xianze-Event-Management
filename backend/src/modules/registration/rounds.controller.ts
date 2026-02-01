@@ -5,7 +5,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { TasksGuard } from '../auth/guards/tasks.guard';
 import { UserRole, UserTask, userCanAccessEvent } from '../users/user.entity';
-import { AdvanceRoundDto, UpdateEventRoundConfigDto } from './dto/round-config.dto';
+import {
+  AdvanceRoundDto,
+  ResetRoundDto,
+  SetCurrentRoundDto,
+  UpdateEventRoundConfigDto,
+} from './dto/round-config.dto';
 import { RoundConfigService } from './round-config.service';
 
 interface AuthRequest {
@@ -61,7 +66,22 @@ export class RoundsController {
    * This is a lightweight endpoint for the scanner to know which round to scan
    */
   @Get('current/:eventSlug')
-  async getCurrentRound(@Param('eventSlug') eventSlug: string) {
+  async getCurrentRound(@Param('eventSlug') eventSlug: string, @Request() req: AuthRequest) {
+    const user = req.user;
+
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, eventSlug)) {
+      return {
+        eventSlug,
+        currentRound: 1,
+        totalRounds: 0,
+        isStarted: false,
+        isCompleted: false,
+        hasRounds: false,
+        currentRoundParticipantCount: 0,
+        currentRoundParticipants: [],
+      };
+    }
+
     return this.roundConfigService.getCurrentRound(eventSlug);
   }
 
@@ -114,6 +134,21 @@ export class RoundsController {
   }
 
   /**
+   * Manually set current round (requires MANAGE_ROUNDS task + event access)
+   */
+  @Post('set-current')
+  @RequireTasks(UserTask.MANAGE_ROUNDS)
+  async setCurrentRound(@Body() dto: SetCurrentRoundDto, @Request() req: AuthRequest) {
+    const user = req.user;
+
+    if (user.role !== UserRole.ADMIN && !userCanAccessEvent(user, dto.eventSlug)) {
+      return { error: 'Not authorized to set rounds for this event' };
+    }
+
+    return this.roundConfigService.setCurrentRound(dto.eventSlug, dto.roundNumber);
+  }
+
+  /**
    * Reset event to initial state (Admin only)
    */
   @Post('reset/:eventSlug')
@@ -121,6 +156,16 @@ export class RoundsController {
   @Roles(UserRole.ADMIN)
   async resetEvent(@Param('eventSlug') eventSlug: string) {
     return this.roundConfigService.resetEvent(eventSlug);
+  }
+
+  /**
+   * Reset a specific round for an event (Admin only)
+   */
+  @Post('reset-round')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async resetRound(@Body() dto: ResetRoundDto) {
+    return this.roundConfigService.resetRound(dto.eventSlug, dto.roundNumber);
   }
 
   /**

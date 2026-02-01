@@ -126,6 +126,14 @@ export default function UsersPage() {
         throw new Error('Password must be at least 6 characters');
       }
 
+      if (formData.role === 'coordinator' && !formData.assignedEvent) {
+        throw new Error('Assigned event is required for coordinators');
+      }
+
+      if (formData.role === 'member' && formData.assignedEvents.length !== 1) {
+        throw new Error('Assigned event is required for members');
+      }
+
       const body: Record<string, unknown> = {
         username: formData.username,
         name: formData.name,
@@ -194,13 +202,8 @@ export default function UsersPage() {
     }
   };
 
-  const handleEventToggle = (event: string) => {
-    const current = formData.assignedEvents;
-    if (current.includes(event)) {
-      setFormData({ ...formData, assignedEvents: current.filter((e) => e !== event) });
-    } else {
-      setFormData({ ...formData, assignedEvents: [...current, event] });
-    }
+  const handleMemberEventChange = (event: string) => {
+    setFormData({ ...formData, assignedEvents: event ? [event] : [] });
   };
 
   // Filter users by search query
@@ -293,14 +296,8 @@ export default function UsersPage() {
 
             {user.role === 'member' && user.assignedEvents && user.assignedEvents.length > 0 && (
               <div className="mb-3 text-sm">
-                <span className="text-gray-500">Events: </span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {user.assignedEvents.map((event) => (
-                    <Badge key={event} variant="purple">
-                      {event}
-                    </Badge>
-                  ))}
-                </div>
+                <span className="text-gray-500">Event: </span>
+                <Badge variant="purple">{user.assignedEvents[0]}</Badge>
               </div>
             )}
 
@@ -422,6 +419,7 @@ export default function UsersPage() {
                   label="Assigned Event"
                   value={formData.assignedEvent}
                   onChange={(e) => setFormData({ ...formData, assignedEvent: e.target.value })}
+                  required
                   options={[
                     { value: '', label: 'Select Event' },
                     ...AVAILABLE_EVENTS.map((e) => ({ value: e, label: e })),
@@ -429,27 +427,18 @@ export default function UsersPage() {
                 />
               )}
 
-              {/* Event assignment - Member (multiple) */}
+              {/* Event assignment - Member (single) */}
               {formData.role === 'member' && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Assigned Events</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {AVAILABLE_EVENTS.map((event) => (
-                      <label
-                        key={event}
-                        className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-primary-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.assignedEvents.includes(event)}
-                          onChange={() => handleEventToggle(event)}
-                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                        />
-                        <span className="text-sm text-gray-700">{event}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <Select
+                  label="Assigned Event"
+                  value={formData.assignedEvents[0] || ''}
+                  onChange={(e) => handleMemberEventChange(e.target.value)}
+                  required
+                  options={[
+                    { value: '', label: 'Select Event' },
+                    ...AVAILABLE_EVENTS.map((event) => ({ value: event, label: event })),
+                  ]}
+                />
               )}
 
               {/* Task assignment */}

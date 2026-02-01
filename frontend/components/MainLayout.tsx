@@ -9,8 +9,10 @@ import { usePathname } from 'next/navigation';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin');
+  const isBuzzer = pathname?.includes('/buzzer');
 
-  if (isAdmin) {
+  // Minimal layout for admin and buzzer pages
+  if (isAdmin || isBuzzer) {
     return <>{children}</>;
   }
 

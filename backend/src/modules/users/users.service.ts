@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
@@ -20,6 +25,18 @@ export class UsersService {
 
     if (existing) {
       throw new ConflictException('Username already exists');
+    }
+
+    if (dto.role === UserRole.COORDINATOR && !dto.assignedEvent) {
+      throw new BadRequestException('Assigned event is required for coordinators');
+    }
+
+    if (dto.role === UserRole.MEMBER && (!dto.assignedEvents || dto.assignedEvents.length === 0)) {
+      throw new BadRequestException('At least one assigned event is required for members');
+    }
+
+    if (dto.role === UserRole.MEMBER && dto.assignedEvents && dto.assignedEvents.length > 1) {
+      throw new BadRequestException('Members can only be assigned to one event');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -57,6 +74,22 @@ export class UsersService {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    const nextRole = dto.role ?? user.role;
+    const nextAssignedEvent = dto.assignedEvent ?? user.assignedEvent;
+    const nextAssignedEvents = dto.assignedEvents ?? user.assignedEvents;
+
+    if (nextRole === UserRole.COORDINATOR && !nextAssignedEvent) {
+      throw new BadRequestException('Assigned event is required for coordinators');
+    }
+
+    if (nextRole === UserRole.MEMBER && (!nextAssignedEvents || nextAssignedEvents.length === 0)) {
+      throw new BadRequestException('At least one assigned event is required for members');
+    }
+
+    if (nextRole === UserRole.MEMBER && nextAssignedEvents && nextAssignedEvents.length > 1) {
+      throw new BadRequestException('Members can only be assigned to one event');
     }
 
     if (dto.password) {

@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { EventParticipation } from './entities/event-participation.entity';
 import { EventRoundConfig } from './entities/event-round-config.entity';
 import { RoundParticipation } from './entities/round-participation.entity';
+import { Registration } from './registration.entity';
 
 // Default events configuration
 const DEFAULT_EVENTS = [
@@ -43,6 +44,8 @@ export class RoundConfigService {
     private readonly eventParticipationRepo: Repository<EventParticipation>,
     @InjectRepository(RoundParticipation)
     private readonly roundParticipationRepo: Repository<RoundParticipation>,
+    @InjectRepository(Registration)
+    private readonly registrationRepo: Repository<Registration>,
   ) {}
 
   /**
@@ -63,7 +66,9 @@ export class RoundConfigService {
         // Fix incorrect event names (e.g., 'gaming' slug had 'Fun Games' name before)
         existing.eventName = event.eventName;
         await this.roundConfigRepo.save(existing);
-        this.logger.log(`Fixed event name for ${event.eventSlug}: ${existing.eventName} -> ${event.eventName}`);
+        this.logger.log(
+          `Fixed event name for ${event.eventSlug}: ${existing.eventName} -> ${event.eventName}`,
+        );
       }
     }
   }
@@ -160,10 +165,39 @@ export class RoundConfigService {
     if (config.currentRound >= config.totalRounds) {
       // All rounds completed
       config.isCompleted = true;
+      config.isStarted = false;
     } else {
-      // Move to next round
-      config.currentRound += 1;
+      // Pause after completing the round; next round must be started manually
+      config.isCompleted = false;
+      config.isStarted = false;
     }
+
+    return this.roundConfigRepo.save(config);
+  }
+
+  /**
+   * Manually set the current round for an event
+   */
+  async setCurrentRound(eventSlug: string, roundNumber: number): Promise<EventRoundConfig> {
+    const config = await this.roundConfigRepo.findOne({
+      where: { eventSlug },
+    });
+
+    if (!config) {
+      throw new NotFoundException(`Event configuration not found: ${eventSlug}`);
+    }
+
+    if (config.totalRounds <= 0) {
+      throw new BadRequestException('This event does not have rounds to set');
+    }
+
+    if (roundNumber < 1 || roundNumber > config.totalRounds) {
+      throw new BadRequestException(`Round number must be between 1 and ${config.totalRounds}`);
+    }
+
+    config.isStarted = true;
+    config.isCompleted = false;
+    config.currentRound = roundNumber;
 
     return this.roundConfigRepo.save(config);
   }
@@ -184,6 +218,45 @@ export class RoundConfigService {
     config.currentRound = 0;
     config.isCompleted = false;
     config.roundCompletedAt = null;
+
+    return this.roundConfigRepo.save(config);
+  }
+
+  /**
+   * Reset a specific round for an event
+   * Clears round participation and marks the round as not completed
+   */
+  async resetRound(eventSlug: string, roundNumber: number): Promise<EventRoundConfig> {
+    const config = await this.roundConfigRepo.findOne({
+      where: { eventSlug },
+    });
+
+    if (!config) {
+      throw new NotFoundException(`Event configuration not found: ${eventSlug}`);
+    }
+
+    if (config.totalRounds <= 0) {
+      throw new BadRequestException('This event does not have rounds to reset');
+    }
+
+    if (roundNumber < 1 || roundNumber > config.totalRounds) {
+      throw new BadRequestException(`Round number must be between 1 and ${config.totalRounds}`);
+    }
+
+    await this.roundParticipationRepo.delete({ eventSlug, roundNumber });
+
+    if (config.roundCompletedAt?.[roundNumber]) {
+      const updated = { ...config.roundCompletedAt };
+      delete updated[roundNumber];
+      config.roundCompletedAt = Object.keys(updated).length ? updated : null;
+    }
+
+    config.isCompleted = false;
+    config.isStarted = true;
+
+    if (config.currentRound === 0 || config.currentRound > roundNumber) {
+      config.currentRound = roundNumber;
+    }
 
     return this.roundConfigRepo.save(config);
   }
@@ -259,6 +332,13 @@ export class RoundConfigService {
     isStarted: boolean;
     isCompleted: boolean;
     hasRounds: boolean;
+    currentRoundParticipantCount: number;
+    currentRoundParticipants: Array<{
+      registrationId: number;
+      name: string;
+      email: string;
+      scannedAt: Date;
+    }>;
   }> {
     const config = await this.roundConfigRepo.findOne({
       where: { eventSlug },
@@ -273,16 +353,68 @@ export class RoundConfigService {
         isStarted: false,
         isCompleted: false,
         hasRounds: false,
+        currentRoundParticipantCount: 0,
+        currentRoundParticipants: [],
       };
+    }
+
+    const hasRounds = config.totalRounds > 0;
+    const currentRound = config.currentRound || 1;
+    const shouldFetchParticipants = hasRounds && config.isStarted && currentRound > 0;
+
+    let currentRoundParticipants: Array<{
+      registrationId: number;
+      name: string;
+      email: string;
+      scannedAt: Date;
+    }> = [];
+
+    if (shouldFetchParticipants) {
+      const participations = await this.roundParticipationRepo.find({
+        where: { eventSlug, roundNumber: currentRound },
+        order: { scannedAt: 'DESC' },
+      });
+
+      const registrationIds = participations.map((p) => p.registrationId);
+
+      if (registrationIds.length > 0) {
+        const registrations = await this.registrationRepo.find({
+          where: { id: In(registrationIds) },
+        });
+
+        const registrationMap = new Map(
+          registrations.map((r) => [r.id, { name: r.name, email: r.email }]),
+        );
+
+        currentRoundParticipants = participations
+          .map((p) => {
+            const registration = registrationMap.get(p.registrationId);
+            if (!registration) return null;
+            return {
+              registrationId: p.registrationId,
+              name: registration.name,
+              email: registration.email,
+              scannedAt: p.scannedAt,
+            };
+          })
+          .filter(Boolean) as Array<{
+          registrationId: number;
+          name: string;
+          email: string;
+          scannedAt: Date;
+        }>;
+      }
     }
 
     return {
       eventSlug: config.eventSlug,
-      currentRound: config.currentRound || 1,
+      currentRound,
       totalRounds: config.totalRounds,
       isStarted: config.isStarted,
       isCompleted: config.isCompleted,
-      hasRounds: config.totalRounds > 0,
+      hasRounds,
+      currentRoundParticipantCount: currentRoundParticipants.length,
+      currentRoundParticipants,
     };
   }
 }

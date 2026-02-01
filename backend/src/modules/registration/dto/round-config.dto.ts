@@ -26,7 +26,27 @@ export class AdvanceRoundDto {
   eventSlug: string;
 }
 
+export class SetCurrentRoundDto {
+  @IsString()
+  eventSlug: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  roundNumber: number;
+}
+
 export class StartEventDto {
   @IsString()
   eventSlug: string;
+}
+
+export class ResetRoundDto {
+  @IsString()
+  eventSlug: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  roundNumber: number;
 }

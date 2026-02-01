@@ -49,9 +49,6 @@ export const metadata: Metadata = {
     telephone: true,
   },
   metadataBase: new URL('https://xianze.tech'),
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     title: 'Xianze 2026',
     description:

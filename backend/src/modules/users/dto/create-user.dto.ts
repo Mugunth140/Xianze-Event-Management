@@ -1,4 +1,14 @@
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayNotEmpty,
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 import { UserRole, UserTask } from '../user.entity';
 
 export class CreateUserDto {
@@ -20,14 +30,17 @@ export class CreateUserDto {
   role: UserRole;
 
   // Single event for coordinator (backward compatible)
+  @ValidateIf((o) => o.role === UserRole.COORDINATOR)
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   assignedEvent?: string;
 
   // Multiple events for member
+  @ValidateIf((o) => o.role === UserRole.MEMBER)
   @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(1)
   @IsString({ each: true })
-  @IsOptional()
   assignedEvents?: string[];
 
   // Optional tasks assigned to user

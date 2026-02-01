@@ -1,7 +1,7 @@
 'use client';
 
 import { Html5Qrcode } from 'html5-qrcode';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useAuth from '../hooks/useAuth';
 
 interface ScanResult {
@@ -25,6 +25,13 @@ interface RoundConfig {
   isStarted: boolean;
   isCompleted: boolean;
   hasRounds: boolean;
+  currentRoundParticipantCount: number;
+  currentRoundParticipants: Array<{
+    registrationId: number;
+    name: string;
+    email: string;
+    scannedAt: string;
+  }>;
 }
 
 interface EventOption {
@@ -92,20 +99,49 @@ export default function EventScanPage() {
 
   // Determine if user is a coordinator with assigned event
   const isCoordinator = user?.role === 'coordinator';
+  const isMember = user?.role === 'member';
   const coordinatorEvent = user?.assignedEvent;
+  const memberEvents = useMemo(() => user?.assignedEvents || [], [user?.assignedEvents]);
 
-  // For admin: all events; for coordinator: only their assigned event
+  const assignedEventSlugs = useMemo(() => {
+    if (!user) return [] as string[];
+    if (user.role === 'admin') return EVENTS.map((event) => event.slug);
+    if (user.role === 'coordinator') {
+      const slug = findEventSlug(coordinatorEvent || '');
+      return slug ? [slug] : [];
+    }
+    return memberEvents
+      .map((event) => findEventSlug(event))
+      .filter((slug): slug is string => Boolean(slug));
+  }, [user, coordinatorEvent, memberEvents]);
+
+  const availableEvents = useMemo(() => {
+    if (user?.role === 'admin') return EVENTS;
+    return EVENTS.filter((event) => assignedEventSlugs.includes(event.slug));
+  }, [user, assignedEventSlugs]);
+
+  const canScan = Boolean(
+    selectedEvent &&
+    roundConfig &&
+    roundConfig.isStarted &&
+    !roundConfig.isCompleted &&
+    !loadingConfig
+  );
+  const statusLabel = useMemo(() => {
+    if (!roundConfig) return 'Loading status...';
+    if (roundConfig.isCompleted) return 'Event completed';
+    if (roundConfig.isStarted) return 'Round in progress - you can scan';
+    return 'Event not started';
+  }, [roundConfig]);
+  // Admin can select events; coordinators/members are locked to assigned events
   const canSelectEvent = user?.role === 'admin';
 
-  // Auto-select event for coordinators (convert name to slug)
+  // Auto-select event when only one assigned event is available
   useEffect(() => {
-    if (isCoordinator && coordinatorEvent) {
-      const slug = findEventSlug(coordinatorEvent);
-      if (slug) {
-        setSelectedEvent(slug);
-      }
+    if (availableEvents.length >= 1 && !selectedEvent) {
+      setSelectedEvent(availableEvents[0].slug);
     }
-  }, [isCoordinator, coordinatorEvent]);
+  }, [availableEvents, selectedEvent]);
 
   // Fetch round configuration when event is selected
   const fetchRoundConfig = useCallback(async () => {
@@ -205,6 +241,16 @@ export default function EventScanPage() {
       return;
     }
 
+    if (!roundConfig || !roundConfig.isStarted) {
+      setError('Event not started. Please wait for the round to start.');
+      return;
+    }
+
+    if (roundConfig.isCompleted) {
+      setError('Event is completed. Scanning is closed.');
+      return;
+    }
+
     try {
       setError(null);
       setResult(null);
@@ -228,7 +274,7 @@ export default function EventScanPage() {
       setError('Failed to access camera. Please ensure camera permissions are granted.');
       setIsScanning(false);
     }
-  }, [handleQRCodeSuccess, selectedEvent]);
+  }, [handleQRCodeSuccess, selectedEvent, roundConfig]);
 
   const resetScanner = useCallback(() => {
     setResult(null);
@@ -248,8 +294,8 @@ export default function EventScanPage() {
     return EVENTS.find((e) => e.slug === slug)?.name || slug;
   };
 
-  // If coordinator has no assigned event
-  if (isCoordinator && !coordinatorEvent) {
+  // If coordinator or member has no assigned event
+  if ((isCoordinator && !coordinatorEvent) || (isMember && memberEvents.length === 0)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-lg max-w-sm text-center">
@@ -284,8 +330,8 @@ export default function EventScanPage() {
       <div className="bg-white border-b border-gray-200 px-4 py-4">
         <h1 className="text-xl font-bold text-gray-900">Event Participation Scanner</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isCoordinator
-            ? `Scanning for ${selectedEvent ? getEventName(selectedEvent) : 'loading...'}`
+          {selectedEvent
+            ? `Handling event: ${getEventName(selectedEvent)}`
             : 'Select an event and scan participant QR codes'}
         </p>
       </div>
@@ -303,7 +349,7 @@ export default function EventScanPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="">Choose an event...</option>
-                {EVENTS.map((event) => (
+                {availableEvents.map((event) => (
                   <option key={event.slug} value={event.slug}>
                     {event.name}
                   </option>
@@ -354,6 +400,17 @@ export default function EventScanPage() {
                       Single session event (no rounds)
                     </div>
                   )}
+                  <div
+                    className={`text-sm font-medium ${
+                      roundConfig.isCompleted
+                        ? 'text-green-700'
+                        : roundConfig.isStarted
+                          ? 'text-blue-700'
+                          : 'text-amber-700'
+                    }`}
+                  >
+                    {statusLabel}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center text-gray-500">No configuration found</div>
@@ -393,14 +450,20 @@ export default function EventScanPage() {
                 Currently scanning for Round {roundConfig.currentRound}
               </p>
             )}
+            {roundConfig && roundConfig.hasRounds && !roundConfig.isStarted && (
+              <p className="text-amber-600 text-sm font-medium mb-2">Round not started yet</p>
+            )}
+            {roundConfig && roundConfig.isCompleted && (
+              <p className="text-green-700 text-sm font-medium mb-2">Event completed</p>
+            )}
             <p className="text-gray-400 text-xs mb-6">
               Scan at event hall entrance to record participation
             </p>
             <button
               onClick={startScanner}
-              disabled={!selectedEvent}
+              disabled={!selectedEvent || !canScan}
               className={`px-8 py-3 rounded-xl font-semibold text-base shadow-lg active:scale-95 transition-transform ${
-                selectedEvent
+                selectedEvent && canScan
                   ? 'bg-blue-600 text-white shadow-blue-600/20'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}

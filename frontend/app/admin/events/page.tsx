@@ -45,6 +45,11 @@ const adminEvents: AdminEvent[] = [
     description: 'Dashboard builder competition with API endpoints.',
     href: '/admin/buildathon',
   },
+  {
+    label: 'Code Hunt',
+    description: 'Buzzer control and leaderboard for coding treasure hunt.',
+    href: '/admin/code-hunt',
+  },
 ];
 
 const normalizeEvent = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -100,7 +105,7 @@ export default function AdminEventsPage() {
                   </div>
                   <Badge variant="purple">Open</Badge>
                 </div>
-                <div className="mt-4 text-sm font-medium text-primary-600">View details →</div>
+                <div className="mt-4 text-sm font-medium text-primary-600">View details</div>
               </Card>
             </Link>
           ))}

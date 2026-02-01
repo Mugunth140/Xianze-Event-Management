@@ -43,6 +43,14 @@ export default function RoundsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const isAdmin = user?.role === 'admin';
+  const isCoordinator = user?.role === 'coordinator';
+  const canViewAnalytics = isAdmin || isCoordinator;
+
+  useEffect(() => {
+    if (!canViewAnalytics && activeTab === 'analytics') {
+      setActiveTab('configuration');
+    }
+  }, [canViewAnalytics, activeTab]);
 
   const fetchConfigs = useCallback(async () => {
     if (!token) return;
@@ -62,6 +70,11 @@ export default function RoundsPage() {
 
   const fetchAnalytics = useCallback(async () => {
     if (!token) return;
+
+    if (!canViewAnalytics) {
+      setAnalytics([]);
+      return;
+    }
 
     try {
       const endpoint = isAdmin ? '/rounds/analytics' : '/rounds';
@@ -92,7 +105,7 @@ export default function RoundsPage() {
     } catch {
       setMessage({ type: 'error', text: 'Failed to load round analytics' });
     }
-  }, [token, isAdmin]);
+  }, [token, isAdmin, canViewAnalytics]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -180,7 +193,7 @@ export default function RoundsPage() {
         const data = await res.json();
         const msg = data.isCompleted
           ? `Event completed: ${eventSlug}`
-          : `Advanced to round ${data.currentRound}`;
+          : `Round marked complete for ${eventSlug}`;
         setMessage({ type: 'success', text: msg });
         await fetchConfigs();
         await fetchAnalytics();
@@ -223,6 +236,71 @@ export default function RoundsPage() {
     }
   };
 
+  const setCurrentRound = async (eventSlug: string, roundNumber: number) => {
+    if (!token) return;
+
+    setUpdating(`${eventSlug}-set-${roundNumber}`);
+    setMessage(null);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/rounds/set-current`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventSlug, roundNumber }),
+      });
+
+      if (res.ok) {
+        setMessage({ type: 'success', text: `Set Round ${roundNumber} for ${eventSlug}` });
+        await fetchConfigs();
+        await fetchAnalytics();
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error || 'Failed to set round' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const resetRound = async (eventSlug: string, roundNumber: number) => {
+    if (!token || !isAdmin) return;
+    if (!confirm(`Reset Round ${roundNumber} for ${eventSlug}? This will clear round entries.`)) {
+      return;
+    }
+
+    setUpdating(`${eventSlug}-round-${roundNumber}`);
+    setMessage(null);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/rounds/reset-round`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventSlug, roundNumber }),
+      });
+
+      if (res.ok) {
+        setMessage({ type: 'success', text: `Reset Round ${roundNumber} for ${eventSlug}` });
+        await fetchConfigs();
+        await fetchAnalytics();
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error || 'Failed to reset round' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -230,6 +308,30 @@ export default function RoundsPage() {
       </div>
     );
   }
+
+  const getRoundStatusPill = (config: EventRoundConfig) => {
+    const currentRoundCompleted = Boolean(config.roundCompletedAt?.[config.currentRound]);
+
+    if (config.isCompleted) {
+      return { label: 'Completed', className: 'bg-green-100 text-green-700' };
+    }
+
+    if (config.isStarted) {
+      return {
+        label: config.totalRounds > 0 ? `Round ${config.currentRound} Active` : 'In Progress',
+        className: 'bg-blue-100 text-blue-700',
+      };
+    }
+
+    if (config.currentRound > 0 && currentRoundCompleted) {
+      return {
+        label: `Round ${config.currentRound} Completed`,
+        className: 'bg-amber-100 text-amber-700',
+      };
+    }
+
+    return { label: 'Not Started', className: 'bg-gray-100 text-gray-600' };
+  };
 
   return (
     <div className="space-y-6">
@@ -255,16 +357,18 @@ export default function RoundsPage() {
           >
             Configuration
           </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'analytics'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Analytics
-          </button>
+          {canViewAnalytics && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'analytics'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Analytics
+            </button>
+          )}
         </nav>
       </div>
 
@@ -290,27 +394,24 @@ export default function RoundsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h3 className="text-lg font-semibold text-gray-900">{config.eventName}</h3>
-                    {config.isCompleted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                        Completed
-                      </span>
-                    )}
-                    {config.isStarted && !config.isCompleted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                        In Progress - Round {config.currentRound}
-                      </span>
-                    )}
-                    {!config.isStarted && (
-                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                        Not Started
-                      </span>
-                    )}
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        getRoundStatusPill(config).className
+                      }`}
+                    >
+                      {getRoundStatusPill(config).label}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {config.totalRounds === 0
                       ? 'No rounds (single session event)'
                       : `${config.totalRounds} round${config.totalRounds > 1 ? 's' : ''}`}
                   </p>
+                  {config.totalRounds > 0 && !config.isStarted && !config.isCompleted && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Select a round to start or resume from the buttons below.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -336,7 +437,7 @@ export default function RoundsPage() {
 
                   {/* Action buttons */}
                   <div className="flex gap-2">
-                    {!config.isStarted && (
+                    {!config.isStarted && config.currentRound === 0 && (
                       <button
                         onClick={() => startEvent(config.eventSlug)}
                         disabled={updating === config.eventSlug}
@@ -353,10 +454,10 @@ export default function RoundsPage() {
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                       >
                         {updating === config.eventSlug
-                          ? 'Advancing...'
+                          ? 'Completing...'
                           : config.currentRound >= config.totalRounds
                             ? 'Complete Event'
-                            : `Finish Round ${config.currentRound}`}
+                            : `Complete Round ${config.currentRound}`}
                       </button>
                     )}
 
@@ -382,13 +483,41 @@ export default function RoundsPage() {
                   </div>
                 </div>
               </div>
+              {config.totalRounds > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {Array.from({ length: config.totalRounds }, (_, idx) => {
+                    const roundNumber = idx + 1;
+                    const isActive = config.currentRound === roundNumber && config.isStarted;
+                    return (
+                      <button
+                        key={roundNumber}
+                        onClick={() => setCurrentRound(config.eventSlug, roundNumber)}
+                        disabled={updating === `${config.eventSlug}-set-${roundNumber}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          isActive
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        } ${
+                          updating === `${config.eventSlug}-set-${roundNumber}`
+                            ? 'opacity-70 cursor-not-allowed'
+                            : ''
+                        }`}
+                      >
+                        {updating === `${config.eventSlug}-set-${roundNumber}`
+                          ? 'Setting...'
+                          : `Start Round ${roundNumber}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
           ))}
         </div>
       )}
 
       {/* Analytics Tab */}
-      {activeTab === 'analytics' && (
+      {activeTab === 'analytics' && canViewAnalytics && (
         <div className="space-y-6">
           {analytics.map((event) => (
             <Card key={event.eventSlug} className="p-6">
@@ -463,6 +592,11 @@ export default function RoundsPage() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Completed At
                           </th>
+                          {isAdmin && (
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -496,6 +630,26 @@ export default function RoundsPage() {
                                 ? new Date(round.completedAt).toLocaleString()
                                 : '-'}
                             </td>
+                            {isAdmin && (
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                <button
+                                  onClick={() => resetRound(event.eventSlug, round.roundNumber)}
+                                  disabled={
+                                    updating === `${event.eventSlug}-round-${round.roundNumber}` ||
+                                    !round.completedAt
+                                  }
+                                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                    round.completedAt
+                                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {updating === `${event.eventSlug}-round-${round.roundNumber}`
+                                    ? 'Resetting...'
+                                    : 'Reset Round'}
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -516,6 +670,12 @@ export default function RoundsPage() {
             <Card className="p-6 text-center text-gray-500">No analytics data available.</Card>
           )}
         </div>
+      )}
+
+      {!canViewAnalytics && activeTab === 'configuration' && (
+        <Card className="p-4 bg-blue-50/60 border-blue-200 text-blue-800">
+          Analytics are available to admins and coordinators only.
+        </Card>
       )}
     </div>
   );
