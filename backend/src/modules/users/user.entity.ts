@@ -36,7 +36,7 @@ export enum UserTask {
 export const DEFAULT_TASKS: Record<UserRole, UserTask[]> = {
   [UserRole.ADMIN]: Object.values(UserTask), // Admin has all tasks
   [UserRole.COORDINATOR]: [UserTask.SCAN_EVENT_PARTICIPATION, UserTask.MANAGE_ROUNDS], // Coordinators can scan and manage rounds
-  [UserRole.MEMBER]: [UserTask.CHECK_IN_PARTICIPANT], // Members can check-in participants
+  [UserRole.MEMBER]: [UserTask.CHECK_IN_PARTICIPANT, UserTask.SCAN_EVENT_PARTICIPATION], // Members can check-in and scan event participation
 };
 
 @Entity('users')
@@ -107,6 +107,37 @@ export function userCanAccessEvent(
   user: User | { role: UserRole; assignedEvent?: string | null; assignedEvents?: string[] | null },
   event: string,
 ): boolean {
+  const normalizeEventSlug = (value?: string | null): string | null => {
+    if (!value) return null;
+    const normalized = value.toLowerCase().trim();
+
+    const slugMap: Record<string, string> = {
+      'paper presentation': 'paper-presentation',
+      'paper-presentation': 'paper-presentation',
+      'bug smash': 'bug-smash',
+      'bug-smash': 'bug-smash',
+      buildathon: 'buildathon',
+      'ctrl + quiz': 'ctrl-quiz',
+      'ctrl quiz': 'ctrl-quiz',
+      'ctrl+ quiz': 'ctrl-quiz',
+      'ctrl-quiz': 'ctrl-quiz',
+      'code hunt': 'code-hunt',
+      'code hunt : word edition': 'code-hunt',
+      'code hunt: word edition': 'code-hunt',
+      'code-hunt': 'code-hunt',
+      'think & link': 'think-link',
+      'think and link': 'think-link',
+      'think-link': 'think-link',
+      gaming: 'gaming',
+      'fun games': 'fun-games',
+      'fun-games': 'fun-games',
+    };
+
+    return slugMap[normalized] || normalized;
+  };
+
+  const targetEvent = normalizeEventSlug(event);
+
   // Admin can access all events
   if (user.role === UserRole.ADMIN) {
     return true;
@@ -114,12 +145,16 @@ export function userCanAccessEvent(
 
   // Coordinator: check assignedEvent
   if (user.role === UserRole.COORDINATOR) {
-    return user.assignedEvent === event;
+    return normalizeEventSlug(user.assignedEvent) === targetEvent;
   }
 
   // Member: check assignedEvents array
   if (user.role === UserRole.MEMBER) {
-    return user.assignedEvents?.includes(event) ?? false;
+    const assignedEvents = user.assignedEvents || [];
+    return assignedEvents
+      .map((assigned) => normalizeEventSlug(assigned))
+      .filter(Boolean)
+      .includes(targetEvent);
   }
 
   return false;

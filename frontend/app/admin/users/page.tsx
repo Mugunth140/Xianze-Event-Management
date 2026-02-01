@@ -126,6 +126,14 @@ export default function UsersPage() {
         throw new Error('Password must be at least 6 characters');
       }
 
+      if (formData.role === 'coordinator' && !formData.assignedEvent) {
+        throw new Error('Assigned event is required for coordinators');
+      }
+
+      if (formData.role === 'member' && formData.assignedEvents.length === 0) {
+        throw new Error('At least one assigned event is required for members');
+      }
+
       const body: Record<string, unknown> = {
         username: formData.username,
         name: formData.name,
@@ -422,6 +430,7 @@ export default function UsersPage() {
                   label="Assigned Event"
                   value={formData.assignedEvent}
                   onChange={(e) => setFormData({ ...formData, assignedEvent: e.target.value })}
+                  required
                   options={[
                     { value: '', label: 'Select Event' },
                     ...AVAILABLE_EVENTS.map((e) => ({ value: e, label: e })),
@@ -449,6 +458,9 @@ export default function UsersPage() {
                       </label>
                     ))}
                   </div>
+                  {formData.assignedEvents.length === 0 && (
+                    <p className="text-xs text-red-500">Select at least one event.</p>
+                  )}
                 </div>
               )}
 

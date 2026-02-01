@@ -27,6 +27,7 @@ interface NavItem {
   label: string;
   icon: JSX.Element;
   adminOnly?: boolean;
+  coordinatorOnly?: boolean;
   coordinatorAndAbove?: boolean;
   requiresEventAccess?: boolean;
   requiresTask?: string;
@@ -106,6 +107,7 @@ const navItems: NavItem[] = [
         />
       </svg>
     ),
+    coordinatorAndAbove: true,
     requiresEventAccess: true,
   },
   {
@@ -133,6 +135,21 @@ const navItems: NavItem[] = [
           strokeLinejoin="round"
           strokeWidth={2}
           d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+        />
+      </svg>
+    ),
+    adminOnly: true,
+  },
+  {
+    href: '/admin/exports',
+    label: 'Exports',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"
         />
       </svg>
     ),
@@ -182,7 +199,6 @@ const navItems: NavItem[] = [
         />
       </svg>
     ),
-    mobileOnly: true,
     requiresTask: 'scan_event_participation',
   },
   {
@@ -198,6 +214,7 @@ const navItems: NavItem[] = [
         />
       </svg>
     ),
+    coordinatorAndAbove: true,
     requiresEventAccess: true,
     requiresTask: 'manage_rounds',
   },
@@ -236,7 +253,7 @@ const DEFAULT_TASKS: Record<string, string[]> = {
     'delete_participant',
   ],
   coordinator: ['scan_event_participation', 'manage_rounds'],
-  member: ['check_in_participant'],
+  member: ['check_in_participant', 'scan_event_participation'],
 };
 
 // Helper to check if user has a task (checks default tasks + explicitly assigned tasks)
@@ -272,6 +289,9 @@ export default function Sidebar({ user, isOpen, onClose }: SidebarProps) {
   const filteredNavItems = navItems.filter((item) => {
     // Admin-only check
     if (item.adminOnly && user.role !== 'admin') return false;
+
+    // Coordinator-only check
+    if (item.coordinatorOnly && user.role !== 'coordinator') return false;
 
     // Coordinator and above check
     if (item.coordinatorAndAbove && user.role === 'member') return false;

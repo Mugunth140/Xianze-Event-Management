@@ -27,12 +27,12 @@ const TASK_DEFINITIONS = {
   scan_event_participation: {
     label: 'Scan Event Participation',
     description: 'Can scan participant QR at event halls',
-    roles: ['member'], // Coordinator has this by default
+    roles: ['member'], // Coordinator and member have this by default
   },
   manage_rounds: {
     label: 'Manage Rounds',
     description: 'Can start events and advance rounds',
-    roles: ['member'], // Coordinator has this by default
+    roles: ['coordinator'], // Coordinator has this by default
   },
 };
 
@@ -40,7 +40,7 @@ const TASK_DEFINITIONS = {
 const DEFAULT_TASKS: Record<string, string[]> = {
   admin: Object.keys(TASK_DEFINITIONS),
   coordinator: ['scan_event_participation', 'manage_rounds'],
-  member: ['check_in_participant'],
+  member: ['check_in_participant', 'scan_event_participation'],
 };
 
 export default function TaskCheckboxes({
