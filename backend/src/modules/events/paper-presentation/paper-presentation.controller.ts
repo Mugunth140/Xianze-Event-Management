@@ -52,7 +52,7 @@ const generateFilename = (originalname: string): string => {
 
 @Controller('paper-presentation')
 export class PaperPresentationController {
-  constructor(private readonly service: PaperPresentationService) { }
+  constructor(private readonly service: PaperPresentationService) {}
 
   /**
    * POST /api/paper-presentation/submit

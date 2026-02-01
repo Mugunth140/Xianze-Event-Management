@@ -34,7 +34,7 @@ export default function ThinkLinkPresenter({
 }: ThinkLinkPresenterProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timerDuration);
-  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerRunning, setTimerRunning] = useState(true); // Auto-start timer
   const [showResult, setShowResult] = useState<'correct' | 'wrong' | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -116,14 +116,20 @@ export default function ThinkLinkPresenter({
   const goToNext = () => {
     if (currentIndex < puzzles.length - 1) {
       setCurrentIndex((prev) => prev + 1);
-      resetTimer();
+      // Auto-start timer on slide change
+      setShowResult(null);
+      setTimeLeft(timerDuration);
+      setTimerRunning(true);
     }
   };
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
-      resetTimer();
+      // Auto-start timer on slide change
+      setShowResult(null);
+      setTimeLeft(timerDuration);
+      setTimerRunning(true);
     }
   };
 
