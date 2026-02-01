@@ -1,6 +1,7 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
+import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
@@ -711,136 +712,57 @@ export default function BuildathonPage() {
       {/* ==================== DOCUMENTS TAB ==================== */}
       {activeTab === 'documents' && (
         <div className="space-y-6">
-          {/* Registration QR Code Card */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              🎟️ Team Registration QR Code
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              This QR code links to the public team registration form. Display this at the event
-              venue for participants to scan and register their teams.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-primary-200">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/buildathon-team-qr.png"
-                  alt="Registration QR Code"
-                  className="w-40 h-40"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs text-gray-400">Links to: /events/buildathon/register</p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Problem Statement Upload */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              📄 Upload Problem Statement
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Upload rulebook or problem statement documents. Each document gets its own QR code
-              that participants can scan to download.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Input
-                label="Document Title"
-                placeholder="Buildathon Problem Statement v1"
-                value={docTitle}
-                onChange={(e) => setDocTitle(e.target.value)}
-              />
-              <Input
-                label="Description (optional)"
-                placeholder="Brief description..."
-                value={docDescription}
-                onChange={(e) => setDocDescription(e.target.value)}
-              />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                PDF / Document File
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={(e) => setDocFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-              />
-            </div>
-            <div className="mt-4">
-              <Button onClick={handleUploadDocument} loading={uploading}>
-                Upload & Generate QR
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Problem Statement</h3>
-            {activeDocument ? (
-              <div
-                className={`p-4 rounded-xl border ${
-                  activeDocument.isActive
-                    ? 'border-primary-300 bg-primary-50'
-                    : 'border-gray-100 bg-white'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{activeDocument.title}</h4>
-                    {activeDocument.description && (
-                      <p className="text-sm text-gray-500">{activeDocument.description}</p>
-                    )}
-                  </div>
-                  {activeDocument.isActive && <Badge variant="purple">ACTIVE</Badge>}
+          {/* QR Codes Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Team Registration QR Code Card */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Team Registration QR Code
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Display this QR at the venue for participants to scan and register their teams.
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-primary-200">
+                  <QRCodeSVG
+                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://xianze.tech'}/events/buildathon/register`}
+                    size={160}
+                    level="H"
+                    fgColor="#6D40D4"
+                    bgColor="#FFFFFF"
+                  />
                 </div>
-                {activeDocument.qrCodePath && (
-                  <div className="my-3 flex justify-center">
-                    <div className="p-2 bg-white rounded-lg shadow-sm border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`/api/uploads/buildathon/qr-${activeDocument.id}.png`}
-                        alt="QR Code"
-                        className="w-32 h-32"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-2 mt-3">
-                  {!activeDocument.isActive && (
-                    <Button
-                      variant="primary-soft"
-                      size="sm"
-                      onClick={() => handleActivateDocument(activeDocument.id)}
-                    >
-                      Set Active
-                    </Button>
-                  )}
-                  <Button
-                    variant="danger-soft"
-                    size="sm"
-                    onClick={() => handleDeleteDocument(activeDocument.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  Uploaded: {new Date(activeDocument.createdAt).toLocaleString()}
+                <p className="text-xs text-gray-400 text-center">
+                  Links to: /events/buildathon/register
                 </p>
               </div>
-            ) : (
-              <div className="py-8 text-center text-gray-400">
-                No document uploaded yet. Upload a problem statement above.
+            </Card>
+
+            {/* API Documentation QR Code Card */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                API Documentation QR Code
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Participants scan this to access the API docs with endpoints, examples, and
+                dashboard requirements.
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-indigo-200">
+                  <QRCodeSVG
+                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://xianze.tech'}/events/buildathon/api-docs`}
+                    size={160}
+                    level="H"
+                    fgColor="#4F46E5"
+                    bgColor="#FFFFFF"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Links to: /events/buildathon/api-docs
+                </p>
               </div>
-            )}
-          </Card>
+            </Card>
+          </div>
         </div>
       )}
 
