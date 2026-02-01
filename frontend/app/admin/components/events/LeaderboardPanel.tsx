@@ -121,7 +121,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
     return () => {
       socket.disconnect();
     };
-  }, [fetchLeaderboard]);
+  }, [fetchLeaderboard, defaultEvent]);
 
   const handleEventChange = useCallback(
     (eventSlug: string) => {

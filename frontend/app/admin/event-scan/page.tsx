@@ -101,7 +101,7 @@ export default function EventScanPage() {
   const isCoordinator = user?.role === 'coordinator';
   const isMember = user?.role === 'member';
   const coordinatorEvent = user?.assignedEvent;
-  const memberEvents = user?.assignedEvents || [];
+  const memberEvents = useMemo(() => user?.assignedEvents || [], [user?.assignedEvents]);
 
   const assignedEventSlugs = useMemo(() => {
     if (!user) return [] as string[];
@@ -122,19 +122,17 @@ export default function EventScanPage() {
 
   const canScan = Boolean(
     selectedEvent &&
-      roundConfig &&
-      roundConfig.isStarted &&
-      !roundConfig.isCompleted &&
-      !loadingConfig
+    roundConfig &&
+    roundConfig.isStarted &&
+    !roundConfig.isCompleted &&
+    !loadingConfig
   );
-
   const statusLabel = useMemo(() => {
     if (!roundConfig) return 'Loading status...';
     if (roundConfig.isCompleted) return 'Event completed';
     if (roundConfig.isStarted) return 'Round in progress - you can scan';
     return 'Event not started';
   }, [roundConfig]);
-
   // Admin can select events; coordinators/members are locked to assigned events
   const canSelectEvent = user?.role === 'admin';
 
@@ -453,9 +451,7 @@ export default function EventScanPage() {
               </p>
             )}
             {roundConfig && roundConfig.hasRounds && !roundConfig.isStarted && (
-              <p className="text-amber-600 text-sm font-medium mb-2">
-                Round not started yet
-              </p>
+              <p className="text-amber-600 text-sm font-medium mb-2">Round not started yet</p>
             )}
             {roundConfig && roundConfig.isCompleted && (
               <p className="text-green-700 text-sm font-medium mb-2">Event completed</p>

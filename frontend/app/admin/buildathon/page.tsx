@@ -22,16 +22,6 @@ interface Team {
   createdAt: string;
 }
 
-interface Document {
-  id: number;
-  title: string;
-  description?: string;
-  filePath: string;
-  qrCodePath?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
 interface ApiState {
   id: number;
   customersEndpointEnabled: boolean;
@@ -60,7 +50,6 @@ type Tab = 'overview' | 'teams' | 'documents' | 'api-control' | 'metrics';
 export default function BuildathonPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [teams, setTeams] = useState<Team[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [apiState, setApiState] = useState<ApiState | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -84,32 +73,23 @@ export default function BuildathonPage() {
     phone: '',
   });
 
-  // Document upload form
-  const [docTitle, setDocTitle] = useState('');
-  const [docDescription, setDocDescription] = useState('');
-  const [docFile, setDocFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [teamsRes, docsRes, stateRes, metricsRes, statsRes] = await Promise.all([
+      const [teamsRes, stateRes, metricsRes, statsRes] = await Promise.all([
         fetch(getApiUrl('/buildathon/teams'), { headers }),
-        fetch(getApiUrl('/buildathon/documents'), { headers }),
         fetch(getApiUrl('/buildathon/api-state'), { headers }),
         fetch(getApiUrl('/buildathon/metrics'), { headers }),
         fetch(getApiUrl('/buildathon/stats'), { headers }),
       ]);
 
       const teamsData = await teamsRes.json();
-      const docsData = await docsRes.json();
       const stateData = await stateRes.json();
       const metricsData = await metricsRes.json();
       const statsData = await statsRes.json();
 
       setTeams(teamsData.data || []);
-      setDocuments(docsData.data || []);
       setApiState(stateData.data || null);
       setMetrics(metricsData.data || null);
       setStats(statsData.data || null);
@@ -151,56 +131,6 @@ export default function BuildathonPage() {
     }
     setCountdownLoaded(true);
   }, []);
-
-  const handleUploadDocument = async () => {
-    if (!docTitle || !docFile) {
-      setError('Title and file are required');
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    const formData = new FormData();
-    formData.append('title', docTitle);
-    formData.append('description', docDescription);
-    formData.append('file', docFile);
-
-    setUploading(true);
-    try {
-      const res = await fetch(getApiUrl('/buildathon/documents'), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      setDocTitle('');
-      setDocDescription('');
-      setDocFile(null);
-      fetchData();
-    } catch {
-      setError('Failed to upload document');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleActivateDocument = async (id: number) => {
-    const token = localStorage.getItem('token');
-    await fetch(getApiUrl(`/buildathon/documents/${id}/activate`), {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchData();
-  };
-
-  const handleDeleteDocument = async (id: number) => {
-    if (!confirm('Delete this document?')) return;
-    const token = localStorage.getItem('token');
-    await fetch(getApiUrl(`/buildathon/documents/${id}`), {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchData();
-  };
 
   const handleToggleEndpoint = async (
     endpoint: 'customersEndpointEnabled' | 'ordersEndpointEnabled' | 'productsEndpointEnabled'
@@ -319,8 +249,6 @@ export default function BuildathonPage() {
   const sortedTeams = [...teams].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
-
-  const activeDocument = documents.find((doc) => doc.isActive) || documents[0];
 
   useEffect(() => {
     if (!isCountdownRunning || !countdownEndTime) return;

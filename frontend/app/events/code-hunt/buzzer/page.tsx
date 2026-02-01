@@ -54,14 +54,12 @@ export default function CodeHuntBuzzerPage() {
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      console.log('[Buzzer] Connected, joining event room...');
       // Join the Code Hunt event room
       newSocket.emit('selectEvent', EVENT_SLUG);
     });
 
     // Event room joined
     newSocket.on('eventSelected', (data: { event: string; sessionActive: boolean }) => {
-      console.log('[Buzzer] Joined event room:', data);
       if (data.sessionActive) {
         setState('register');
         setMessage('Session active! Register your team.');
@@ -72,19 +70,16 @@ export default function CodeHuntBuzzerPage() {
     });
 
     newSocket.on('sessionStarted', (_info: SessionInfo) => {
-      console.log('[Buzzer] Session started');
       setState('register');
       setMessage('Session started! Register your team.');
     });
 
     newSocket.on('sessionEnded', () => {
-      console.log('[Buzzer] Session ended');
       setState('no-session');
       setMessage('Session ended.');
     });
 
     newSocket.on('buzzerReady', (data: { questionNumber: number }) => {
-      console.log('[Buzzer] Buzzer ready for question:', data.questionNumber);
       setWasFirst(false);
       setWinnerNames('');
       setState('ready');
@@ -92,7 +87,6 @@ export default function CodeHuntBuzzerPage() {
     });
 
     newSocket.on('buzzResult', (data: { isFirst: boolean; position?: number }) => {
-      console.log('[Buzzer] Buzz result:', data);
       setState('pressed');
       setWasFirst(data.isFirst);
       if (data.isFirst) {
@@ -103,7 +97,6 @@ export default function CodeHuntBuzzerPage() {
     });
 
     newSocket.on('buzzerWinner', (data: { names: string; socketId: string }) => {
-      console.log('[Buzzer] Winner announced:', data);
       // Only lock if we didn't win
       if (newSocket.id !== data.socketId) {
         setState('locked');
@@ -113,7 +106,6 @@ export default function CodeHuntBuzzerPage() {
     });
 
     newSocket.on('buzzerReset', () => {
-      console.log('[Buzzer] Buzzer reset');
       setState('waiting');
       setWasFirst(false);
       setWinnerNames('');
@@ -121,23 +113,19 @@ export default function CodeHuntBuzzerPage() {
     });
 
     newSocket.on('error', (error: { message: string }) => {
-      console.error('[Buzzer] Error:', error);
       setMessage(error.message);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('[Buzzer] Disconnected');
       setState('disconnected');
     });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('[Buzzer] Connection error:', error);
+    newSocket.on('connect_error', (_error) => {
       setState('disconnected');
       setMessage('Connection failed. Please refresh.');
     });
 
     return () => {
-      console.log('[Buzzer] Cleaning up socket...');
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -150,7 +138,6 @@ export default function CodeHuntBuzzerPage() {
       e.preventDefault();
       if (!socket || !name1.trim() || !name2.trim()) return;
 
-      console.log('[Buzzer] Registering team:', name1, name2);
       socket.emit('joinSession', { name1: name1.trim(), name2: name2.trim() });
       setState('waiting');
       setMessage('Registered! Waiting for coordinator...');
@@ -161,7 +148,6 @@ export default function CodeHuntBuzzerPage() {
   const handleBuzzerPress = useCallback(() => {
     if (!socket || state !== 'ready') return;
 
-    console.log('[Buzzer] Pressing buzzer!');
     socket.emit('pressBuzzer');
   }, [socket, state]);
 

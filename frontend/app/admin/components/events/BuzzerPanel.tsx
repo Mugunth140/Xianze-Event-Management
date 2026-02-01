@@ -81,7 +81,7 @@ export default function BuzzerPanel({
             { eventSlug: defaultEvent },
             (res: { success: boolean }) => {
               if (!res.success) {
-                console.warn('Failed to set default event');
+                setError('Failed to set default event');
               }
             }
           );
@@ -156,7 +156,7 @@ export default function BuzzerPanel({
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [defaultEvent]);
 
   const handleStartSession = useCallback(() => {
     socketRef.current?.emit(
