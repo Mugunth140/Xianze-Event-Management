@@ -9,6 +9,7 @@ import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
+import SlideshowViewer from '../components/ui/SlideshowViewer';
 
 interface PaperSubmission {
   id: number;
@@ -42,8 +43,9 @@ export default function PaperPresentationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [downloadedLinks, setDownloadedLinks] = useState<Record<number, string>>({});
+  const [_downloadedLinks, setDownloadedLinks] = useState<Record<number, string>>({});
   const [userRole, setUserRole] = useState<User['role'] | null>(null);
+  const [presentingSubmission, setPresentingSubmission] = useState<PaperSubmission | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -148,13 +150,6 @@ export default function PaperPresentationPage() {
     } finally {
       setDownloadingId(null);
     }
-  };
-
-  const handlePresent = (sub: PaperSubmission) => {
-    const fileUrl = downloadedLinks[sub.id];
-    if (!fileUrl) return;
-    const deepLink = `ms-powerpoint:ofe|u|${fileUrl}`;
-    window.location.href = deepLink;
   };
 
   const handleEditOpen = (sub: PaperSubmission) => {
@@ -378,30 +373,23 @@ export default function PaperPresentationPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                  {downloadedLinks[sub.id] && (
-                    <Button size="sm" onClick={() => handlePresent(sub)}>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Present
-                    </Button>
-                  )}
+                  <Button size="sm" onClick={() => setPresentingSubmission(sub)}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Present
+                  </Button>
 
                   <Button
                     size="sm"
@@ -419,7 +407,7 @@ export default function PaperPresentationPage() {
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                       />
                     </svg>
-                    {downloadedLinks[sub.id] ? 'Re-download' : 'Download'}
+                    Download
                   </Button>
 
                   {canEdit && (
@@ -492,6 +480,15 @@ export default function PaperPresentationPage() {
           ))
         )}
       </div>
+
+      {/* Slideshow Viewer Modal */}
+      {presentingSubmission && (
+        <SlideshowViewer
+          submissionId={presentingSubmission.id}
+          teamName={presentingSubmission.teamMembers.join(', ')}
+          onClose={() => setPresentingSubmission(null)}
+        />
+      )}
     </div>
   );
 }

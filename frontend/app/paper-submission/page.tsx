@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { getApiUrl } from '@/lib/api';
 
 export default function PaperSubmissionPage() {
   const [formData, setFormData] = useState({
@@ -36,7 +37,7 @@ export default function PaperSubmissionPage() {
     data.append('slides', file);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/paper-presentation/submit`, {
+      const res = await fetch(getApiUrl('/paper-presentation/submit'), {
         method: 'POST',
         body: data,
       });
@@ -103,7 +104,7 @@ export default function PaperSubmissionPage() {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-700 border border-amber-200">
-              PPT/PPTX only — ready for slideshow
+              PDF/PPT/PPTX only — ready for slideshow
             </span>
             <Link
               href="/events"
@@ -204,7 +205,7 @@ export default function PaperSubmissionPage() {
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-400 transition-colors">
               <input
                 type="file"
-                accept=".ppt,.pptx"
+                accept=".ppt,.pptx,.pdf"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="hidden"
                 id="file-upload"
@@ -228,12 +229,12 @@ export default function PaperSubmissionPage() {
                 {file ? (
                   <p className="text-primary-600 font-medium">{file.name}</p>
                 ) : (
-                  <p className="text-gray-500">Click to upload PPT or PPTX (max 15MB)</p>
+                  <p className="text-gray-500">Click to upload PDF, PPT or PPTX (max 15MB)</p>
                 )}
               </label>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              Please upload a slideshow-ready PPT/PPTX. PDFs are not accepted.
+              For best presentation experience, we recommend uploading a <strong>PDF</strong>.
             </p>
           </div>
 

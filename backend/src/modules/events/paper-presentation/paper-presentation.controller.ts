@@ -52,7 +52,7 @@ const generateFilename = (originalname: string): string => {
 
 @Controller('paper-presentation')
 export class PaperPresentationController {
-  constructor(private readonly service: PaperPresentationService) {}
+  constructor(private readonly service: PaperPresentationService) { }
 
   /**
    * POST /api/paper-presentation/submit
@@ -84,12 +84,13 @@ export class PaperPresentationController {
         const allowedMimes = [
           'application/vnd.ms-powerpoint',
           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'application/pdf',
         ];
-        const allowedExts = ['.ppt', '.pptx'];
+        const allowedExts = ['.ppt', '.pptx', '.pdf'];
         const ext = extname(file.originalname).toLowerCase();
 
         if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
-          return cb(new BadRequestException('Only PPT and PPTX files are allowed'), false);
+          return cb(new BadRequestException('Only PPT, PPTX, and PDF files are allowed'), false);
         }
         cb(null, true);
       },
@@ -124,8 +125,8 @@ export class PaperPresentationController {
 
     const slidePath = `/presentations/${file.filename}`;
 
-    // Convert PPT/PPTX to PDF for slideshow
-    const pdfPath = null;
+    // If uploaded file is PDF, we treat it as the slideshow PDF
+    const pdfPath = extname(file.originalname).toLowerCase() === '.pdf' ? slidePath : null;
 
     const submission = await this.service.create(
       { teamName: derivedTeamName, teamMembers, college, topic, phone },

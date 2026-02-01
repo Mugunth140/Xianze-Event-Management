@@ -13,8 +13,8 @@ import { PageLoader } from './components/ui/Spinner';
 interface OverviewData {
   totalRegistrations: number;
   totalContacts: number;
-  registrationsByEvent: { event: string; count: string }[];
-  registrationsByCollege?: { college: string; count: string }[];
+  registrationsByEvent: { event: string; count: number }[];
+  registrationsByCollege?: { college: string; count: number }[];
 }
 
 interface PaymentStat {
@@ -24,7 +24,7 @@ interface PaymentStat {
 
 interface TrendData {
   date: string;
-  count: string;
+  count: number;
 }
 
 interface User {
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
 
   // Computed metrics
   const totalTrendCount = useMemo(
-    () => trends.reduce((sum, item) => sum + Number(item.count || 0), 0),
+    () => trends.reduce((sum, item) => sum + (item.count || 0), 0),
     [trends]
   );
 
@@ -58,13 +58,13 @@ export default function AdminDashboard() {
 
   const peakDay = useMemo(() => {
     if (trends.length === 0) return null;
-    return trends.reduce((max, item) => (Number(item.count) > Number(max.count) ? item : max));
+    return trends.reduce((max, item) => (item.count > max.count ? item : max));
   }, [trends]);
 
   const latestDelta = useMemo(() => {
     if (trends.length < 2) return null;
-    const last = Number(trends[trends.length - 1].count || 0);
-    const prev = Number(trends[trends.length - 2].count || 0);
+    const last = trends[trends.length - 1].count || 0;
+    const prev = trends[trends.length - 2].count || 0;
     return last - prev;
   }, [trends]);
 
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   const topEvent = useMemo(() => {
     if (!overview?.registrationsByEvent?.length) return null;
     return overview.registrationsByEvent.reduce((max, item) =>
-      Number(item.count) > Number(max.count) ? item : max
+      item.count > max.count ? item : max
     );
   }, [overview]);
 
@@ -151,9 +151,36 @@ export default function AdminDashboard() {
         const paymentData = await paymentRes.json();
         const trendsData = await trendsRes.json();
 
+        // Ensure count is a number for charts
+        if (overviewData.registrationsByEvent) {
+          overviewData.registrationsByEvent = overviewData.registrationsByEvent.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (item: any) => ({
+              ...item,
+              count: Number(item.count),
+            })
+          );
+        }
+
+        if (overviewData.registrationsByCollege) {
+          overviewData.registrationsByCollege = overviewData.registrationsByCollege.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (item: any) => ({
+              ...item,
+              count: Number(item.count),
+            })
+          );
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const formattedTrends = trendsData.map((item: any) => ({
+          ...item,
+          count: Number(item.count),
+        }));
+
         setOverview(overviewData);
         setPaymentStats(paymentData);
-        setTrends(trendsData);
+        setTrends(formattedTrends);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
@@ -637,7 +664,7 @@ export default function AdminDashboard() {
         <Card className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Top Colleges</h2>
-            <Badge variant="info">{uniqueColleges} total</Badge>
+            <Badge variant="purple">{uniqueColleges} total</Badge>
           </div>
           <div className="space-y-3 max-h-[300px] overflow-y-auto admin-scrollbar">
             {overview?.registrationsByCollege?.slice(0, 8).map((college, index) => (
@@ -661,7 +688,7 @@ export default function AdminDashboard() {
                     <div
                       className="bg-primary-500 h-1.5 rounded-full"
                       style={{
-                        width: `${Math.min(100, (Number(college.count) / Number(overview?.registrationsByCollege?.[0]?.count || 1)) * 100)}%`,
+                        width: `${Math.min(100, (college.count / (overview?.registrationsByCollege?.[0]?.count || 1)) * 100)}%`,
                       }}
                     />
                   </div>
