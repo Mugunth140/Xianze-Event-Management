@@ -482,7 +482,7 @@ export default function UsersPage() {
         onConfirm={handleDelete}
         title="Delete User"
         message={`Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        confirmText="Delete"
         confirmVariant="danger"
       />
     </div>

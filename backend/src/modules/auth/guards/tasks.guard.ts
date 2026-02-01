@@ -24,11 +24,6 @@ export class TasksGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    console.log(
-      `TasksGuard Debug: User ${user.username} (${user.role}) trying to access. Required: ${requiredTasks}`,
-    );
-    console.log(`Is Admin? ${user.role} === ${UserRole.ADMIN} -> ${user.role === UserRole.ADMIN}`);
-
     // Admin bypasses all task checks
     if (user.role === UserRole.ADMIN) {
       return true;

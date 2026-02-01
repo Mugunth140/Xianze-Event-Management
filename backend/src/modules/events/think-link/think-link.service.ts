@@ -1,109 +1,84 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PuzzleResult, ThinkLinkPuzzle } from './think-link.entity';
+import { ThinkLinkPresentation } from './think-link.entity';
 
 @Injectable()
 export class ThinkLinkService {
   constructor(
-    @InjectRepository(ThinkLinkPuzzle)
-    private readonly puzzleRepository: Repository<ThinkLinkPuzzle>,
+    @InjectRepository(ThinkLinkPresentation)
+    private readonly presentationRepository: Repository<ThinkLinkPresentation>,
   ) {}
 
   /**
-   * Create a new puzzle
+   * Create a new presentation
    */
-  async create(imagePath: string, hint?: string): Promise<ThinkLinkPuzzle> {
-    // Get next round number
-    const maxRound = await this.puzzleRepository
-      .createQueryBuilder('puzzle')
-      .select('MAX(puzzle.roundNumber)', 'max')
-      .getRawOne();
-
-    const nextRound = (maxRound?.max || 0) + 1;
-
-    const puzzle = this.puzzleRepository.create({
-      imagePath,
-      hint: hint || null,
-      roundNumber: nextRound,
-      result: PuzzleResult.PENDING,
+  async create(
+    name: string,
+    filePath: string,
+    totalSlides: number = 0,
+  ): Promise<ThinkLinkPresentation> {
+    const presentation = this.presentationRepository.create({
+      name,
+      filePath,
+      totalSlides,
     });
-    return this.puzzleRepository.save(puzzle);
+    return this.presentationRepository.save(presentation);
   }
 
   /**
-   * Find all puzzles ordered by round number
+   * Find all presentations ordered by creation date
    */
-  async findAll(): Promise<ThinkLinkPuzzle[]> {
-    return this.puzzleRepository.find({
-      order: { roundNumber: 'ASC' },
+  async findAll(): Promise<ThinkLinkPresentation[]> {
+    return this.presentationRepository.find({
+      order: { createdAt: 'DESC' },
     });
   }
 
   /**
-   * Find puzzle by ID
+   * Find presentation by ID
    */
-  async findById(id: number): Promise<ThinkLinkPuzzle> {
-    const puzzle = await this.puzzleRepository.findOne({ where: { id } });
-    if (!puzzle) {
-      throw new NotFoundException(`Puzzle with ID ${id} not found`);
+  async findById(id: number): Promise<ThinkLinkPresentation> {
+    const presentation = await this.presentationRepository.findOne({
+      where: { id },
+    });
+    if (!presentation) {
+      throw new NotFoundException(`Presentation with ID ${id} not found`);
     }
-    return puzzle;
+    return presentation;
   }
 
   /**
-   * Update puzzle hint
+   * Update presentation name
    */
-  async updateHint(id: number, hint: string): Promise<ThinkLinkPuzzle> {
-    const puzzle = await this.findById(id);
-    puzzle.hint = hint;
-    return this.puzzleRepository.save(puzzle);
+  async updateName(id: number, name: string): Promise<ThinkLinkPresentation> {
+    const presentation = await this.findById(id);
+    presentation.name = name;
+    return this.presentationRepository.save(presentation);
   }
 
   /**
-   * Mark puzzle result
+   * Update total slides count
    */
-  async markResult(id: number, result: PuzzleResult): Promise<ThinkLinkPuzzle> {
-    const puzzle = await this.findById(id);
-    puzzle.result = result;
-    puzzle.markedAt = new Date();
-    return this.puzzleRepository.save(puzzle);
+  async updateTotalSlides(id: number, totalSlides: number): Promise<ThinkLinkPresentation> {
+    const presentation = await this.findById(id);
+    presentation.totalSlides = totalSlides;
+    return this.presentationRepository.save(presentation);
   }
 
   /**
-   * Reorder puzzle
-   */
-  async reorder(id: number, newRoundNumber: number): Promise<ThinkLinkPuzzle> {
-    const puzzle = await this.findById(id);
-    puzzle.roundNumber = newRoundNumber;
-    return this.puzzleRepository.save(puzzle);
-  }
-
-  /**
-   * Reset all puzzles to pending
-   */
-  async resetAll(): Promise<void> {
-    await this.puzzleRepository.update({}, { result: PuzzleResult.PENDING, markedAt: null });
-  }
-
-  /**
-   * Delete puzzle
+   * Delete presentation
    */
   async delete(id: number): Promise<void> {
-    const puzzle = await this.findById(id);
-    await this.puzzleRepository.remove(puzzle);
+    const presentation = await this.findById(id);
+    await this.presentationRepository.remove(presentation);
   }
 
   /**
    * Get stats
    */
-  async getStats(): Promise<{ total: number; correct: number; wrong: number; pending: number }> {
-    const puzzles = await this.puzzleRepository.find();
-    return {
-      total: puzzles.length,
-      correct: puzzles.filter((p) => p.result === PuzzleResult.CORRECT).length,
-      wrong: puzzles.filter((p) => p.result === PuzzleResult.WRONG).length,
-      pending: puzzles.filter((p) => p.result === PuzzleResult.PENDING).length,
-    };
+  async getStats(): Promise<{ total: number }> {
+    const count = await this.presentationRepository.count();
+    return { total: count };
   }
 }
