@@ -54,7 +54,7 @@ const SchedulePage = () => {
             <TimelineItem
               time="08:30 AM"
               title="Spot Registration"
-              description="Get your ID cards and welcome kits at the registration desk."
+              description="Get your ID cards for verification at the registration desk."
               align="left"
               icon="📝"
               delay={0.2}

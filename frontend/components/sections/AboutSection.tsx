@@ -95,24 +95,31 @@ export default function AboutSection() {
           ref={statsRef}
           className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto"
         >
+          {' '}
           <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              300+
-            </div>
-            <div className="text-sm sm:text-base text-gray-600 font-medium">Participants</div>
-          </div>
+              {' '}
+              300+{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Participants</div>{' '}
+          </div>{' '}
           <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              25+
-            </div>
-            <div className="text-sm sm:text-base text-gray-600 font-medium">Colleges</div>
-          </div>
+              {' '}
+              25+{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Colleges</div>{' '}
+          </div>{' '}
           <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              ₹20K+
-            </div>
-            <div className="text-sm sm:text-base text-gray-600 font-medium">Prizes</div>
-          </div>
+              {' '}
+              Loaded{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Cash Prizes</div>{' '}
+          </div>{' '}
         </div>
       </div>
     </section>
