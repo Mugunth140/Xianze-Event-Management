@@ -13,13 +13,17 @@ type BuzzerState =
   | 'locked'
   | 'disconnected';
 
-interface SessionInfo {
-  sessionId: string;
-  questionNumber: number;
-  buzzerEnabled: boolean;
+interface BuzzerStatus {
+  isActive: boolean;
+  isBuzzerEnabled: boolean;
+  canPress: boolean;
 }
 
-const EVENT_SLUG = 'code-hunt';
+interface SessionCheckResponse {
+  success: boolean;
+  isActive: boolean;
+  isBuzzerEnabled: boolean;
+}
 
 const getApiUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -29,7 +33,6 @@ const getApiUrl = () => {
 
 export default function CodeHuntBuzzerPage() {
   const [state, setState] = useState<BuzzerState>('connecting');
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [message, setMessage] = useState<string>('');
   const [name1, setName1] = useState('');
   const [name2, setName2] = useState('');
@@ -38,6 +41,9 @@ export default function CodeHuntBuzzerPage() {
 
   const socketRef = useRef<Socket | null>(null);
   const hasInitializedRef = useRef(false);
+  const isRegisteredRef = useRef(false);
+  const isPressedRef = useRef(false);
+  const winnerNamesRef = useRef('');
 
   useEffect(() => {
     // Prevent double initialization in strict mode
@@ -51,69 +57,107 @@ export default function CodeHuntBuzzerPage() {
     });
 
     socketRef.current = newSocket;
-    setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      // Join the Code Hunt event room
-      newSocket.emit('selectEvent', EVENT_SLUG);
+      newSocket.emit('participant:check-session', (response: SessionCheckResponse) => {
+        if (response.success && response.isActive) {
+          if (isRegisteredRef.current) {
+            setState('waiting');
+          } else {
+            setState('register');
+          }
+          setMessage('');
+        } else {
+          setState('no-session');
+          setMessage('No active session. Wait for coordinator to start.');
+        }
+      });
     });
 
-    // Event room joined
-    newSocket.on('eventSelected', (data: { event: string; sessionActive: boolean }) => {
-      if (data.sessionActive) {
-        setState('register');
-        setMessage('Session active! Register your team.');
-      } else {
-        setState('no-session');
-        setMessage('No active session. Wait for coordinator to start.');
-      }
-    });
-
-    newSocket.on('sessionStarted', (_info: SessionInfo) => {
+    newSocket.on('session:started', () => {
       setState('register');
       setMessage('Session started! Register your team.');
     });
 
-    newSocket.on('sessionEnded', () => {
+    newSocket.on('session:ended', () => {
       setState('no-session');
       setMessage('Session ended.');
+      isRegisteredRef.current = false;
     });
 
-    newSocket.on('buzzerReady', (data: { questionNumber: number }) => {
-      setWasFirst(false);
-      setWinnerNames('');
-      setState('ready');
-      setMessage(`Question ${data.questionNumber} - Press when ready!`);
-    });
-
-    newSocket.on('buzzResult', (data: { isFirst: boolean; position?: number }) => {
-      setState('pressed');
-      setWasFirst(data.isFirst);
-      if (data.isFirst) {
-        setMessage("🎉 You're first! Wait for the question.");
-      } else {
-        setMessage(`Position: ${data.position || '?'}`);
+    newSocket.on('buzzer:state', (status: BuzzerStatus) => {
+      if (!status.isActive) {
+        setState('no-session');
+        isRegisteredRef.current = false;
+        setMessage('Session ended. Thank you for participating!');
+      } else if (isRegisteredRef.current) {
+        if (status.isBuzzerEnabled && status.canPress) {
+          setState('ready');
+          isPressedRef.current = false;
+          setWasFirst(false);
+          setMessage('');
+        } else if (!status.canPress && !isPressedRef.current) {
+          setState('waiting');
+          setMessage('Stand by for the next question...');
+        }
       }
     });
 
-    newSocket.on('buzzerWinner', (data: { names: string; socketId: string }) => {
-      // Only lock if we didn't win
-      if (newSocket.id !== data.socketId) {
+    newSocket.on('buzzer:enabled', () => {
+      if (isRegisteredRef.current) {
+        setState('ready');
+        isPressedRef.current = false;
+        setWasFirst(false);
+        winnerNamesRef.current = '';
+        setWinnerNames('');
+        setMessage('');
+      }
+    });
+
+    newSocket.on('buzzer:disabled', () => {
+      if (isRegisteredRef.current && !isPressedRef.current) {
+        setState('waiting');
+        setMessage('Stand by...');
+      }
+    });
+
+    newSocket.on('buzzer:locked', (data: { winnerNames: string }) => {
+      winnerNamesRef.current = data.winnerNames;
+      setWinnerNames(data.winnerNames);
+      if (!isPressedRef.current) {
         setState('locked');
-        setWinnerNames(data.names);
-        setMessage(`${data.names} pressed first!`);
+        setMessage(`${data.winnerNames} pressed first!`);
       }
     });
 
-    newSocket.on('buzzerReset', () => {
-      setState('waiting');
-      setWasFirst(false);
-      setWinnerNames('');
-      setMessage('Waiting for next question...');
+    newSocket.on('answer:correct', () => {
+      if (isRegisteredRef.current) {
+        setMessage('Correct answer! Waiting for next question...');
+        setState('waiting');
+        isPressedRef.current = false;
+        setWasFirst(false);
+      }
     });
 
-    newSocket.on('error', (error: { message: string }) => {
-      setMessage(error.message);
+    newSocket.on('answer:wrong', (data: { wrongTeam: string }) => {
+      if (isRegisteredRef.current) {
+        if (data.wrongTeam && winnerNamesRef.current === data.wrongTeam) {
+          setMessage('Wrong answer! Buzzer continuing...');
+        }
+        isPressedRef.current = false;
+        setWasFirst(false);
+      }
+    });
+
+    newSocket.on('buzzer:reset', () => {
+      if (isRegisteredRef.current) {
+        setState('waiting');
+        isPressedRef.current = false;
+        setWasFirst(false);
+        winnerNamesRef.current = '';
+        setWinnerNames('');
+        setMessage('Waiting for next question...');
+      }
     });
 
     newSocket.on('disconnect', () => {
@@ -136,20 +180,54 @@ export default function CodeHuntBuzzerPage() {
   const handleRegister = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      if (!socket || !name1.trim() || !name2.trim()) return;
+      if (!name1.trim() || !name2.trim()) return;
 
-      socket.emit('joinSession', { name1: name1.trim(), name2: name2.trim() });
-      setState('waiting');
-      setMessage('Registered! Waiting for coordinator...');
+      const activeSocket = socketRef.current;
+      if (!activeSocket) return;
+
+      activeSocket.emit(
+        'team:join',
+        { name1: name1.trim(), name2: name2.trim() },
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            isRegisteredRef.current = true;
+            setState('waiting');
+            setMessage('Registered! Waiting for coordinator...');
+          } else {
+            setMessage(response.error || 'Failed to join');
+          }
+        }
+      );
     },
-    [socket, name1, name2]
+    [name1, name2]
   );
 
   const handleBuzzerPress = useCallback(() => {
-    if (!socket || state !== 'ready') return;
+    const activeSocket = socketRef.current;
+    if (!activeSocket || state !== 'ready') return;
 
-    socket.emit('pressBuzzer');
-  }, [socket, state]);
+    isPressedRef.current = true;
+    setState('pressed');
+
+    activeSocket.emit(
+      'buzzer:press',
+      (response: { success: boolean; first?: boolean; error?: string }) => {
+        if (response.success) {
+          if (response.first) {
+            setWasFirst(true);
+            setMessage("🎉 You're first! Wait for the question.");
+          } else {
+            setMessage('Someone was faster...');
+            setState('locked');
+          }
+        } else {
+          setMessage(response.error || 'Failed to register buzz');
+          isPressedRef.current = false;
+          setState('ready');
+        }
+      }
+    );
+  }, [state]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 flex flex-col">
