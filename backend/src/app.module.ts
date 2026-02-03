@@ -13,6 +13,7 @@ import { BugSmashModule } from './modules/events/bug-smash/bug-smash.module';
 import { BuildathonModule } from './modules/events/buildathon/buildathon.module';
 import { CtrlQuizModule } from './modules/events/ctrl-quiz/ctrl-quiz.module';
 import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
+import { BuzzerModule } from './modules/events/think-link/buzzer/buzzer.module';
 import { ThinkLinkModule } from './modules/events/think-link/think-link.module';
 import { ExportsModule } from './modules/exports/exports.module';
 import { RegistrationModule } from './modules/registration/registration.module';
@@ -63,6 +64,7 @@ import { UsersModule } from './modules/users/users.module';
     ExportsModule,
     PaperPresentationModule,
     ThinkLinkModule,
+    BuzzerModule,
     BugSmashModule,
     CtrlQuizModule,
     BuildathonModule,

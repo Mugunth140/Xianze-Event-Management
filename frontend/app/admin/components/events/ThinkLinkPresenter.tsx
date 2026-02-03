@@ -2,6 +2,7 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PDFDocumentProxy = any;
@@ -29,6 +30,11 @@ export default function ThinkLinkPresenter({
   timerDuration,
   onClose,
 }: ThinkLinkPresenterProps) {
+  const getBaseUrl = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    return apiUrl.replace(/\/api$/, '');
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timerDuration);
@@ -37,11 +43,13 @@ export default function ThinkLinkPresenter({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [buzzerWinner, setBuzzerWinner] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const pdfjsRef = useRef<PDFLib | null>(null);
+  const buzzerSocketRef = useRef<Socket | null>(null);
 
   // Load PDF document
   useEffect(() => {
@@ -85,6 +93,42 @@ export default function ThinkLinkPresenter({
       }
     };
   }, [presentationId]);
+
+  useEffect(() => {
+    const socket = io(`${getBaseUrl()}/buzzer`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+    });
+
+    buzzerSocketRef.current = socket;
+
+    socket.on('buzzer:locked', (data: { winnerNames: string }) => {
+      setBuzzerWinner(data.winnerNames);
+    });
+
+    socket.on('buzzer:reset', () => {
+      setBuzzerWinner('');
+    });
+
+    socket.on('buzzer:enabled', () => {
+      setBuzzerWinner('');
+    });
+
+    socket.on('answer:correct', () => {
+      setBuzzerWinner('');
+    });
+
+    socket.on('session:ended', () => {
+      setBuzzerWinner('');
+    });
+
+    return () => {
+      socket.disconnect();
+      buzzerSocketRef.current = null;
+    };
+  }, []);
 
   // Render current page
   useEffect(() => {
@@ -323,6 +367,15 @@ export default function ThinkLinkPresenter({
               {formatTime(timeLeft)}
             </div>
           </div>
+
+          {/* Buzzer winner - bottom center */}
+          {buzzerWinner && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
+              <div className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-sm font-semibold shadow-lg">
+                {buzzerWinner}
+              </div>
+            </div>
+          )}
 
           {/* Slide number - top left */}
           <div className="absolute top-6 left-6 pointer-events-none">
