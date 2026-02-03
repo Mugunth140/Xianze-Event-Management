@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function BuildathonDocs() {
-  const baseUrl = "xianze.tech";
+  const baseUrl = 'xianze.tech';
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans text-gray-900 mt-10">
       <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">

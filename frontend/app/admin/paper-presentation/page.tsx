@@ -318,10 +318,11 @@ export default function PaperPresentationPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${activeTab === tab
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${
+                activeTab === tab
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-900'
-                }`}
+              }`}
             >
               {tab}
             </button>
