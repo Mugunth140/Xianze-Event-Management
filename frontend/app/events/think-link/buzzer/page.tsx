@@ -25,6 +25,8 @@ interface SessionCheckResponse {
   isBuzzerEnabled: boolean;
 }
 
+const EVENT_SLUG = 'think-link';
+
 export default function BuzzerPage() {
   const [state, setState] = useState<BuzzerState>('connecting');
   const [name1, setName1] = useState('');
@@ -59,18 +61,22 @@ export default function BuzzerPage() {
     socket.on('connect', () => {
       setError('');
       // Check if session is active
-      socket.emit('participant:check-session', (response: SessionCheckResponse) => {
-        if (response.success && response.isActive) {
-          // If already registered (reconnect), go to waiting
-          if (isRegisteredRef.current) {
-            setState('waiting');
+      socket.emit(
+        'participant:check-session',
+        { eventSlug: EVENT_SLUG },
+        (response: SessionCheckResponse) => {
+          if (response.success && response.isActive) {
+            // If already registered (reconnect), go to waiting
+            if (isRegisteredRef.current) {
+              setState('waiting');
+            } else {
+              setState('register');
+            }
           } else {
-            setState('register');
+            setState('no-session');
           }
-        } else {
-          setState('no-session');
         }
-      });
+      );
     });
 
     socket.on('disconnect', () => {
@@ -203,7 +209,7 @@ export default function BuzzerPage() {
 
     socket.emit(
       'team:join',
-      { name1: name1.trim(), name2: name2.trim() },
+      { name1: name1.trim(), name2: name2.trim(), eventSlug: EVENT_SLUG },
       (response: { success: boolean; error?: string }) => {
         if (response.success) {
           isRegisteredRef.current = true;

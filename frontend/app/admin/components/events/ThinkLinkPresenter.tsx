@@ -104,6 +104,10 @@ export default function ThinkLinkPresenter({
 
     buzzerSocketRef.current = socket;
 
+    socket.on('connect', () => {
+      socket.emit('participant:check-session', { eventSlug: 'think-link' });
+    });
+
     socket.on('buzzer:locked', (data: { winnerNames: string }) => {
       setBuzzerWinner(data.winnerNames);
     });

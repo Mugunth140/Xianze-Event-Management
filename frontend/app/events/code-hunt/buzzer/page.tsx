@@ -25,6 +25,8 @@ interface SessionCheckResponse {
   isBuzzerEnabled: boolean;
 }
 
+const EVENT_SLUG = 'code-hunt';
+
 const getApiUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   // Remove /api suffix if present for WebSocket connection
@@ -59,19 +61,23 @@ export default function CodeHuntBuzzerPage() {
     socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
-      newSocket.emit('participant:check-session', (response: SessionCheckResponse) => {
-        if (response.success && response.isActive) {
-          if (isRegisteredRef.current) {
-            setState('waiting');
+      newSocket.emit(
+        'participant:check-session',
+        { eventSlug: EVENT_SLUG },
+        (response: SessionCheckResponse) => {
+          if (response.success && response.isActive) {
+            if (isRegisteredRef.current) {
+              setState('waiting');
+            } else {
+              setState('register');
+            }
+            setMessage('');
           } else {
-            setState('register');
+            setState('no-session');
+            setMessage('No active session. Wait for coordinator to start.');
           }
-          setMessage('');
-        } else {
-          setState('no-session');
-          setMessage('No active session. Wait for coordinator to start.');
         }
-      });
+      );
     });
 
     newSocket.on('session:started', () => {
@@ -187,7 +193,7 @@ export default function CodeHuntBuzzerPage() {
 
       activeSocket.emit(
         'team:join',
-        { name1: name1.trim(), name2: name2.trim() },
+        { name1: name1.trim(), name2: name2.trim(), eventSlug: EVENT_SLUG },
         (response: { success: boolean; error?: string }) => {
           if (response.success) {
             isRegisteredRef.current = true;
