@@ -1,24 +1,24 @@
 import {
-    BadRequestException,
-    Body,
-    ConflictException,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Logger,
-    MaxFileSizeValidator,
-    NotFoundException,
-    Param,
-    ParseFilePipe,
-    ParseIntPipe,
-    Patch,
-    Post,
-    Res,
-    UploadedFile,
-    UseGuards,
-    UseInterceptors,
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  MaxFileSizeValidator,
+  NotFoundException,
+  Param,
+  ParseFilePipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
@@ -228,7 +228,7 @@ export class RegistrationController {
   /**
    * PATCH /api/register/:id
    *
-    * Update a registration (requires edit registration task).
+   * Update a registration (requires edit registration task).
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard, TasksGuard)
