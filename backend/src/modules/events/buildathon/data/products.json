@@ -1,92 +1,98 @@
 [
-  {
-    "id": 1,
-    "name": "Pro Laptop X1",
-    "category": "Electronics",
-    "price": 500.00,
-    "stock": 150,
-    "rating": 4.5,
-    "description": "High-performance laptop for professionals"
-  },
-  {
-    "id": 2,
-    "name": "Wireless Mouse Elite",
-    "category": "Accessories",
-    "price": 150.00,
-    "stock": 500,
-    "rating": 4.2,
-    "description": "Ergonomic wireless mouse with precision tracking"
-  },
-  {
-    "id": 3,
-    "name": "USB-C Hub Pro",
-    "category": "Accessories",
-    "price": 250.00,
-    "stock": 300,
-    "rating": 4.7,
-    "description": "Multi-port USB-C hub with 10 ports"
-  },
-  {
-    "id": 4,
-    "name": "4K Monitor Ultra",
-    "category": "Electronics",
-    "price": 1200.00,
-    "stock": 75,
-    "rating": 4.8,
-    "description": "32-inch 4K monitor with HDR support"
-  },
-  {
-    "id": 5,
-    "name": "Mechanical Keyboard RGB",
-    "category": "Accessories",
-    "price": 400.50,
-    "stock": 200,
-    "rating": 4.6,
-    "description": "Mechanical keyboard with customizable RGB lighting"
-  },
-  {
-    "id": 6,
-    "name": "Noise-Cancelling Headphones",
-    "category": "Audio",
-    "price": 450.00,
-    "stock": 180,
-    "rating": 4.9,
-    "description": "Premium wireless headphones with ANC"
-  },
-  {
-    "id": 7,
-    "name": "Webcam HD Plus",
-    "category": "Accessories",
-    "price": 60.00,
-    "stock": 400,
-    "rating": 4.1,
-    "description": "1080p webcam with built-in microphone"
-  },
-  {
-    "id": 8,
-    "name": "External SSD 1TB",
-    "category": "Storage",
-    "price": 300.00,
-    "stock": 250,
-    "rating": 4.4,
-    "description": "Portable SSD with fast transfer speeds"
-  },
-  {
-    "id": 9,
-    "name": "Smart Desk Lamp",
-    "category": "Office",
-    "price": 375.00,
-    "stock": 120,
-    "rating": 4.3,
-    "description": "LED desk lamp with adjustable brightness and color"
-  },
-  {
-    "id": 10,
-    "name": "Ergonomic Chair Pro",
-    "category": "Furniture",
-    "price": 475.00,
-    "stock": 60,
-    "rating": 4.7,
-    "description": "Adjustable ergonomic office chair with lumbar support"
-  }
+    {
+        "id": 1,
+        "name": "Men Kurta Set",
+        "price": 1800,
+        "stock": 12,
+        "sold": 28,
+        "image": "https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1"
+    },
+    {
+        "id": 2,
+        "name": "Women Saree",
+        "price": 2500,
+        "stock": 8,
+        "sold": 35,
+        "image": "https://images.unsplash.com/photo-1583391733990-5c9e08c41c58"
+    },
+    {
+        "id": 3,
+        "name": "Casual T-shirt",
+        "price": 800,
+        "stock": 25,
+        "sold": 40,
+        "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab"
+    },
+    {
+        "id": 4,
+        "name": "Kids Hoodie",
+        "price": 1200,
+        "stock": 15,
+        "sold": 18,
+        "image": "https://images.unsplash.com/photo-1602810318383-e386cc2a65d4"
+    },
+    {
+        "id": 5,
+        "name": "Women Dress",
+        "price": 1800,
+        "stock": 10,
+        "sold": 22,
+        "image": "https://images.unsplash.com/photo-1520975916090-3105956dac38"
+    },
+    {
+        "id": 6,
+        "name": "Boys Jacket",
+        "price": 1500,
+        "stock": 5,
+        "sold": 15,
+        "image": "https://images.unsplash.com/photo-1542068829-1115f7259450"
+    },
+    {
+        "id": 7,
+        "name": "Men Formal Shirt",
+        "price": 1400,
+        "stock": 18,
+        "sold": 30,
+        "image": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633"
+    },
+    {
+        "id": 8,
+        "name": "Women Top",
+        "price": 900,
+        "stock": 30,
+        "sold": 34,
+        "image": "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1"
+    },
+    {
+        "id": 9,
+        "name": "Girls Skirt",
+        "price": 1100,
+        "stock": 9,
+        "sold": 12,
+        "image": "https://images.unsplash.com/photo-1520974735194-6c1c3aa52e98"
+    },
+    {
+        "id": 10,
+        "name": "Winter Sweater",
+        "price": 2000,
+        "stock": 6,
+        "sold": 20,
+        "image": "https://images.unsplash.com/photo-1618354691414-91f9c64d8d2b"
+    },
+    {
+        "id": 11,
+        "name": "Ethnic Lehenga",
+        "price": 3500,
+        "stock": 4,
+        "sold": 10,
+        "image": "https://images.unsplash.com/photo-1600180758890-6b94519a5c7a"
+    },
+    {
+        "id": 12,
+        "name": "Denim Jeans",
+        "price": 1600,
+        "stock": 22,
+        "sold": 38,
+        "image": "https://images.unsplash.com/photo-1542272604-787c3835535d"
+    }
 ]

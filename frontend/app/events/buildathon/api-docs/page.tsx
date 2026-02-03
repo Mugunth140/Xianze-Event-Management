@@ -1,777 +1,407 @@
-'use client';
+import React from 'react';
+import type { Metadata } from 'next';
 
-import { useEffect, useState } from 'react';
-
-// TypeScript interfaces for data structures
-interface CustomerSchema {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  industry: string;
-  joinedAt: string;
-}
-
-interface OrderItem {
-  productId: number;
-  quantity: number;
-  price: number;
-}
-
-interface OrderSchema {
-  id: number;
-  customerId: number;
-  orderDate: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  totalAmount: number;
-  items: OrderItem[];
-}
-
-interface ProductSchema {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  rating: number;
-  description: string;
-}
-
-// Example data for documentation
-const customerExample: CustomerSchema = {
-  id: 1,
-  name: 'Acme Corp',
-  email: 'contact@acme.com',
-  phone: '+1-555-0101',
-  address: '123 Innovation Drive, Tech City, TC 10001',
-  industry: 'Technology',
-  joinedAt: '2024-01-15',
+export const metadata: Metadata = {
+  title: 'Buildathon Challenge Docs | Xianze 2026',
+  description:
+    'Documentation and requirements for the Xianze 2026 Buildathon Challenge: Trendy Threads Business Dashboard.',
 };
 
-const orderExample: OrderSchema = {
-  id: 1,
-  customerId: 1,
-  orderDate: '2025-01-10',
-  status: 'delivered',
-  totalAmount: 1250.0,
-  items: [
-    { productId: 1, quantity: 2, price: 500.0 },
-    { productId: 3, quantity: 1, price: 250.0 },
-  ],
-};
-
-const productExample: ProductSchema = {
-  id: 1,
-  name: 'Pro Laptop X1',
-  category: 'Electronics',
-  price: 500.0,
-  stock: 150,
-  rating: 4.5,
-  description: 'High-performance laptop for professionals',
-};
-
-type ActiveTab = 'overview' | 'customers' | 'orders' | 'products' | 'dashboard';
-
-export default function BuildathonApiDocsPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
-  const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
-  const [baseUrl, setBaseUrl] = useState('https://xianze.tech');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
-  }, []);
-
-  const apiBase = `${baseUrl}/api/buildathon`;
-
-  const copyToClipboard = (text: string, endpoint: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedEndpoint(endpoint);
-    setTimeout(() => setCopiedEndpoint(null), 2000);
-  };
-
-  const tabs: { key: ActiveTab; label: string; icon: string }[] = [
-    { key: 'overview', label: 'Overview', icon: '📋' },
-    { key: 'customers', label: 'Customers', icon: '👥' },
-    { key: 'orders', label: 'Orders', icon: '📦' },
-    { key: 'products', label: 'Products', icon: '🏷️' },
-    { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-  ];
-
+export default function BuildathonDocs() {
+  const baseUrl = "xianze.tech";
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-lg border-b border-purple-500/20">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">API Documentation</h1>
-              <p className="text-purple-300 text-sm mt-1">Analytics Dashboard Challenge</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full border border-green-500/30">
-                ● API LIVE
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans text-gray-900 mt-10">
+      <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+        {/* Header */}
+        <div className="bg-indigo-600 px-8 py-10 text-white">
+          <h1 className="text-4xl font-bold mb-2">Buildathon Challenge</h1>
+          <h2 className="text-2xl font-light opacity-90">Trendy Threads – Business Dashboard</h2>
         </div>
-      </header>
 
-      {/* Navigation Tabs */}
-      <nav className="sticky top-[73px] z-40 bg-slate-900/90 backdrop-blur-md border-b border-purple-500/10">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex overflow-x-auto scrollbar-hide gap-1 py-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                  activeTab === tab.key
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+        <div className="p-8 space-y-12">
+          {/* Rules & Regulations */}
+          <section>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">📜</span>
+              Rules & Regulations
+            </h3>
+            <ul className="list-disc pl-6 space-y-2 text-gray-700 leading-relaxed">
+              <li>
+                Each team must consist of <strong>2 to 4 members</strong>.
+              </li>
+              <li>
+                The prototype must be completed within the <strong>2-hour time limit</strong>.
+              </li>
+              <li>
+                Use of pre-existing projects, templates, or modules is <strong>not allowed</strong>.
+              </li>
+              <li>All work must be done during the buildathon period.</li>
+            </ul>
+          </section>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6 pb-20">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Challenge Brief */}
-            <section className="bg-gradient-to-r from-purple-900/50 to-indigo-900/50 rounded-2xl p-6 border border-purple-500/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Challenge Overview
-              </h2>
-              <div className="prose prose-invert max-w-none">
-                <p className="text-gray-300 leading-relaxed">
-                  Build a <strong className="text-purple-300">real-time analytics dashboard</strong>{' '}
-                  that fetches data from our live API endpoints and presents meaningful insights
-                  about an e-commerce platform. Your dashboard should demonstrate your ability to
-                  work with APIs, process data, and create compelling visualizations.
-                </p>
-              </div>
-            </section>
+          {/* Instructions */}
+          <section>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">🛠️</span>
+              Instructions
+            </h3>
+            <ul className="list-disc pl-6 space-y-2 text-gray-700 leading-relaxed">
+              <li>
+                Participants must build a prototype using <strong>only the provided APIs</strong>.
+              </li>
+              <li>The solution should follow the given problem scenario and required pages.</li>
+            </ul>
 
-            {/* Time & Rules */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  Time Limit
-                </h3>
-                <p className="text-3xl font-bold text-purple-400">2 Hours</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Build and submit your dashboard within the time limit
-                </p>
-              </div>
-
-              <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  Team Size
-                </h3>
-                <p className="text-3xl font-bold text-purple-400">1-4 Members</p>
-                <p className="text-gray-400 text-sm mt-2">Solo or team participation allowed</p>
+            <div className="mt-6 bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+              <h4 className="font-semibold text-indigo-800 mb-3">Judging Criteria</h4>
+              <div className="grid grid-cols-2 gap-4 text-indigo-900">
+                <div className="flex items-center">✨ Creativity</div>
+                <div className="flex items-center">🎨 UI/UX design</div>
+                <div className="flex items-center">✅ Correct implementation</div>
+                <div className="flex items-center">📊 Clarity of data</div>
               </div>
             </div>
+          </section>
 
-            {/* API Endpoints Summary */}
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Available Endpoints
-              </h2>
-              <div className="space-y-3">
-                {[
-                  {
-                    method: 'GET',
-                    path: '/data/customers',
-                    desc: 'Fetch customer records',
-                  },
-                  { method: 'GET', path: '/data/orders', desc: 'Fetch order data with items' },
-                  { method: 'GET', path: '/data/products', desc: 'Fetch product catalog' },
-                ].map((endpoint) => (
-                  <div
-                    key={endpoint.path}
-                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50"
-                  >
-                    <span className="inline-flex items-center px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-mono font-bold rounded w-fit">
-                      {endpoint.method}
-                    </span>
-                    <code className="text-purple-300 font-mono text-sm break-all">
-                      {apiBase}
-                      {endpoint.path}
-                    </code>
-                    <span className="text-gray-500 text-sm sm:ml-auto">{endpoint.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Constraints */}
-            <section className="bg-red-950/30 rounded-2xl p-6 border border-red-500/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Constraints & Rules
-              </h2>
-              <ul className="space-y-3">
-                {[
-                  'Rate limit: 60 requests per minute per endpoint',
-                  'All endpoints are read-only (GET requests only)',
-                  'No authentication required for data endpoints',
-                  'Data is static but endpoints may be toggled on/off by admins',
-                  'CORS is enabled - you can call from any origin',
-                  'Response format is always JSON with { success: true, data: [...] }',
-                ].map((rule, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-300">
-                    <span className="text-red-400 mt-0.5">•</span>
-                    <span>{rule}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Tech Stack Suggestions */}
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Suggested Tech Stack
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { name: 'React', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-                  { name: 'Vue.js', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
-                  {
-                    name: 'Vanilla JS',
-                    color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-                  },
-                  { name: 'Chart.js', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
-                  {
-                    name: 'Tailwind CSS',
-                    color: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
-                  },
-                  { name: 'D3.js', color: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
-                  { name: 'Next.js', color: 'bg-white/10 text-white border-white/20' },
-                  {
-                    name: 'Recharts',
-                    color: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-                  },
-                ].map((tech) => (
-                  <div
-                    key={tech.name}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium text-center border ${tech.color}`}
-                  >
-                    {tech.name}
-                  </div>
-                ))}
-              </div>
-              <p className="text-gray-400 text-sm mt-4">
-                You can use any frontend framework or vanilla JavaScript. Focus on data
-                visualization and user experience.
+          {/* Scenario */}
+          <section>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">📖</span>
+              Scenario
+            </h3>
+            <div className="prose text-gray-700 leading-relaxed">
+              <p className="mb-4">
+                <strong>Ravi</strong> is the owner of <strong>Trendy Threads</strong>, a growing
+                costume store. He wants a simple website that helps him:
               </p>
-            </section>
-          </div>
-        )}
+              <ul className="list-disc pl-6 space-y-1 mb-4">
+                <li>See which products are selling well</li>
+                <li>Identify loyal customers</li>
+                <li>Track pending and delayed orders</li>
+                <li>Monitor low stock items</li>
+              </ul>
+              <p className="bg-yellow-50 p-4 border-l-4 border-yellow-400 rounded-r-md">
+                <strong>Your task:</strong> Build a 3-page web application that gives Ravi a clear
+                overview of his business. All data will be provided through APIs.
+              </p>
+            </div>
+          </section>
 
-        {/* Customers Tab */}
-        {activeTab === 'customers' && (
-          <div className="space-y-6">
-            <EndpointCard
-              method="GET"
-              path="/data/customers"
-              baseUrl={apiBase}
-              description="Retrieve all customer records from the e-commerce platform."
-              onCopy={copyToClipboard}
-              copied={copiedEndpoint === 'customers'}
-            />
+          {/* Mandatory Pages */}
+          <section>
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">📄</span>
+              Pages to Build (Mandatory)
+            </h3>
 
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4">📊 Response Schema</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Field</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Type</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-300">
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">id</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Unique customer identifier</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">name</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Customer/company name</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">email</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Contact email address</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">phone</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Contact phone number</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">address</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Full address with city and zip</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">industry</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">
-                        Business sector (Technology, Retail, Healthcare, etc.)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-4 font-mono text-cyan-300">joinedAt</td>
-                      <td className="py-3 px-4 text-yellow-300">string (date)</td>
-                      <td className="py-3 px-4">Customer registration date (YYYY-MM-DD)</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div className="space-y-8">
+              {/* Landing Page */}
+              <div className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <h4 className="text-xl font-bold text-indigo-700 mb-2">1️⃣ Landing Page</h4>
+                <p className="text-sm text-gray-500 mb-4 uppercase tracking-wide font-semibold">
+                  Purpose: Introduce the store
+                </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 className="font-semibold text-gray-900 mb-2">Must Contain:</h5>
+                    <ul className="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                      <li>
+                        Store name: <strong>Trendy Threads</strong>
+                      </li>
+                      <li>A short welcome message / tagline</li>
+                      <li>
+                        Section for <strong>3–5 trending products</strong>
+                      </li>
+                      <li>Navigation buttons (Product Page, Dashboard Page)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 flex items-center justify-center italic">
+                    &quot;This page should feel simple, friendly, and professional.&quot;
+                  </div>
+                </div>
               </div>
-            </section>
 
-            <ExampleResponseCard example={customerExample} title="Example Customer Object" />
-
-            <InsightsCard
-              title="Dashboard Ideas for Customers"
-              ideas={[
-                'Customer distribution by industry (pie/bar chart)',
-                'Customer acquisition timeline (line chart by joinedAt)',
-                'Geographic distribution based on addresses',
-                'Total customer count KPI card',
-                'Searchable customer directory table',
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
-          <div className="space-y-6">
-            <EndpointCard
-              method="GET"
-              path="/data/orders"
-              baseUrl={apiBase}
-              description="Retrieve all orders with their items and status information."
-              onCopy={copyToClipboard}
-              copied={copiedEndpoint === 'orders'}
-            />
-
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4">📊 Response Schema</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Field</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Type</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-300">
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">id</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Unique order identifier</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">customerId</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Reference to customer who placed the order</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">orderDate</td>
-                      <td className="py-3 px-4 text-yellow-300">string (date)</td>
-                      <td className="py-3 px-4">Date when order was placed (YYYY-MM-DD)</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">status</td>
-                      <td className="py-3 px-4 text-yellow-300">enum</td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex flex-wrap gap-1">
-                          {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(
-                            (s) => (
-                              <code key={s} className="px-1.5 py-0.5 bg-slate-700 rounded text-xs">
-                                {s}
-                              </code>
-                            )
-                          )}
-                        </span>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">totalAmount</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Total order value in USD</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-4 font-mono text-cyan-300">items</td>
-                      <td className="py-3 px-4 text-yellow-300">array</td>
-                      <td className="py-3 px-4">
-                        Array of order items with{' '}
-                        <code className="text-xs bg-slate-700 px-1 rounded">productId</code>,{' '}
-                        <code className="text-xs bg-slate-700 px-1 rounded">quantity</code>,{' '}
-                        <code className="text-xs bg-slate-700 px-1 rounded">price</code>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <ExampleResponseCard example={orderExample} title="Example Order Object" />
-
-            <InsightsCard
-              title="Dashboard Ideas for Orders"
-              ideas={[
-                'Total revenue and average order value KPIs',
-                'Order status distribution (pie chart)',
-                'Revenue over time (line/area chart by orderDate)',
-                'Top customers by order value',
-                'Order fulfillment funnel (pending → delivered)',
-                'Items per order analysis',
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Products Tab */}
-        {activeTab === 'products' && (
-          <div className="space-y-6">
-            <EndpointCard
-              method="GET"
-              path="/data/products"
-              baseUrl={apiBase}
-              description="Retrieve the complete product catalog with pricing and stock info."
-              onCopy={copyToClipboard}
-              copied={copiedEndpoint === 'products'}
-            />
-
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4">Response Schema</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Field</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Type</th>
-                      <th className="py-3 px-4 text-purple-300 font-semibold">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-300">
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">id</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Unique product identifier</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">name</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Product name</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">category</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">
-                        Product category (Electronics, Accessories, Audio, etc.)
-                      </td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">price</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Unit price in USD</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">stock</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Available inventory count</td>
-                    </tr>
-                    <tr className="border-b border-slate-700/50">
-                      <td className="py-3 px-4 font-mono text-cyan-300">rating</td>
-                      <td className="py-3 px-4 text-yellow-300">number</td>
-                      <td className="py-3 px-4">Average customer rating (1.0 - 5.0)</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-4 font-mono text-cyan-300">description</td>
-                      <td className="py-3 px-4 text-yellow-300">string</td>
-                      <td className="py-3 px-4">Product description text</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <ExampleResponseCard example={productExample} title="Example Product Object" />
-
-            <InsightsCard
-              title="Dashboard Ideas for Products"
-              ideas={[
-                'Products by category (pie/bar chart)',
-                'Price range distribution (histogram)',
-                'Stock level alerts (low stock warnings)',
-                'Top rated products leaderboard',
-                'Inventory value by category',
-                'Product catalog with search/filter',
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Dashboard Requirements Tab */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* Scoring Criteria */}
-            <section className="bg-gradient-to-r from-purple-900/50 to-indigo-900/50 rounded-2xl p-6 border border-purple-500/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Judging Criteria
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {[
-                  {
-                    title: 'Data Integration',
-                    points: 25,
-                    desc: 'Successfully fetch and display data from all 3 endpoints',
-                  },
-                  {
-                    title: 'Visualizations',
-                    points: 25,
-                    desc: 'Creative and meaningful charts/graphs that tell a story',
-                  },
-                  {
-                    title: 'UI/UX Design',
-                    points: 20,
-                    desc: 'Clean, responsive, and user-friendly interface',
-                  },
-                  {
-                    title: 'Insights & Analysis',
-                    points: 15,
-                    desc: 'Derive meaningful insights from the data',
-                  },
-                  {
-                    title: 'Code Quality',
-                    points: 10,
-                    desc: 'Clean, organized, and readable code structure',
-                  },
-                  {
-                    title: 'Innovation',
-                    points: 5,
-                    desc: 'Unique features or creative approaches',
-                  },
-                ].map((criteria) => (
-                  <div
-                    key={criteria.title}
-                    className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-white">{criteria.title}</h4>
-                      <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-sm font-bold rounded">
-                        {criteria.points} pts
+              {/* Product Page */}
+              <div className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <h4 className="text-xl font-bold text-indigo-700 mb-2">2️⃣ Product Page</h4>
+                <p className="text-sm text-gray-500 mb-4 uppercase tracking-wide font-semibold">
+                  Purpose: Show all products
+                </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 className="font-semibold text-gray-900 mb-2">Must Contain:</h5>
+                    <ul className="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                      <li>List of all products</li>
+                      <li>Product name, Price, Stock available</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-green-700 mb-2">Optional (Extra Credit):</h5>
+                    <div className="flex gap-2">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        Search
+                      </span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        Filter
+                      </span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        Sort
                       </span>
                     </div>
-                    <p className="text-gray-400 text-sm">{criteria.desc}</p>
                   </div>
-                ))}
+                </div>
               </div>
-            </section>
 
-            {/* Required Features */}
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Required Features
-              </h2>
-              <ul className="space-y-3">
-                {[
-                  'Display at least 3 different visualizations (charts/graphs)',
-                  'Show key KPIs: Total Revenue, Total Customers, Total Orders, Total Products',
-                  'Implement data from all 3 API endpoints',
-                  'Responsive design that works on mobile and desktop',
-                  'Loading states while fetching data',
-                  'Error handling for API failures',
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-300">
-                    <span className="text-green-400 mt-0.5">✓</span>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+              {/* Dashboard Page */}
+              <div className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <h4 className="text-xl font-bold text-indigo-700 mb-2">3️⃣ Dashboard Page</h4>
+                <p className="text-sm text-gray-500 mb-4 uppercase tracking-wide font-semibold">
+                  Purpose: Business Overview
+                </p>
 
-            {/* Bonus Features */}
-            <section className="bg-amber-950/30 rounded-2xl p-6 border border-amber-500/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Bonus Features (Extra Points)
-              </h2>
-              <ul className="space-y-3">
-                {[
-                  'Real-time data refresh with auto-polling',
-                  'Interactive filters (date range, category, status)',
-                  'Dark/Light theme toggle',
-                  'Export data or charts functionality',
-                  'Customer-Order-Product relationship analysis',
-                  'Animated transitions and micro-interactions',
-                  'Performance optimizations (caching, lazy loading)',
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-300">
-                    <span className="text-amber-400 mt-0.5">★</span>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Sample Dashboard Layout */}
-            <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Sample Dashboard Layout
-              </h2>
-              <div className="grid grid-cols-4 gap-2 text-xs">
-                {/* KPI Row */}
-                <div className="col-span-4 grid grid-cols-4 gap-2">
-                  {['Revenue', 'Customers', 'Orders', 'Products'].map((kpi) => (
-                    <div
-                      key={kpi}
-                      className="p-3 bg-purple-900/30 rounded-lg border border-purple-500/20 text-center"
-                    >
-                      <div className="text-purple-300 font-medium">{kpi}</div>
-                      <div className="text-white font-bold mt-1">KPI Card</div>
+                <h5 className="font-semibold text-gray-900 mb-3">Must verify these 6 sections:</h5>
+                <div className="grid grid-cols-1 gap-4 text-sm">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">
+                      1. Total Products Sold per Product
                     </div>
-                  ))}
-                </div>
-                {/* Charts Row */}
-                <div className="col-span-4 sm:col-span-2 p-4 bg-blue-900/20 rounded-lg border border-blue-500/20 min-h-[100px] flex items-center justify-center">
-                  <span className="text-blue-300">Revenue Chart</span>
-                </div>
-                <div className="col-span-4 sm:col-span-2 p-4 bg-green-900/20 rounded-lg border border-green-500/20 min-h-[100px] flex items-center justify-center">
-                  <span className="text-green-300">Status Pie Chart</span>
-                </div>
-                {/* Table Row */}
-                <div className="col-span-4 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30 min-h-[80px] flex items-center justify-center">
-                  <span className="text-gray-400">Data Table (Orders/Customers)</span>
+                    <p className="text-gray-600 mb-1">
+                      Shows how many units of each product have been sold so far.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi understand which products are performing well.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">2. Revenue per Product</div>
+                    <p className="text-gray-600 mb-1">
+                      Shows how much money each product has generated.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi identify high-earning products.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">
+                      3. Pending vs Completed Orders
+                    </div>
+                    <p className="text-gray-600 mb-1">
+                      Shows the total number of orders that are still pending and those that are
+                      completed.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi track order fulfillment status.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">4. Low Stock Products</div>
+                    <p className="text-gray-600 mb-1">
+                      Shows products that are running low on available stock.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi know when to restock items.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">5. Delayed Orders</div>
+                    <p className="text-gray-600 mb-1">
+                      Shows orders that have crossed their expected delivery date but are still not
+                      completed.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi identify delivery issues.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="font-bold text-gray-800 mb-1">6. Top Customers by Revenue</div>
+                    <p className="text-gray-600 mb-1">
+                      Shows the customers who have spent the most money.
+                    </p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Helps Ravi recognize his most valuable customers.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p className="text-gray-400 text-sm mt-4">
-                This is just a suggestion. Feel free to be creative with your layout!
-              </p>
+            </div>
+          </section>
+
+          {/* General Guidelines & Not Required */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <section>
+              <h3 className="text-lg font-bold text-gray-800 mb-3">General Guidelines</h3>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                <li>
+                  Use data from provided APIs <strong>only</strong>.
+                </li>
+                <li>UI should be clean, easy to read, business-oriented.</li>
+                <li>Use tables, cards, or charts.</li>
+                <li>
+                  Focus on <strong>clarity</strong> over decoration.
+                </li>
+              </ul>
             </section>
 
-            {/* Submission Instructions */}
-            <section className="bg-green-950/30 rounded-2xl p-6 border border-green-500/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                Submission Instructions
-              </h2>
-              <ol className="space-y-3 list-decimal list-inside text-gray-300">
-                <li>Ensure your dashboard is running and accessible</li>
-                <li>Prepare a brief demo (2-3 minutes) explaining your approach</li>
-                <li>Be ready to show your code and explain key decisions</li>
-                <li>Submit before the timer ends - late submissions won&apos;t be accepted</li>
-              </ol>
+            <section>
+              <h3 className="text-lg font-bold text-red-600 mb-3">What is NOT Required</h3>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                <li>❌ No authentication</li>
+                <li>❌ No payment system</li>
+                <li>❌ No backend development</li>
+                <li>❌ No complex animations</li>
+              </ul>
             </section>
           </div>
-        )}
-      </main>
 
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-purple-500/20 py-3 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
-          <span className="text-gray-400">XIANZE - Buildathon 2026</span>
-          <span className="text-purple-400 font-medium">Good luck!</span>
+          <section className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white text-center">
+            <h3 className="text-xl font-bold mb-2">Goal of the Challenge</h3>
+            <p className="opacity-90 max-w-2xl mx-auto">
+              By the end, Ravi should be able to open the dashboard, instantly understand his
+              store&apos;s performance, and spot problems without digging through raw data. <br />
+              <strong>Turn data into insight.</strong>
+            </p>
+          </section>
+
+          {/* APIs */}
+          <section>
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">🔌</span>
+              Provided APIs
+            </h3>
+
+            <div className="space-y-6">
+              {/* Customers API */}
+              <div className="bg-slate-900 text-slate-50 rounded-lg overflow-hidden shadow-lg border border-slate-800">
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <div>
+                    <div className="text-slate-400 text-xs uppercase mb-1 font-bold tracking-wider">
+                      API 1: Customers
+                    </div>
+                    <div className="flex items-center font-mono text-sm bg-slate-950/50 px-3 py-1.5 rounded-md border border-slate-700/50">
+                      <span className="text-green-400 mr-3 font-bold">GET</span>
+                      <span className="text-slate-200 select-all">
+                        {baseUrl}/api/buildathon/data/customers
+                      </span>
+                    </div>
+                  </div>
+                  <div className="self-start sm:self-center">
+                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">
+                      JSON Array
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-900 overflow-x-auto relative group">
+                  <div className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono uppercase tracking-widest pointer-events-none group-hover:text-slate-400 transition-colors">
+                    Structure
+                  </div>
+                  <pre className="text-xs sm:text-sm text-blue-300 font-mono leading-relaxed">
+                    {`[
+  {
+    "id": "number",
+    "name": "string",
+    "city": "string",
+    "mobile": "string",
+    "address": "string",
+    "joinedAt": "string (YYYY-MM-DD)"
+  },
+  ...
+]`}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Products API */}
+              <div className="bg-slate-900 text-slate-50 rounded-lg overflow-hidden shadow-lg border border-slate-800">
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <div>
+                    <div className="text-slate-400 text-xs uppercase mb-1 font-bold tracking-wider">
+                      API 2: Products
+                    </div>
+                    <div className="flex items-center font-mono text-sm bg-slate-950/50 px-3 py-1.5 rounded-md border border-slate-700/50">
+                      <span className="text-green-400 mr-3 font-bold">GET</span>
+                      <span className="text-slate-200 select-all">
+                        {baseUrl}/api/buildathon/data/products
+                      </span>
+                    </div>
+                  </div>
+                  <div className="self-start sm:self-center">
+                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">
+                      JSON Array
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-900 overflow-x-auto relative group">
+                  <div className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono uppercase tracking-widest pointer-events-none group-hover:text-slate-400 transition-colors">
+                    Structure
+                  </div>
+                  <pre className="text-xs sm:text-sm text-blue-300 font-mono leading-relaxed">
+                    {`[
+  {
+    "id": "number",
+    "name": "string",
+    "price": "number",
+    "stock": "number",
+    "sold": "number",
+    "image": "string (URL)"
+  },
+  ...
+]`}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Orders API */}
+              <div className="bg-slate-900 text-slate-50 rounded-lg overflow-hidden shadow-lg border border-slate-800">
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <div>
+                    <div className="text-slate-400 text-xs uppercase mb-1 font-bold tracking-wider">
+                      API 3: Orders
+                    </div>
+                    <div className="flex items-center font-mono text-sm bg-slate-950/50 px-3 py-1.5 rounded-md border border-slate-700/50">
+                      <span className="text-green-400 mr-3 font-bold">GET</span>
+                      <span className="text-slate-200 select-all">
+                        {baseUrl}/api/buildathon/data/orders
+                      </span>
+                    </div>
+                  </div>
+                  <div className="self-start sm:self-center">
+                    <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">
+                      JSON Array
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-900 overflow-x-auto relative group">
+                  <div className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono uppercase tracking-widest pointer-events-none group-hover:text-slate-400 transition-colors">
+                    Structure
+                  </div>
+                  <pre className="text-xs sm:text-sm text-blue-300 font-mono leading-relaxed">
+                    {`[
+  {
+    "orderId": "number",
+    "customerId": "number",
+    "productId": "number",
+    "orderDate": "string (YYYY-MM-DD)",
+    "deliveryDate": "string (YYYY-MM-DD)",
+    "status": "string ('Pending' | 'Completed')"
+  },
+  ...
+]`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </footer>
+
+        <div className="bg-gray-50 px-8 py-6 border-t border-gray-100 text-center text-sm text-gray-500">
+          Good luck teams! 🚀
+        </div>
+      </div>
     </div>
-  );
-}
-
-// Reusable Components
-
-interface EndpointCardProps {
-  method: string;
-  path: string;
-  baseUrl: string;
-  description: string;
-  onCopy: (text: string, id: string) => void;
-  copied: boolean;
-}
-
-function EndpointCard({ method, path, baseUrl, description, onCopy, copied }: EndpointCardProps) {
-  const fullUrl = `${baseUrl}${path}`;
-  const id = path.split('/').pop() || path;
-
-  return (
-    <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <span className="inline-flex items-center px-3 py-1.5 bg-green-500/20 text-green-400 text-sm font-mono font-bold rounded-lg w-fit">
-          {method}
-        </span>
-        <code className="text-purple-300 font-mono text-sm sm:text-base break-all">{fullUrl}</code>
-      </div>
-      <p className="text-gray-400 mb-4">{description}</p>
-      <button
-        onClick={() => onCopy(fullUrl, id)}
-        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-          copied
-            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-            : 'bg-purple-600 text-white hover:bg-purple-700'
-        }`}
-      >
-        {copied ? '✓ Copied!' : '📋 Copy URL'}
-      </button>
-    </section>
-  );
-}
-
-interface ExampleResponseCardProps {
-  example: CustomerSchema | OrderSchema | ProductSchema;
-  title: string;
-}
-
-function ExampleResponseCard({ example, title }: ExampleResponseCardProps) {
-  const response = {
-    success: true,
-    data: [example],
-  };
-
-  return (
-    <section className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-      <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-        <pre className="text-sm text-gray-300 font-mono whitespace-pre-wrap break-words">
-          {JSON.stringify(response, null, 2)}
-        </pre>
-      </div>
-    </section>
-  );
-}
-
-interface InsightsCardProps {
-  title: string;
-  ideas: string[];
-}
-
-function InsightsCard({ title, ideas }: InsightsCardProps) {
-  return (
-    <section className="bg-indigo-950/30 rounded-2xl p-6 border border-indigo-500/20">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-      <ul className="space-y-2">
-        {ideas.map((idea, i) => (
-          <li key={i} className="flex items-start gap-3 text-gray-300">
-            <span className="text-indigo-400 mt-0.5">→</span>
-            <span>{idea}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
