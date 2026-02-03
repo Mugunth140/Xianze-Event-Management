@@ -77,7 +77,7 @@ const navItems: NavItem[] = [
         />
       </svg>
     ),
-    adminOnly: true,
+    requiresTask: 'edit_registration_details',
   },
   {
     href: '/admin/contact-inquiries',
@@ -249,6 +249,7 @@ const DEFAULT_TASKS: Record<string, string[]> = {
     'check_in_participant',
     'scan_event_participation',
     'manage_rounds',
+    'edit_registration_details',
     'edit_participant',
     'delete_participant',
   ],

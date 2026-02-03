@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiUrl } from '@/lib/api';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import './admin.css';
@@ -12,6 +13,8 @@ interface User {
   name: string;
   role: 'admin' | 'coordinator' | 'member';
   assignedEvent?: string;
+  assignedEvents?: string[];
+  tasks?: string[];
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +52,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.push('/admin/login');
     }
   }, [pathname, router, isClient, isLoginPage]);
+
+  useEffect(() => {
+    if (!isClient || isLoginPage) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const syncProfile = async () => {
+      try {
+        const res = await fetch(getApiUrl('/auth/me'), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) return;
+
+        const freshUser = await res.json();
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      } catch {
+        // Ignore sync errors and fall back to local storage
+      }
+    };
+
+    syncProfile();
+  }, [isClient, isLoginPage]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

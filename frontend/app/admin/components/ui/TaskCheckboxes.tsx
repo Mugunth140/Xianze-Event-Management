@@ -34,6 +34,11 @@ const TASK_DEFINITIONS = {
     description: 'Can start events and advance rounds',
     roles: ['coordinator'], // Coordinator has this by default
   },
+  edit_registration_details: {
+    label: 'Edit Registration Details',
+    description: 'Can edit participant registration details',
+    roles: ['coordinator', 'member'],
+  },
 };
 
 // Default tasks per role (these are always enabled, shown as readonly)

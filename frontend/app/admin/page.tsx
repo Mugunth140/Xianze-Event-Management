@@ -35,6 +35,29 @@ interface User {
   tasks?: string[];
 }
 
+const DEFAULT_TASKS: Record<string, string[]> = {
+  admin: [
+    'verify_payment',
+    'mark_attendance',
+    'check_in_participant',
+    'scan_event_participation',
+    'manage_rounds',
+    'edit_registration_details',
+    'edit_participant',
+    'delete_participant',
+  ],
+  coordinator: ['scan_event_participation', 'manage_rounds'],
+  member: ['check_in_participant', 'scan_event_participation'],
+};
+
+const userHasTask = (user: User | null, task: string): boolean => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const defaultTasks = DEFAULT_TASKS[user.role] || [];
+  if (defaultTasks.includes(task)) return true;
+  return user.tasks?.includes(task) ?? false;
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [overview, setOverview] = useState<OverviewData | null>(null);
@@ -223,7 +246,7 @@ export default function AdminDashboard() {
 
         {/* Quick Actions for Members */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {user?.tasks?.includes('mark_attendance') && (
+          {userHasTask(user, 'mark_attendance') && (
             <Link href="/admin/attendance">
               <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
                 <div className="flex items-center gap-4">
@@ -251,7 +274,7 @@ export default function AdminDashboard() {
             </Link>
           )}
 
-          {user?.tasks?.includes('verify_payment') && (
+          {userHasTask(user, 'verify_payment') && (
             <Link href="/admin/payments">
               <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
                 <div className="flex items-center gap-4">
@@ -279,7 +302,7 @@ export default function AdminDashboard() {
             </Link>
           )}
 
-          {user?.tasks?.includes('check_in_participant') && (
+          {userHasTask(user, 'check_in_participant') && (
             <Link href="/admin/qr-checkin">
               <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer group">
                 <div className="flex items-center gap-4">
