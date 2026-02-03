@@ -6,7 +6,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 // Set worker path
 if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 }
 
 interface PaperPresenterProps {
@@ -77,9 +77,9 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
         // Scale to fit container while maintaining aspect ratio
         const viewport = page.getViewport({ scale: 1 });
 
-        // Calculate container dimensions
-        const containerWidth = window.innerWidth * 0.9;
-        const containerHeight = window.innerHeight * 0.8;
+        // Calculate container dimensions - Use full window size
+        const containerWidth = window.innerWidth;
+        const containerHeight = window.innerHeight;
 
         const scaleX = containerWidth / viewport.width;
         const scaleY = containerHeight / viewport.height;
@@ -101,7 +101,15 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
     };
 
     renderPage();
-  }, [currentPage, loading]);
+
+    // Add resize listener
+    const handleResize = () => {
+      renderPage();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentPage, loading, isFullscreen]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
@@ -160,7 +168,7 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[100] bg-gray-900 flex items-center justify-center">
+      <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
         <div className="text-white text-xl">Loading presentation...</div>
       </div>
     );
@@ -168,11 +176,11 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
 
   if (error) {
     return (
-      <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center gap-4">
+      <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center gap-4">
         <div className="text-red-500 text-xl">{error}</div>
         <button
           onClick={onClose}
-          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+          className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg"
         >
           Go Back
         </button>
@@ -181,26 +189,26 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
   }
 
   return (
-    <div id="paper-presenter" className="fixed inset-0 z-[100] bg-gray-900 flex flex-col">
+    <div
+      id="paper-presenter"
+      className="fixed inset-0 z-[100] bg-black flex flex-col cursor-none hover:cursor-default"
+    >
       {/* Header - Hidden in fullscreen */}
       {!isFullscreen && (
-        <div className="flex items-center justify-between px-6 py-4 bg-gray-800">
+        <div className="absolute top-0 left-0 w-full z-10 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/50 to-transparent hover:opacity-100 opacity-0 transition-opacity duration-300">
           <div className="flex items-center gap-4">
-            <h2 className="text-white font-bold text-xl">{teamName}</h2>
-            <span className="text-gray-400">
-              Slide {currentPage} of {totalPages}
-            </span>
+            <h2 className="text-white font-bold text-xl drop-shadow-md">{teamName}</h2>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={enterFullscreen}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-lg text-sm font-medium transition-colors border border-white/20"
             >
               Fullscreen
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-red-500/80 hover:bg-red-600/80 backdrop-blur-md text-white rounded-lg text-sm font-medium transition-colors"
             >
               Exit
             </button>
@@ -209,83 +217,10 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
       )}
 
       {/* Main content */}
-      <div className="flex-1 relative flex items-center justify-center p-8">
+      <div className="flex-1 relative flex items-center justify-center">
         {/* PDF Slide Canvas */}
-        <canvas ref={canvasRef} className="max-h-[80vh] rounded-xl shadow-2xl" />
-
-        {/* Slide number - top left */}
-        <div className="absolute top-8 left-8">
-          <div className="text-4xl font-bold text-white/70">
-            {currentPage} / {totalPages}
-          </div>
-        </div>
+        <canvas ref={canvasRef} className="shadow-2xl" />
       </div>
-
-      {/* Controls - bottom */}
-      <div className="px-8 py-6 bg-gray-800 flex items-center justify-between">
-        {/* Navigation */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={goToPrevious}
-            disabled={currentPage === 1}
-            className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={goToNext}
-            disabled={currentPage === totalPages}
-            className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Page indicator */}
-        <div className="text-white font-semibold">
-          Page {currentPage} of {totalPages}
-        </div>
-
-        {/* Next button */}
-        <button
-          onClick={goToNext}
-          disabled={currentPage >= totalPages}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-        >
-          Next Slide
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Keyboard hints - bottom */}
-      {!isFullscreen && (
-        <div className="px-8 py-2 bg-gray-900 text-gray-500 text-xs flex justify-center gap-8">
-          <span>
-            <kbd className="px-2 py-1 bg-gray-700 rounded mr-1">←</kbd>
-            <kbd className="px-2 py-1 bg-gray-700 rounded mr-2">→</kbd>
-            Navigate
-          </span>
-          <span>
-            <kbd className="px-2 py-1 bg-gray-700 rounded mr-2">Space</kbd>
-            Next Slide
-          </span>
-          <span>
-            <kbd className="px-2 py-1 bg-gray-700 rounded mr-2">Esc</kbd>
-            Exit
-          </span>
-        </div>
-      )}
     </div>
   );
 }

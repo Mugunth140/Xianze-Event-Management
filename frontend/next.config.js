@@ -33,6 +33,23 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_API_URL ||
       (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api'),
   },
+
+  // Webpack configuration for pdfjs-dist compatibility
+  webpack: (config, { isServer }) => {
+    // Fix for pdfjs-dist
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+    };
+
+    // Disable webpack parsing for pdfjs-dist worker
+    config.module = {
+      ...config.module,
+      exprContextCritical: false,
+    };
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;

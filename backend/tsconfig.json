@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "types": ["node", "jest", "express"],
+    "types": [
+      "node",
+      "jest",
+      "express"
+    ],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -11,7 +15,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "incremental": true,
+    "incremental": false,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
@@ -19,6 +23,12 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test"
+  ]
 }
