@@ -28,10 +28,12 @@ import { createReadStream, existsSync } from 'fs';
 import { diskStorage } from 'multer';
 import { basename, extname, join } from 'path';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequireTasks } from '../auth/decorators/tasks.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { TasksGuard } from '../auth/guards/tasks.guard';
 import { MailService } from '../mail/mail.service';
-import { UserRole } from '../users/user.entity';
+import { UserRole, UserTask } from '../users/user.entity';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { UpdateRegistrationDto } from './dto/update-registration.dto';
 import { Registration } from './registration.entity';
@@ -226,11 +228,11 @@ export class RegistrationController {
   /**
    * PATCH /api/register/:id
    *
-   * Update a registration (admin only).
+   * Update a registration (requires edit registration task).
    */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, TasksGuard)
+  @RequireTasks(UserTask.EDIT_REGISTRATION_DETAILS)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRegistrationDto,

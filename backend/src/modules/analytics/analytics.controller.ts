@@ -2,7 +2,7 @@ import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '../users/user.entity';
+import { User, UserRole, UserTask, userHasTask } from '../users/user.entity';
 import { AnalyticsService } from './analytics.service';
 
 @Controller('analytics')
@@ -25,14 +25,27 @@ export class AnalyticsController {
   @Get('registrations')
   @Roles(UserRole.ADMIN, UserRole.COORDINATOR, UserRole.MEMBER)
   getRegistrations(
-    @Request() req: { user: { role: UserRole; assignedEvent?: string } },
+    @Request() req: { user: User },
     @Query('event') event?: string,
     @Query('paymentMode') paymentMode?: string,
   ) {
-    // Members can only see their assigned event
-    if (req.user.role === UserRole.MEMBER) {
-      return this.analyticsService.getEventBreakdown(req.user.assignedEvent, paymentMode);
+    const user = req.user;
+
+    // If user has verify_payment task, they can see all registrations
+    if (userHasTask(user, UserTask.VERIFY_PAYMENT)) {
+      return this.analyticsService.getEventBreakdown(event, paymentMode);
     }
+
+    // Members without verify_payment can only see their assigned event
+    if (user.role === UserRole.MEMBER) {
+      return this.analyticsService.getEventBreakdown(user.assignedEvent ?? undefined, paymentMode);
+    }
+
+    // Coordinators without verify_payment can only see their assigned event
+    if (user.role === UserRole.COORDINATOR) {
+      return this.analyticsService.getEventBreakdown(user.assignedEvent ?? undefined, paymentMode);
+    }
+
     return this.analyticsService.getEventBreakdown(event, paymentMode);
   }
 

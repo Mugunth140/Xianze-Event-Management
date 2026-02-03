@@ -349,7 +349,124 @@ const Register = () => {
       'Oral Surgery',
       'Others',
     ],
-    Others: [],
+    'B.E': [
+      'Computer Science',
+      'Information Technology',
+      'Electronics',
+      'Mechanical',
+      'Civil',
+      'Aerospace',
+      'Automobile',
+      'Biotechnology',
+      'Chemical',
+      'Electrical',
+      'Electronics and Communication',
+      'Instrumentation',
+      'Textile',
+      'Marine',
+      'Agricultural',
+      'Others',
+    ],
+    'M.E': [
+      'Computer Science',
+      'Structural Engineering',
+      'VLSI',
+      'Power Electronics',
+      'Manufacturing Engineering',
+      'Thermal Engineering',
+      'Computer Integrated Manufacturing',
+      'Embedded Systems',
+      'Others',
+    ],
+    'B.Arch': ['General', 'Interior Design', 'Landscape Architecture', 'Others'],
+    'B.Pharm': ['General', 'Clinical Pharmacy', 'Pharmaceutical Chemistry', 'Others'],
+    'M.Pharm': [
+      'General',
+      'Pharmaceutics',
+      'Pharmacology',
+      'Pharmaceutical Chemistry',
+      'Pharmaceutical Analysis',
+      'Others',
+    ],
+    MBBS: ['General'],
+    MD: [
+      'General Medicine',
+      'Pediatrics',
+      'Dermatology',
+      'Psychiatry',
+      'Radiology',
+      'Anesthesiology',
+      'Pathology',
+      'Others',
+    ],
+    LLB: ['General', 'Corporate Law', 'Criminal Law', 'Cyber Law', 'Others'],
+    LLM: [
+      'General',
+      'Constitutional Law',
+      'International Law',
+      'Criminal Law',
+      'Corporate Law',
+      'Others',
+    ],
+    'B.Voc': [
+      'Software Development',
+      'Web Technologies',
+      'Banking and Financial Services',
+      'Retail Management',
+      'Healthcare',
+      'Animation and Multimedia',
+      'Others',
+    ],
+    Diploma: [
+      'Computer Science',
+      'Mechanical',
+      'Civil',
+      'Electrical',
+      'Electronics',
+      'Automobile',
+      'Hotel Management',
+      'Nursing',
+      'Pharmacy',
+      'Others',
+    ],
+    'B.Des': [
+      'Fashion Design',
+      'Product Design',
+      'Graphic Design',
+      'Communication Design',
+      'Interior Design',
+      'Animation',
+      'UI/UX Design',
+      'Others',
+    ],
+    'M.Des': [
+      'Fashion Design',
+      'Product Design',
+      'Interaction Design',
+      'Strategic Design',
+      'Communication Design',
+      'Others',
+    ],
+    'B.F.A': ['Painting', 'Sculpture', 'Applied Arts', 'Photography', 'Others'],
+    'M.F.A': ['Painting', 'Sculpture', 'Applied Arts', 'Art History', 'Others'],
+    Others: [
+      'Computer Science',
+      'Information Technology',
+      'Data Science',
+      'Artificial Intelligence',
+      'Electronics',
+      'Mechanical',
+      'Civil',
+      'Electrical',
+      'Commerce',
+      'Arts',
+      'Science',
+      'Management',
+      'Law',
+      'Medicine',
+      'Engineering',
+      'Others',
+    ],
   };
 
   const triggerConfetti = () => {
@@ -1130,24 +1247,23 @@ const Register = () => {
                     </div>
                   )}
 
-                  {!['Others', 'BDS', 'MS', 'B.Ed'].includes(formData.course) &&
-                    formData.course !== '' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Branch / Specialization
-                        </label>
-                        <CustomDropdown
-                          label="Branch"
-                          options={courses[formData.course] || []}
-                          selected={formData.branch}
-                          setSelected={(val) =>
-                            handleChange({
-                              target: { name: 'branch', value: val },
-                            } as unknown as React.ChangeEvent<HTMLInputElement>)
-                          }
-                        />
-                      </div>
-                    )}
+                  {!['BDS', 'MBBS'].includes(formData.course) && formData.course !== '' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Branch / Specialization
+                      </label>
+                      <CustomDropdown
+                        label="Branch"
+                        options={courses[formData.course] || []}
+                        selected={formData.branch}
+                        setSelected={(val) =>
+                          handleChange({
+                            target: { name: 'branch', value: val },
+                          } as unknown as React.ChangeEvent<HTMLInputElement>)
+                        }
+                      />
+                    </div>
+                  )}
 
                   {formData.branch === 'Others' && (
                     <div>

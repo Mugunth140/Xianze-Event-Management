@@ -64,20 +64,23 @@ export class VisitorAnalyticsService {
       });
 
       if (existingVisitor) {
+        const previousLastVisit = existingVisitor.lastVisit;
+        const now = new Date();
+
+        // Check if this is a new session (more than 30 minutes since last visit)
+        const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+        if (now.getTime() - previousLastVisit.getTime() > sessionTimeout) {
+          existingVisitor.totalVisits += 1;
+        }
+
         // Update existing visitor
-        existingVisitor.lastVisit = new Date();
+        existingVisitor.lastVisit = now;
         existingVisitor.totalPageViews += 1;
 
         // Update device info if provided
         if (dto.browser) existingVisitor.browser = dto.browser;
         if (dto.os) existingVisitor.os = dto.os;
         if (dto.deviceType) existingVisitor.deviceType = dto.deviceType;
-
-        // Check if this is a new session (more than 30 minutes since last visit)
-        const sessionTimeout = 30 * 60 * 1000; // 30 minutes
-        if (new Date().getTime() - existingVisitor.lastVisit.getTime() > sessionTimeout) {
-          existingVisitor.totalVisits += 1;
-        }
 
         await this.visitorRepository.save(existingVisitor);
       } else {

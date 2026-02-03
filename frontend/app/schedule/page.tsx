@@ -54,7 +54,7 @@ const SchedulePage = () => {
             <TimelineItem
               time="08:30 AM"
               title="Spot Registration"
-              description="Get your ID cards and welcome kits at the registration desk."
+              description="Get your ID cards for verification at the registration desk."
               align="left"
               icon="📝"
               delay={0.2}
@@ -103,7 +103,7 @@ const SchedulePage = () => {
                       </h2>
                       <p className="text-gray-500">Concurrent sessions across venues</p>
                     </div>
-                    <div className="mt-4 md:mt-0 text-lg text-primary-700 font-mono bg-primary-50 px-6 py-2 rounded-full border border-primary-100">
+                    <div className="mt-4 md:mt-0 text-base lg:text-lg text-primary-700 font-mono bg-primary-50 px-5 py-3 rounded-full border border-primary-100">
                       10:30 AM - 01:30 PM
                     </div>
                   </div>
@@ -111,7 +111,7 @@ const SchedulePage = () => {
                   <div className="grid md:grid-cols-2 gap-8">
                     {/* Batch A */}
                     <div className="relative group/batch h-full">
-                      <div className="relative p-8 border border-gray-100 rounded-[2rem] bg-white hover:bg-primary-50/30 hover:border-primary-200 transition-all duration-300 h-full shadow-sm hover:shadow-md">
+                      <div className="relative p-6 border border-gray-100 rounded-[2rem] bg-white hover:bg-primary-50/30 hover:border-primary-200 transition-all duration-300 h-full shadow-sm hover:shadow-md">
                         <div className="flex items-center gap-4 mb-6">
                           <div className="w-12 h-12 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xl">
                             A

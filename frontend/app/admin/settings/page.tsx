@@ -294,7 +294,10 @@ export default function SettingsPage() {
                 <div className="w-8 h-8 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
               ) : (
                 <>
-                  <Badge variant={registrationOpen ? 'success' : 'error'} className="text-sm px-3 py-1">
+                  <Badge
+                    variant={registrationOpen ? 'success' : 'error'}
+                    className="text-sm px-3 py-1"
+                  >
                     {registrationOpen ? 'Open' : 'Closed'}
                   </Badge>
                   <Button

@@ -27,6 +27,9 @@ export enum UserTask {
   // Round management (start/advance rounds for events)
   MANAGE_ROUNDS = 'manage_rounds',
 
+  // Registration management
+  EDIT_REGISTRATION_DETAILS = 'edit_registration_details',
+
   // Participant management (admin default, optional for others)
   EDIT_PARTICIPANT = 'edit_participant',
   DELETE_PARTICIPANT = 'delete_participant',

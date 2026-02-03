@@ -28,7 +28,32 @@ interface Registration {
 interface User {
   role: 'admin' | 'coordinator' | 'member';
   assignedEvent?: string;
+  assignedEvents?: string[];
+  tasks?: string[];
 }
+
+const DEFAULT_TASKS: Record<string, string[]> = {
+  admin: [
+    'verify_payment',
+    'mark_attendance',
+    'check_in_participant',
+    'scan_event_participation',
+    'manage_rounds',
+    'edit_registration_details',
+    'edit_participant',
+    'delete_participant',
+  ],
+  coordinator: ['scan_event_participation', 'manage_rounds'],
+  member: ['check_in_participant', 'scan_event_participation'],
+};
+
+const userHasTask = (user: User | null, task: string): boolean => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const defaultTasks = DEFAULT_TASKS[user.role] || [];
+  if (defaultTasks.includes(task)) return true;
+  return user.tasks?.includes(task) ?? false;
+};
 
 const events = [
   { value: 'All Events', label: 'All Events' },
@@ -209,6 +234,7 @@ export default function RegistrationsPage() {
       : events;
 
   const isAdmin = user?.role === 'admin';
+  const canEditRegistration = isAdmin || userHasTask(user, 'edit_registration_details');
 
   return (
     <div className="space-y-6">
@@ -277,7 +303,7 @@ export default function RegistrationsPage() {
                 <th className="px-6 py-4">Event</th>
                 <th className="px-6 py-4">Mode</th>
                 <th className="px-6 py-4">College</th>
-                {isAdmin && <th className="px-6 py-4">Actions</th>}
+                {canEditRegistration && <th className="px-6 py-4">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -298,15 +324,17 @@ export default function RegistrationsPage() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 max-w-[200px] truncate">{reg.college}</td>
-                  {isAdmin && (
+                  {canEditRegistration && (
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <Button size="sm" variant="ghost" onClick={() => handleEdit(reg)}>
                           Edit
                         </Button>
-                        <Button size="sm" variant="danger" onClick={() => setDeleteReg(reg)}>
-                          Delete
-                        </Button>
+                        {isAdmin && (
+                          <Button size="sm" variant="danger" onClick={() => setDeleteReg(reg)}>
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     </td>
                   )}
@@ -315,7 +343,7 @@ export default function RegistrationsPage() {
               {paginatedRegistrations.length === 0 && (
                 <tr>
                   <td
-                    colSpan={isAdmin ? 6 : 5}
+                    colSpan={canEditRegistration ? 6 : 5}
                     className="px-6 py-12 text-center text-[var(--admin-text-muted)]"
                   >
                     No registrations found

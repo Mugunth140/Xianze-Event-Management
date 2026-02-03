@@ -22,12 +22,15 @@ import { Registration } from './registration.entity';
 import { RegistrationService } from './registration.service';
 
 interface AuthRequest {
-  user: {
-    id: number;
-    role: UserRole;
-    assignedEvent?: string;
-    assignedEvents?: string[];
-  };
+  user: User;
+}
+
+/**
+ * Check if user has verify_payment as an explicitly assigned task
+ * (not from default role tasks)
+ */
+function hasExplicitVerifyPaymentTask(user: User): boolean {
+  return user.tasks?.includes(UserTask.VERIFY_PAYMENT) ?? false;
 }
 
 @Controller('payments')
@@ -44,7 +47,9 @@ export class PaymentController {
 
   /**
    * Get pending payments
-   * Admins see all, others see only their assigned event(s)
+   * - Admins see all
+   * - Users with explicit verify_payment task see all
+   * - Otherwise coordinators/members see only their assigned event(s)
    */
   @Get('pending')
   @RequireTasks(UserTask.VERIFY_PAYMENT)
@@ -53,6 +58,11 @@ export class PaymentController {
 
     // Admin can see all or filter by event
     if (user.role === UserRole.ADMIN) {
+      return this.registrationService.getPendingPayments(event);
+    }
+
+    // Users with explicitly assigned verify_payment task see all
+    if (hasExplicitVerifyPaymentTask(user)) {
       return this.registrationService.getPendingPayments(event);
     }
 
@@ -179,6 +189,9 @@ export class PaymentController {
 
   /**
    * Get verification history (all verified/rejected payments)
+   * - Admins see all
+   * - Users with explicit verify_payment task see all
+   * - Otherwise coordinators/members see only their assigned event(s)
    */
   @Get('history')
   @RequireTasks(UserTask.VERIFY_PAYMENT)
@@ -189,7 +202,15 @@ export class PaymentController {
     // Filter to non-pending
     let filtered = payments.filter((p) => p.paymentStatus !== 'pending');
 
-    // Apply event scope
+    // Users with explicitly assigned verify_payment task or admin see all (with optional event filter)
+    if (user.role === UserRole.ADMIN || hasExplicitVerifyPaymentTask(user)) {
+      if (event) {
+        filtered = filtered.filter((p) => p.event === event);
+      }
+      return filtered;
+    }
+
+    // Apply event scope for coordinators/members without explicit task
     if (user.role === UserRole.COORDINATOR && user.assignedEvent) {
       filtered = filtered.filter((p) => p.event === user.assignedEvent);
     } else if (user.role === UserRole.MEMBER && user.assignedEvents?.length) {
