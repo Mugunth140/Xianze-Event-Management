@@ -9,7 +9,11 @@ import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
-import SlideshowViewer from '../components/ui/SlideshowViewer';
+import dynamic from 'next/dynamic';
+
+const PaperPresenter = dynamic(() => import('../components/events/PaperPresenter'), {
+  ssr: false,
+});
 
 interface PaperSubmission {
   id: number;
@@ -314,11 +318,10 @@ export default function PaperPresentationPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${
-                activeTab === tab
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${activeTab === tab
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-900'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -481,9 +484,9 @@ export default function PaperPresentationPage() {
         )}
       </div>
 
-      {/* Slideshow Viewer Modal */}
+      {/* Paper Presenter Modal */}
       {presentingSubmission && (
-        <SlideshowViewer
+        <PaperPresenter
           submissionId={presentingSubmission.id}
           teamName={presentingSubmission.teamMembers.join(', ')}
           onClose={() => setPresentingSubmission(null)}
