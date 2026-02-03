@@ -1,19 +1,19 @@
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Post,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Res,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -46,7 +46,22 @@ const generateFilename = (originalname: string): string => {
 };
 
 // Ensure upload directory exists
-const uploadDir = join(process.cwd(), 'data', 'think-link');
+const containerUploadRoot = '/data';
+const localUploadRoot = join(process.cwd(), 'data');
+let uploadRoot = process.env.UPLOAD_ROOT || containerUploadRoot;
+
+try {
+  if (!existsSync(uploadRoot)) {
+    mkdirSync(uploadRoot, { recursive: true });
+  }
+} catch {
+  uploadRoot = localUploadRoot;
+  if (!existsSync(uploadRoot)) {
+    mkdirSync(uploadRoot, { recursive: true });
+  }
+}
+
+const uploadDir = join(uploadRoot, 'think-link');
 if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
 }
@@ -108,7 +123,7 @@ export class ThinkLinkController {
     }
 
     const presentationName = name || file.originalname.replace(/\.[^/.]+$/, '');
-    const filePath = `/think-link/${file.filename}`;
+    const filePath = `think-link/${file.filename}`;
     const presentation = await this.service.create(presentationName, filePath);
     return { success: true, data: presentation };
   }
@@ -154,7 +169,8 @@ export class ThinkLinkController {
   @Roles(UserRole.ADMIN, UserRole.COORDINATOR, UserRole.MEMBER)
   async getFile(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const presentation = await this.service.findById(id);
-    const filePath = join(process.cwd(), 'data', presentation.filePath);
+    const safeRelativePath = presentation.filePath.replace(/^\/+/, '');
+    const filePath = join(uploadRoot, safeRelativePath);
 
     if (!existsSync(filePath)) {
       throw new BadRequestException('File not found');
@@ -201,7 +217,8 @@ export class ThinkLinkController {
     const presentation = await this.service.findById(id);
 
     // Delete file
-    const filePath = join(process.cwd(), 'data', presentation.filePath);
+    const safeRelativePath = presentation.filePath.replace(/^\/+/, '');
+    const filePath = join(uploadRoot, safeRelativePath);
     if (existsSync(filePath)) {
       try {
         unlinkSync(filePath);

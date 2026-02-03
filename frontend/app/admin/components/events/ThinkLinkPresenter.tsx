@@ -2,12 +2,11 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
 
-// Set worker path
-if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PDFDocumentProxy = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PDFLib = any;
 
 interface ThinkLinkPresenterProps {
   presentationId: number;
@@ -40,12 +39,25 @@ export default function ThinkLinkPresenter({
   const [error, setError] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+  const pdfjsRef = useRef<PDFLib | null>(null);
 
   // Load PDF document
   useEffect(() => {
     const loadPdf = async () => {
       try {
+        // Dynamic import to avoid webpack bundling issues with pdfjs-dist
+        if (!pdfjsRef.current) {
+          const pdfjs = await import(
+            /* webpackIgnore: true */
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs'
+          );
+          pdfjs.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+          pdfjsRef.current = pdfjs;
+        }
+
         const token = localStorage.getItem('token');
         const response = await fetch(
           getApiUrl(`/think-link/presentations/${presentationId}/file`),
@@ -55,7 +67,7 @@ export default function ThinkLinkPresenter({
         if (!response.ok) throw new Error('Failed to load PDF');
 
         const arrayBuffer = await response.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsRef.current.getDocument({ data: arrayBuffer }).promise;
         pdfDocRef.current = pdf;
         setTotalPages(pdf.numPages);
         setLoading(false);
@@ -85,9 +97,10 @@ export default function ThinkLinkPresenter({
         const context = canvas.getContext('2d');
         if (!context) return;
 
-        // Scale to fit container while maintaining aspect ratio
-        const containerWidth = window.innerWidth * 0.9;
-        const containerHeight = window.innerHeight * 0.7;
+        // Scale to fit stage container while maintaining aspect ratio
+        const stage = stageRef.current;
+        const containerWidth = stage?.clientWidth ?? window.innerWidth;
+        const containerHeight = stage?.clientHeight ?? window.innerHeight;
         const viewport = page.getViewport({ scale: 1 });
 
         const scaleX = containerWidth / viewport.width;
@@ -261,19 +274,89 @@ export default function ThinkLinkPresenter({
       )}
 
       {/* Main content */}
-      <div className="flex-1 relative flex items-center justify-center p-8">
-        {/* Timed Out Overlay - Blank Screen */}
-        {isTimedOut ? (
-          <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center z-10">
-            <div className="text-6xl font-bold text-red-500 mb-8 animate-pulse">
-              Time&apos;s Up!
+      <div className="flex-1 relative bg-gray-900">
+        <div
+          ref={stageRef}
+          className={`absolute inset-0 flex items-center justify-center ${isFullscreen ? '' : 'p-8'}`}
+        >
+          {/* Timed Out Overlay - Blank Screen */}
+          {isTimedOut ? (
+            <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center z-10">
+              <div className="text-6xl font-bold text-red-500 mb-8 animate-pulse">
+                Time&apos;s Up!
+              </div>
+              <button
+                onClick={goToNext}
+                disabled={currentPage >= totalPages}
+                className="px-8 py-4 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl rounded-lg font-semibold transition-colors flex items-center gap-3"
+              >
+                Next Slide
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              {currentPage >= totalPages && (
+                <p className="text-gray-400 mt-4">This was the last slide</p>
+              )}
             </div>
+          ) : (
+            /* PDF Slide Canvas */
+            <canvas ref={canvasRef} className="max-w-full max-h-full rounded-xl shadow-2xl" />
+          )}
+
+          {/* Timer display - top right */}
+          <div className="absolute top-6 right-6 pointer-events-none">
+            <div
+              className={`px-4 py-2 rounded-xl bg-black/40 backdrop-blur text-5xl font-bold font-mono ${
+                timeLeft <= 10
+                  ? 'text-red-500 animate-pulse'
+                  : timeLeft <= 30
+                    ? 'text-amber-400'
+                    : 'text-white'
+              }`}
+            >
+              {formatTime(timeLeft)}
+            </div>
+          </div>
+
+          {/* Slide number - top left */}
+          <div className="absolute top-6 left-6 pointer-events-none">
+            <div className="px-3 py-1 rounded-lg bg-black/40 backdrop-blur text-3xl font-bold text-white/80">
+              {currentPage} / {totalPages}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls - bottom */}
+      {!isFullscreen && (
+        <div className="px-8 py-6 bg-gray-800 flex items-center justify-between">
+          {/* Navigation */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={goToPrevious}
+              disabled={currentPage === 1}
+              className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
             <button
               onClick={goToNext}
-              disabled={currentPage >= totalPages}
-              className="px-8 py-4 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl rounded-lg font-semibold transition-colors flex items-center gap-3"
+              disabled={currentPage === totalPages}
+              className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
             >
-              Next Slide
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -283,110 +366,52 @@ export default function ThinkLinkPresenter({
                 />
               </svg>
             </button>
-            {currentPage >= totalPages && (
-              <p className="text-gray-400 mt-4">This was the last slide</p>
-            )}
           </div>
-        ) : (
-          /* PDF Slide Canvas */
-          <canvas ref={canvasRef} className="max-h-[70vh] rounded-xl shadow-2xl" />
-        )}
 
-        {/* Timer display - bottom right */}
-        <div className="absolute bottom-8 right-8">
-          <div
-            className={`text-6xl font-bold font-mono ${
-              timeLeft <= 10
-                ? 'text-red-500 animate-pulse'
-                : timeLeft <= 30
-                  ? 'text-amber-400'
-                  : 'text-white'
-            }`}
-          >
-            {formatTime(timeLeft)}
+          {/* Timer controls */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={startTimer}
+              disabled={timerRunning}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Start Timer
+            </button>
+            <button
+              onClick={resetTimer}
+              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Reset
+            </button>
           </div>
-        </div>
 
-        {/* Slide number - top left */}
-        <div className="absolute top-8 left-8">
-          <div className="text-4xl font-bold text-white/70">
-            {currentPage} / {totalPages}
-          </div>
-        </div>
-      </div>
-
-      {/* Controls - bottom */}
-      <div className="px-8 py-6 bg-gray-800 flex items-center justify-between">
-        {/* Navigation */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={goToPrevious}
-            disabled={currentPage === 1}
-            className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
+          {/* Next button */}
           <button
             onClick={goToNext}
-            disabled={currentPage === totalPages}
-            className="p-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            disabled={currentPage >= totalPages}
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            Next Slide
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
-
-        {/* Timer controls */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={startTimer}
-            disabled={timerRunning}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Start Timer
-          </button>
-          <button
-            onClick={resetTimer}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-
-        {/* Next button */}
-        <button
-          onClick={goToNext}
-          disabled={currentPage >= totalPages}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
-        >
-          Next Slide
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+      )}
 
       {/* Keyboard hints - bottom */}
       {!isFullscreen && (

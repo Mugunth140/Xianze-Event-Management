@@ -25,7 +25,7 @@ interface Stats {
   total: number;
 }
 
-type Tab = 'puzzles' | 'buzzer' | 'leaderboard';
+//type Tab = 'puzzles' | 'buzzer' | 'leaderboard';
 
 export default function ThinkLinkPage() {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
