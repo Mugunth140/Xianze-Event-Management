@@ -2,12 +2,6 @@
 
 import { getApiUrl } from '@/lib/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Set worker path
-if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-}
 
 interface PaperPresenterProps {
   submissionId: number;
@@ -30,7 +24,7 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
   const [error, setError] = useState('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<any>(null);
 
   // Load PDF document
   useEffect(() => {
@@ -44,6 +38,13 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
         if (!response.ok) throw new Error('Failed to load PDF');
 
         const arrayBuffer = await response.arrayBuffer();
+        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+            'pdfjs-dist/build/pdf.worker.min.mjs',
+            import.meta.url,
+          ).toString();
+        }
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         pdfDocRef.current = pdf;
         setTotalPages(pdf.numPages);
