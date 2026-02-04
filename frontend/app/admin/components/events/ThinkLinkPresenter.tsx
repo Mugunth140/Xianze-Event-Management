@@ -45,6 +45,7 @@ export default function ThinkLinkPresenter({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [buzzerWinner, setBuzzerWinner] = useState('');
+  const [wsReady, setWsReady] = useState(false);
   const hasAutoStartedRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -164,11 +165,16 @@ export default function ThinkLinkPresenter({
     buzzerSocketRef.current = ws;
 
     ws.onopen = () => {
-      // Join as coordinator
+      // Join as coordinator and start session
       sendWSWithResponse('coordinator:join')
         .then(() => sendWSWithResponse('coordinator:select-event', { eventSlug: 'think-link' }))
+        .then(() => sendWSWithResponse('coordinator:start-session'))
+        .then(() => {
+          setWsReady(true);
+        })
         .catch(() => {
           // Connection failed - ignore
+          setWsReady(true); // Set ready anyway to unblock UI
         });
     };
 
@@ -369,22 +375,13 @@ export default function ThinkLinkPresenter({
   }, [resetAndStartTimer, enableBuzzerForSlide]);
 
   useEffect(() => {
-    if (!loading && !hasAutoStartedRef.current) {
+    if (!loading && wsReady && !hasAutoStartedRef.current) {
       hasAutoStartedRef.current = true;
-      // Auto-start buzzer session
-      sendWSWithResponse('coordinator:start-session')
-        .then(() => {
-          resetAndStartTimer();
-          enableBuzzerForSlide();
-        })
-        .catch((err) => {
-          console.error('Failed to start buzzer session:', err);
-          // Continue anyway
-          resetAndStartTimer();
-          enableBuzzerForSlide();
-        });
+      // Just start the timer, don't enable buzzer yet
+      // Buzzer will be enabled when user presses arrow key to go to next slide
+      resetAndStartTimer();
     }
-  }, [loading, resetAndStartTimer, enableBuzzerForSlide, sendWSWithResponse]);
+  }, [loading, wsReady, resetAndStartTimer]);
 
   const enterFullscreen = () => {
     const container = document.getElementById('think-link-presenter');
