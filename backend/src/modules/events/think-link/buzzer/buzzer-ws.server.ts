@@ -57,7 +57,6 @@ interface WSMessage {
  */
 const BUZZER_EVENTS = [
   { slug: 'think-link', name: 'Think & Link' },
-  { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'tech-quiz', name: 'Tech Quiz' },
   { slug: 'general-quiz', name: 'General Quiz' },
   { slug: 'rapid-fire', name: 'Rapid Fire' },

@@ -31,11 +31,6 @@ const adminEvents: AdminEvent[] = [
     href: '/admin/think-link',
   },
   {
-    label: 'Bug Smash',
-    description: 'Access challenges and evaluate participants.',
-    href: '/admin/bug-smash',
-  },
-  {
     label: 'Ctrl + Quiz',
     description: 'Manage quiz content and live session.',
     href: '/admin/ctrl-quiz',
@@ -44,11 +39,6 @@ const adminEvents: AdminEvent[] = [
     label: 'Buildathon',
     description: 'Dashboard builder competition with API endpoints.',
     href: '/admin/buildathon',
-  },
-  {
-    label: 'Code Hunt',
-    description: 'Buzzer control and leaderboard for coding treasure hunt.',
-    href: '/admin/code-hunt',
   },
 ];
 
