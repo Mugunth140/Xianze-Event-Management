@@ -40,10 +40,7 @@ export default function PaperPresenter({ submissionId, teamName, onClose }: Pape
         const arrayBuffer = await response.arrayBuffer();
         const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
         if (pdfjsLib.GlobalWorkerOptions) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-            'pdfjs-dist/build/pdf.worker.min.mjs',
-            import.meta.url,
-          ).toString();
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         }
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         pdfDocRef.current = pdf;
