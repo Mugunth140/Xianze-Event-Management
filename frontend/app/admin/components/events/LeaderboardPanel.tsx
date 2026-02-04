@@ -438,9 +438,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
       {/* Top 3 Podium Display for Presentation */}
       {leaderboard.length >= 1 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">
-            Top Performers
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">Top Performers</h3>
           <div className="flex items-end justify-center gap-4">
             {/* Second Place */}
             {leaderboard[1] && (

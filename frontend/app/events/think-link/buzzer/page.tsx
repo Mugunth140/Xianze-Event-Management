@@ -36,15 +36,6 @@ export default function BuzzerPage() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
 
-  // Helper to send WebSocket message
-  const sendWS = useCallback((type: string, data?: Record<string, unknown>) => {
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const message: WSMessage = { type, data };
-      ws.send(JSON.stringify(message));
-    }
-  }, []);
-
   // Helper to send WebSocket message with response
   const sendWSWithResponse = useCallback(
     (type: string, data?: Record<string, unknown>): Promise<Record<string, unknown>> => {

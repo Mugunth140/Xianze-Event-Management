@@ -408,8 +408,8 @@ export default function ContactInquiriesPage() {
             <div className="p-4 rounded-xl bg-primary-50 border border-primary-200">
               <p className="text-sm text-primary-700">
                 <strong>📧 Note:</strong> Your reply will be sent from{' '}
-                <span className="font-mono">contact@xianze.tech</span> and will include the
-                original message for context.
+                <span className="font-mono">contact@xianze.tech</span> and will include the original
+                message for context.
               </p>
             </div>
           </div>

@@ -221,7 +221,7 @@ export default function BuzzerPanel({
 
   useEffect(() => {
     let isMounted = true;
-    
+
     if (isMounted) {
       connect();
     }

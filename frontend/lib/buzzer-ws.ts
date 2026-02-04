@@ -52,7 +52,7 @@ interface UseBuzzerWSReturn {
  */
 function getWSUrl(): string {
   const configured = process.env.NEXT_PUBLIC_WS_URL?.trim();
-  
+
   if (configured) {
     const hasScheme = configured.startsWith('ws://') || configured.startsWith('wss://');
     const inferredScheme =
@@ -67,7 +67,7 @@ function getWSUrl(): string {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   let apiHost: string | null = null;
-  
+
   // Parse API URL safely - handle both absolute and relative URLs
   if (apiUrl) {
     try {
@@ -80,7 +80,7 @@ function getWSUrl(): string {
       // If URL parsing fails, treat as relative
     }
   }
-  
+
   const windowHost = window.location.hostname;
   const isLocalHost = (host: string | null) => host === 'localhost' || host === '127.0.0.1';
   const baseHost = apiHost && !isLocalHost(apiHost) ? apiHost : windowHost;
@@ -354,4 +354,3 @@ export function useBuzzerWS(options: UseBuzzerWSOptions = {}): UseBuzzerWSReturn
 
 export { getWSUrl };
 export type { ConnectionState, UseBuzzerWSOptions, UseBuzzerWSReturn };
-
