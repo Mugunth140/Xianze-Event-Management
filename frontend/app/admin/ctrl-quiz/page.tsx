@@ -151,13 +151,31 @@ export default function CtrlQuizPage() {
       {stats && (
         <div className="grid grid-cols-2 gap-4">
           <StatCard
-            icon={<span className="text-2xl">❓</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 12h.01M9.09 9a3 3 0 115.82 0c0 1.657-1.343 3-3 3h-.5"
+                />
+              </svg>
+            }
             value={stats.totalQuestions}
             label="Questions"
             iconColor="text-primary-600"
           />
           <StatCard
-            icon={<span className="text-2xl">👥</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-3-3.87M7 7a4 4 0 118 0 4 4 0 01-8 0zm10 4a4 4 0 10-8 0 4 4 0 008 0z"
+                />
+              </svg>
+            }
             value={stats.totalParticipants}
             label="Participants"
             iconColor="text-blue-600"

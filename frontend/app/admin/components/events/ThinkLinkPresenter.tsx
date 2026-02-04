@@ -1,13 +1,19 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
+import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PDFDocumentProxy = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PDFLib = any;
+
+interface WSMessage {
+  type: string;
+  requestId?: string;
+  data?: Record<string, unknown>;
+}
 
 interface ThinkLinkPresenterProps {
   presentationId: number;
@@ -30,11 +36,6 @@ export default function ThinkLinkPresenter({
   timerDuration,
   onClose,
 }: ThinkLinkPresenterProps) {
-  const getBaseUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    return apiUrl.replace(/\/api$/, '');
-  };
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timerDuration);
@@ -44,12 +45,28 @@ export default function ThinkLinkPresenter({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [buzzerWinner, setBuzzerWinner] = useState('');
+  const hasAutoStartedRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const pdfjsRef = useRef<PDFLib | null>(null);
-  const buzzerSocketRef = useRef<Socket | null>(null);
+  const buzzerSocketRef = useRef<WebSocket | null>(null);
+  const currentPageRef = useRef(1);
+  const totalPagesRef = useRef(0);
+  const timeLeftRef = useRef(timerDuration);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  useEffect(() => {
+    timeLeftRef.current = timeLeft;
+  }, [timeLeft]);
 
   // Load PDF document
   useEffect(() => {
@@ -94,45 +111,113 @@ export default function ThinkLinkPresenter({
     };
   }, [presentationId]);
 
+  // Helper to send WebSocket message
+  const sendWS = useCallback((type: string, data?: Record<string, unknown>) => {
+    const ws = buzzerSocketRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const message: WSMessage = { type, data };
+      ws.send(JSON.stringify(message));
+    }
+  }, []);
+
+  // Helper to send WebSocket message with response
+  const sendWSWithResponse = useCallback(
+    (type: string, data?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+      return new Promise((resolve, reject) => {
+        const ws = buzzerSocketRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
+        }
+
+        const requestId = crypto.randomUUID();
+        const message: WSMessage = { type, requestId, data };
+
+        const handleResponse = (event: MessageEvent) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.requestId === requestId) {
+              ws.removeEventListener('message', handleResponse);
+              resolve(response.data || {});
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        };
+
+        ws.addEventListener('message', handleResponse);
+        ws.send(JSON.stringify(message));
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          ws.removeEventListener('message', handleResponse);
+          reject(new Error('Request timeout'));
+        }, 10000);
+      });
+    },
+    []
+  );
+
   useEffect(() => {
-    const socket = io(`${getBaseUrl()}/buzzer`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    });
+    const wsUrl = getWSUrl();
+    const ws = new WebSocket(wsUrl);
+    buzzerSocketRef.current = ws;
 
-    buzzerSocketRef.current = socket;
+    ws.onopen = () => {
+      // Join as coordinator
+      sendWSWithResponse('coordinator:join')
+        .then(() => sendWSWithResponse('coordinator:select-event', { eventSlug: 'think-link' }))
+        .catch(() => {
+          // Connection failed - ignore
+        });
+    };
 
-    socket.on('connect', () => {
-      socket.emit('participant:check-session', { eventSlug: 'think-link' });
-    });
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        const { type, data = {} } = message;
 
-    socket.on('buzzer:locked', (data: { winnerNames: string }) => {
-      setBuzzerWinner(data.winnerNames);
-    });
+        switch (type) {
+          case 'buzzer:locked':
+            setBuzzerWinner((data as { winnerNames?: string }).winnerNames || '');
+            setTimerRunning(false);
+            break;
 
-    socket.on('buzzer:reset', () => {
-      setBuzzerWinner('');
-    });
+          case 'buzzer:reset':
+          case 'buzzer:enabled':
+            setBuzzerWinner('');
+            break;
 
-    socket.on('buzzer:enabled', () => {
-      setBuzzerWinner('');
-    });
+          case 'answer:correct':
+            setBuzzerWinner('');
+            advanceFromCorrect();
+            break;
 
-    socket.on('answer:correct', () => {
-      setBuzzerWinner('');
-    });
+          case 'answer:wrong':
+            setBuzzerWinner('');
+            resumeTimer();
+            break;
 
-    socket.on('session:ended', () => {
-      setBuzzerWinner('');
-    });
+          case 'session:ended':
+            setBuzzerWinner('');
+            setTimerRunning(false);
+            break;
+        }
+      } catch {
+        // Parse error - ignore
+      }
+    };
 
-    return () => {
-      socket.disconnect();
+    ws.onclose = () => {
       buzzerSocketRef.current = null;
     };
-  }, []);
+
+    return () => {
+      ws.close();
+      buzzerSocketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sendWSWithResponse]);
 
   // Render current page
   useEffect(() => {
@@ -234,14 +319,16 @@ export default function ThinkLinkPresenter({
   const goToNext = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
-      resetTimer();
+      resetAndStartTimer();
+      enableBuzzerForSlide();
     }
   };
 
   const goToPrevious = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
-      resetTimer();
+      resetAndStartTimer();
+      enableBuzzerForSlide();
     }
   };
 
@@ -251,11 +338,43 @@ export default function ThinkLinkPresenter({
     setIsTimedOut(false);
   };
 
+  const resetAndStartTimer = useCallback(() => {
+    setTimeLeft(timerDuration);
+    setIsTimedOut(false);
+    setTimerRunning(true);
+  }, [timerDuration]);
+
+  const resumeTimer = useCallback(() => {
+    if (timeLeftRef.current > 0) {
+      setTimerRunning(true);
+    }
+  }, []);
+
+  const enableBuzzerForSlide = useCallback(() => {
+    sendWS('coordinator:enable-buzzer');
+  }, [sendWS]);
+
   const startTimer = () => {
     setIsTimedOut(false);
     setTimeLeft(timerDuration);
     setTimerRunning(true);
   };
+
+  const advanceFromCorrect = useCallback(() => {
+    if (currentPageRef.current < totalPagesRef.current) {
+      setCurrentPage((prev) => prev + 1);
+      resetAndStartTimer();
+      enableBuzzerForSlide();
+    }
+  }, [resetAndStartTimer, enableBuzzerForSlide]);
+
+  useEffect(() => {
+    if (!loading && !hasAutoStartedRef.current) {
+      hasAutoStartedRef.current = true;
+      resetAndStartTimer();
+      enableBuzzerForSlide();
+    }
+  }, [loading, resetAndStartTimer, enableBuzzerForSlide]);
 
   const enterFullscreen = () => {
     const container = document.getElementById('think-link-presenter');

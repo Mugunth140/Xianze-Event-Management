@@ -183,25 +183,61 @@ export default function BugSmashPage() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
-            icon={<span className="text-2xl">❓</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 12h.01M9.09 9a3 3 0 115.82 0c0 1.657-1.343 3-3 3h-.5"
+                />
+              </svg>
+            }
             value={stats.totalQuestions}
             label="Questions"
             iconColor="text-primary-600"
           />
           <StatCard
-            icon={<span className="text-2xl">👥</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-3-3.87M7 7a4 4 0 118 0 4 4 0 01-8 0zm10 4a4 4 0 10-8 0 4 4 0 008 0z"
+                />
+              </svg>
+            }
             value={stats.totalParticipants}
             label="Participants"
             iconColor="text-blue-600"
           />
           <StatCard
-            icon={<span className="text-2xl">✅</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
             value={stats.qualified}
             label="Qualified"
             iconColor="text-emerald-600"
           />
           <StatCard
-            icon={<span className="text-2xl">❌</span>}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 14l2-2m0 0l2-2m-2 2L10 10m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
             value={stats.eliminated}
             label="Eliminated"
             iconColor="text-red-500"
@@ -395,14 +431,14 @@ export default function BugSmashPage() {
                       variant="secondary"
                       onClick={() => handleRound2Status(p.id, 'qualified')}
                     >
-                      ✅
+                      Qualify
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
                       onClick={() => handleRound2Status(p.id, 'eliminated')}
                     >
-                      ❌
+                      Eliminate
                     </Button>
                   </td>
                 </tr>

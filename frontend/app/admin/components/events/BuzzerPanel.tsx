@@ -1,8 +1,8 @@
 'use client';
 
+import { getWSUrl } from '@/lib/buzzer-ws';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 import Button from '../ui/Button';
 import Card, { StatCard } from '../ui/Card';
 
@@ -21,6 +21,12 @@ interface WinnerData {
 interface BuzzerEvent {
   slug: string;
   name: string;
+}
+
+interface WSMessage {
+  type: string;
+  requestId?: string;
+  data?: Record<string, unknown>;
 }
 
 type ConnectionState = 'connecting' | 'connected' | 'disconnected';
@@ -45,12 +51,8 @@ export default function BuzzerPanel({
   const [showQR, setShowQR] = useState(true);
   const [currentEvent, setCurrentEvent] = useState(defaultEvent);
   const [availableEvents, setAvailableEvents] = useState<BuzzerEvent[]>([]);
-  const socketRef = useRef<Socket | null>(null);
-
-  const getApiUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    return apiUrl.replace(/\/api$/, '');
-  };
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getBuzzerUrl = () => {
     if (typeof window !== 'undefined') {
@@ -60,202 +62,281 @@ export default function BuzzerPanel({
     return `https://xianze.tech/events/${defaultEvent}/buzzer`;
   };
 
-  useEffect(() => {
-    const socket = io(`${getApiUrl()}/buzzer`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    });
+  // Helper to send WebSocket message with response
+  // Helper to send message with optional WebSocket instance
+  const sendWSMessage = useCallback(
+    (
+      type: string,
+      data?: Record<string, unknown>,
+      wsInstance?: WebSocket
+    ): Promise<Record<string, unknown>> => {
+      return new Promise((resolve, reject) => {
+        const ws = wsInstance || wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
+        }
 
-    socketRef.current = socket;
+        const requestId = crypto.randomUUID();
+        const message: WSMessage = { type, requestId, data };
 
-    socket.on('connect', () => {
+        const handleResponse = (event: MessageEvent) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.requestId === requestId) {
+              ws.removeEventListener('message', handleResponse);
+              resolve(response.data || {});
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        };
+
+        ws.addEventListener('message', handleResponse);
+        ws.send(JSON.stringify(message));
+
+        setTimeout(() => {
+          ws.removeEventListener('message', handleResponse);
+          reject(new Error('Request timeout'));
+        }, 10000);
+      });
+    },
+    []
+  );
+
+  const sendWSWithResponse = useCallback(
+    (type: string, data?: Record<string, unknown>) => sendWSMessage(type, data),
+    [sendWSMessage]
+  );
+
+  // Connect to WebSocket
+  const connect = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    setConnectionState('connecting');
+    const wsUrl = getWSUrl();
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
       setConnectionState('connected');
       setError('');
-      socket.emit('coordinator:join', (response: { success: boolean }) => {
-        if (response.success) {
-          // Set the default event for this panel
-          socket.emit(
-            'coordinator:select-event',
-            { eventSlug: defaultEvent },
-            (res: { success: boolean }) => {
-              if (!res.success) {
-                setError('Failed to set default event');
-              }
+
+      // Join as coordinator and select default event - pass ws instance directly
+      sendWSMessage('coordinator:join', undefined, ws)
+        .then(() => sendWSMessage('coordinator:select-event', { eventSlug: defaultEvent }, ws))
+        .catch((err) => {
+          setError('Failed to join as coordinator: ' + err.message);
+        });
+    };
+
+    ws.onerror = (error) => {
+      console.error('[BuzzerPanel] WebSocket error:', error);
+      setError('WebSocket connection error');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const { type, data = {} } = msg;
+
+        switch (type) {
+          case 'state:update': {
+            const stateData = data as {
+              isActive?: boolean;
+              isBuzzerEnabled?: boolean;
+              teams?: Team[];
+              currentWinner?: WinnerData | null;
+              eventSlug?: string;
+              availableEvents?: BuzzerEvent[];
+            };
+            setTeams(stateData.teams || []);
+            if (stateData.eventSlug) {
+              setCurrentEvent(stateData.eventSlug);
             }
-          );
-        } else {
-          setError('Failed to join as coordinator');
-        }
-      });
-    });
-
-    socket.on('disconnect', () => {
-      setConnectionState('disconnected');
-    });
-
-    socket.on('connect_error', () => {
-      setError('Unable to connect to server');
-      setConnectionState('disconnected');
-    });
-
-    socket.on(
-      'state:update',
-      (data: {
-        isActive: boolean;
-        isBuzzerEnabled: boolean;
-        teamCount: number;
-        teams: Team[];
-        currentWinner: WinnerData | null;
-        eventSlug?: string;
-        availableEvents?: BuzzerEvent[];
-      }) => {
-        setTeams(data.teams || []);
-        if (data.eventSlug) {
-          setCurrentEvent(data.eventSlug);
-        }
-        if (data.availableEvents) {
-          setAvailableEvents(data.availableEvents);
-        }
-        if (data.isActive) {
-          if (data.currentWinner) {
-            setSessionState('winner');
-            setWinner(data.currentWinner);
-          } else if (data.isBuzzerEnabled) {
-            setSessionState('buzzer-enabled');
-          } else {
-            setSessionState('active');
+            if (stateData.availableEvents) {
+              setAvailableEvents(stateData.availableEvents);
+            }
+            if (stateData.isActive) {
+              if (stateData.currentWinner) {
+                setSessionState('winner');
+                setWinner(stateData.currentWinner);
+              } else if (stateData.isBuzzerEnabled) {
+                setSessionState('buzzer-enabled');
+              } else {
+                setSessionState('active');
+              }
+            } else {
+              setSessionState('idle');
+            }
+            break;
           }
-        } else {
-          setSessionState('idle');
+
+          case 'event:changed': {
+            const eventData = data as { eventSlug?: string; availableEvents?: BuzzerEvent[] };
+            if (eventData.eventSlug) {
+              setCurrentEvent(eventData.eventSlug);
+            }
+            if (eventData.availableEvents) {
+              setAvailableEvents(eventData.availableEvents);
+            }
+            break;
+          }
+
+          case 'teams:update': {
+            const teamsData = data as { teams?: Team[] };
+            setTeams(teamsData.teams || []);
+            break;
+          }
+
+          case 'buzzer:winner': {
+            const winnerData = data as WinnerData;
+            setWinner(winnerData);
+            setSessionState('winner');
+            break;
+          }
+
+          case 'buzzer:enabled':
+            setSessionState('buzzer-enabled');
+            setWinner(null);
+            break;
         }
+      } catch {
+        // Parse error - ignore
       }
-    );
+    };
 
-    socket.on('event:changed', (data: { eventSlug: string; availableEvents: BuzzerEvent[] }) => {
-      setCurrentEvent(data.eventSlug);
-      setAvailableEvents(data.availableEvents);
-    });
+    ws.onclose = (event) => {
+      console.log('[BuzzerPanel] WebSocket closed:', event.code, event.reason, event.wasClean);
+      wsRef.current = null;
+      setConnectionState('disconnected');
+    };
 
-    socket.on('teams:update', (data: { teamCount: number; teams: Team[] }) => {
-      setTeams(data.teams || []);
-    });
+    ws.onerror = () => {
+      setError('Unable to connect to server');
+    };
+  }, [defaultEvent, sendWSMessage]);
 
-    socket.on('buzzer:winner', (data: WinnerData) => {
-      setWinner(data);
-      setSessionState('winner');
-    });
-
-    // Listen for buzzer re-enabled after wrong answer
-    socket.on('buzzer:enabled', () => {
-      setSessionState('buzzer-enabled');
-      setWinner(null);
-    });
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (isMounted) {
+      connect();
+    }
 
     return () => {
-      socket.disconnect();
+      isMounted = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, [defaultEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only connect once on mount
 
   const handleStartSession = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:start-session',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:start-session')
+      .then((response) => {
         if (response.success) {
           setSessionState('active');
           setWinner(null);
         } else {
-          setError(response.error || 'Failed to start session');
+          setError((response.error as string) || 'Failed to start session');
         }
-      }
-    );
-  }, []);
+      })
+      .catch((err) => setError('Failed to start session: ' + err.message));
+  }, [sendWSWithResponse]);
 
   const handleEndSession = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:end-session',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:end-session')
+      .then((response) => {
         if (response.success) {
           setSessionState('idle');
           setWinner(null);
         } else {
-          setError(response.error || 'Failed to end session');
+          setError((response.error as string) || 'Failed to end session');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to end session'));
+  }, [sendWSWithResponse]);
 
   const handleEnableBuzzer = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:enable-buzzer',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:enable-buzzer')
+      .then((response) => {
         if (response.success) {
           setSessionState('buzzer-enabled');
           setWinner(null);
         } else {
-          setError(response.error || 'Failed to enable buzzer');
+          setError((response.error as string) || 'Failed to enable buzzer');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to enable buzzer'));
+  }, [sendWSWithResponse]);
 
   const handleDisableBuzzer = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:disable-buzzer',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:disable-buzzer')
+      .then((response) => {
         if (response.success) {
           setSessionState('active');
         } else {
-          setError(response.error || 'Failed to pause buzzer');
+          setError((response.error as string) || 'Failed to pause buzzer');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to pause buzzer'));
+  }, [sendWSWithResponse]);
 
   const handleCorrectAnswer = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:answer-correct',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:answer-correct')
+      .then((response) => {
         if (response.success) {
           setSessionState('active');
           setWinner(null);
         } else {
-          setError(response.error || 'Failed to mark correct');
+          setError((response.error as string) || 'Failed to mark correct');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to mark correct'));
+  }, [sendWSWithResponse]);
 
   const handleWrongAnswer = useCallback(() => {
-    socketRef.current?.emit(
-      'coordinator:answer-wrong',
-      (response: { success: boolean; error?: string }) => {
-        if (response.success) {
-          // Buzzer re-enabled automatically, state updated via socket event
-        } else {
-          setError(response.error || 'Failed to mark wrong');
+    sendWSWithResponse('coordinator:answer-wrong')
+      .then((response) => {
+        if (!response.success) {
+          setError((response.error as string) || 'Failed to mark wrong');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to mark wrong'));
+  }, [sendWSWithResponse]);
 
   const handleReconnect = useCallback(() => {
-    setConnectionState('connecting');
-    socketRef.current?.connect();
-  }, []);
+    connect();
+  }, [connect]);
 
-  const handleEventChange = useCallback((eventSlug: string) => {
-    socketRef.current?.emit(
-      'coordinator:select-event',
-      { eventSlug },
-      (response: { success: boolean; error?: string }) => {
-        if (!response.success) {
-          setError(response.error || 'Failed to change event');
-        }
-      }
-    );
-  }, []);
+  const handleEventChange = useCallback(
+    (eventSlug: string) => {
+      sendWSWithResponse('coordinator:select-event', { eventSlug })
+        .then((response) => {
+          if (!response.success) {
+            setError((response.error as string) || 'Failed to change event');
+          }
+        })
+        .catch(() => setError('Failed to change event'));
+    },
+    [sendWSWithResponse]
+  );
+
+  const statusLabel =
+    sessionState === 'idle' ? 'Off' : sessionState === 'buzzer-enabled' ? 'Live' : 'Paused';
+  const statusTone =
+    sessionState === 'buzzer-enabled'
+      ? 'text-emerald-500'
+      : sessionState === 'idle'
+        ? 'text-gray-400'
+        : 'text-amber-500';
 
   // Disconnected state
   if (connectionState === 'disconnected') {
@@ -316,7 +397,19 @@ export default function BuzzerPanel({
         <Card className="p-8 border-4 border-primary-500 bg-gradient-to-br from-primary-50 to-purple-50">
           <div className="text-center">
             <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-              <span className="text-5xl">🔔</span>
+              <svg
+                className="w-12 h-12 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">First to Buzz!</h2>
             <p className="text-2xl font-semibold text-primary-600 mb-8">
@@ -365,7 +458,19 @@ export default function BuzzerPanel({
         <Card className="p-8 border-4 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50">
           <div className="text-center">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-4xl">🔔</span>
+              <svg
+                className="w-10 h-10 text-amber-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
             </div>
             <h2 className="text-3xl font-bold text-amber-800 mb-2">Buzzer is LIVE!</h2>
             <p className="text-gray-600">Waiting for teams to press...</p>
@@ -377,31 +482,56 @@ export default function BuzzerPanel({
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
-          icon={<span className="text-2xl">👥</span>}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-3-3.87M7 7a4 4 0 118 0 4 4 0 01-8 0zm10 4a4 4 0 10-8 0 4 4 0 008 0z"
+              />
+            </svg>
+          }
           value={teams.length}
           label="Teams Connected"
           iconColor="text-primary-600"
         />
         <StatCard
           icon={
-            <span className="text-2xl">
-              {sessionState === 'buzzer-enabled' ? '🟢' : sessionState === 'idle' ? '⏹️' : '🟡'}
-            </span>
+            <svg className={`w-5 h-5 ${statusTone}`} fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="6" />
+            </svg>
           }
-          value={
-            sessionState === 'idle' ? 'Off' : sessionState === 'buzzer-enabled' ? 'LIVE' : 'Paused'
-          }
+          value={statusLabel}
           label="Buzzer Status"
           iconColor="text-primary-600"
         />
         <StatCard
-          icon={<span className="text-2xl">🔔</span>}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+          }
           value={sessionState === 'buzzer-enabled' ? 'Enabled' : 'Disabled'}
           label="State"
           iconColor="text-primary-600"
         />
         <StatCard
-          icon={<span className="text-2xl">🏆</span>}
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 4h6a1 1 0 011 1v2h3a1 1 0 011 1v1a5 5 0 01-5 5h-1.5a3.5 3.5 0 01-7 0H8a5 5 0 01-5-5V8a1 1 0 011-1h3V5a1 1 0 011-1z"
+              />
+            </svg>
+          }
           value={winner ? '1' : '0'}
           label="Winner"
           iconColor="text-primary-600"
@@ -521,7 +651,19 @@ export default function BuzzerPanel({
 
         {teams.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <span className="text-4xl block mb-3">👥</span>
+            <svg
+              className="w-12 h-12 text-gray-300 mx-auto mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-3-3.87M7 7a4 4 0 118 0 4 4 0 01-8 0zm10 4a4 4 0 10-8 0 4 4 0 008 0z"
+              />
+            </svg>
             <p>No teams connected yet</p>
             <p className="text-sm mt-1">Share the QR code for participants to join</p>
           </div>
@@ -533,7 +675,19 @@ export default function BuzzerPanel({
                 className="flex items-center gap-3 p-3 bg-primary-50 rounded-xl border border-primary-100"
               >
                 <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">👤</span>
+                  <svg
+                    className="w-5 h-5 text-primary-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5.121 17.804A4 4 0 017.9 16h8.2a4 4 0 012.778 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{team.name1}</p>

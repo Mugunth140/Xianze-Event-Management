@@ -1,7 +1,7 @@
 'use client';
 
+import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -18,6 +18,12 @@ interface BuzzerEvent {
   name: string;
 }
 
+interface WSMessage {
+  type: string;
+  requestId?: string;
+  data?: Record<string, unknown>;
+}
+
 type ConnectionState = 'connecting' | 'connected' | 'disconnected';
 
 interface LeaderboardPanelProps {
@@ -30,105 +36,157 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
   const [currentEvent, setCurrentEvent] = useState(defaultEvent);
   const [availableEvents, setAvailableEvents] = useState<BuzzerEvent[]>([]);
   const [error, setError] = useState('');
-  const socketRef = useRef<Socket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  const getApiUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    return apiUrl.replace(/\/api$/, '');
-  };
-
-  const fetchLeaderboard = useCallback((socket: Socket, eventSlug?: string) => {
-    socket.emit(
-      'coordinator:get-leaderboard',
-      { eventSlug },
-      (res: { success: boolean; leaderboard?: TeamScore[]; eventSlug?: string }) => {
-        if (res.success && res.leaderboard) {
-          setLeaderboard(res.leaderboard);
-          if (res.eventSlug) {
-            setCurrentEvent(res.eventSlug);
-          }
+  // Helper to send WebSocket message with response
+  const sendWSWithResponse = useCallback(
+    (type: string, data?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+      return new Promise((resolve, reject) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
         }
-      }
-    );
-  }, []);
 
-  useEffect(() => {
-    const socket = io(`${getApiUrl()}/buzzer`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    });
+        const requestId = crypto.randomUUID();
+        const message: WSMessage = { type, requestId, data };
 
-    socketRef.current = socket;
+        const handleResponse = (event: MessageEvent) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.requestId === requestId) {
+              ws.removeEventListener('message', handleResponse);
+              resolve(response.data || {});
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        };
 
-    socket.on('connect', () => {
+        ws.addEventListener('message', handleResponse);
+        ws.send(JSON.stringify(message));
+
+        setTimeout(() => {
+          ws.removeEventListener('message', handleResponse);
+          reject(new Error('Request timeout'));
+        }, 10000);
+      });
+    },
+    []
+  );
+
+  const fetchLeaderboard = useCallback(
+    (eventSlug?: string) => {
+      sendWSWithResponse('coordinator:get-leaderboard', { eventSlug })
+        .then((res) => {
+          if (res.success && res.leaderboard) {
+            setLeaderboard(res.leaderboard as TeamScore[]);
+            if (res.eventSlug) {
+              setCurrentEvent(res.eventSlug as string);
+            }
+          }
+        })
+        .catch(() => {
+          // Ignore fetch errors
+        });
+    },
+    [sendWSWithResponse]
+  );
+
+  // Connect to WebSocket
+  const connect = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    setConnectionState('connecting');
+    const wsUrl = getWSUrl();
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
       setConnectionState('connected');
       setError('');
 
-      // Register as coordinator
-      socket.emit(
-        'coordinator:join',
-        (response: { success: boolean; eventSlug?: string; availableEvents?: BuzzerEvent[] }) => {
-          if (response.success) {
-            // Fetch initial leaderboard for the default event
-            fetchLeaderboard(socket, defaultEvent);
-          } else {
-            setError('Failed to join as coordinator');
+      // Join as coordinator and fetch initial leaderboard
+      sendWSWithResponse('coordinator:join')
+        .then(() => {
+          fetchLeaderboard(defaultEvent);
+          // Get available events
+          return sendWSWithResponse('coordinator:get-events');
+        })
+        .then((res) => {
+          if (res.success && res.events) {
+            setAvailableEvents(res.events as BuzzerEvent[]);
+            if (res.currentEvent) {
+              setCurrentEvent(res.currentEvent as string);
+            }
+          }
+        })
+        .catch(() => {
+          setError('Failed to join as coordinator');
+        });
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const { type, data = {} } = msg;
+
+        switch (type) {
+          case 'leaderboard:update': {
+            const lbData = data as { leaderboard?: TeamScore[]; eventSlug?: string };
+            if (lbData.leaderboard) {
+              setLeaderboard(lbData.leaderboard);
+            }
+            if (lbData.eventSlug) {
+              setCurrentEvent(lbData.eventSlug);
+            }
+            break;
+          }
+
+          case 'event:changed': {
+            const eventData = data as { eventSlug?: string; availableEvents?: BuzzerEvent[] };
+            if (eventData.eventSlug) {
+              setCurrentEvent(eventData.eventSlug);
+              fetchLeaderboard(eventData.eventSlug);
+            }
+            if (eventData.availableEvents) {
+              setAvailableEvents(eventData.availableEvents);
+            }
+            break;
           }
         }
-      );
-    });
+      } catch {
+        // Parse error - ignore
+      }
+    };
 
-    socket.on('disconnect', () => {
+    ws.onclose = () => {
+      wsRef.current = null;
       setConnectionState('disconnected');
-    });
+    };
 
-    socket.on('connect_error', () => {
+    ws.onerror = () => {
       setError('Unable to connect to server');
-      setConnectionState('disconnected');
-    });
+    };
+  }, [defaultEvent, sendWSWithResponse, fetchLeaderboard]);
 
-    // Listen for leaderboard updates
-    socket.on('leaderboard:update', (data: { leaderboard: TeamScore[]; eventSlug?: string }) => {
-      setLeaderboard(data.leaderboard);
-      if (data.eventSlug) {
-        setCurrentEvent(data.eventSlug);
-      }
-    });
-
-    // Listen for event changes
-    socket.on('event:changed', (data: { eventSlug: string; availableEvents: BuzzerEvent[] }) => {
-      setCurrentEvent(data.eventSlug);
-      setAvailableEvents(data.availableEvents);
-      // Fetch leaderboard for new event
-      fetchLeaderboard(socket, data.eventSlug);
-    });
-
-    // Get available events
-    socket.emit(
-      'coordinator:get-events',
-      (res: { success: boolean; events?: BuzzerEvent[]; currentEvent?: string }) => {
-        if (res.success && res.events) {
-          setAvailableEvents(res.events);
-          if (res.currentEvent) {
-            setCurrentEvent(res.currentEvent);
-          }
-        }
-      }
-    );
+  useEffect(() => {
+    connect();
 
     return () => {
-      socket.disconnect();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, [fetchLeaderboard, defaultEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only connect once on mount
 
   const handleEventChange = useCallback(
     (eventSlug: string) => {
       setCurrentEvent(eventSlug);
-      if (socketRef.current) {
-        fetchLeaderboard(socketRef.current, eventSlug);
-      }
+      fetchLeaderboard(eventSlug);
     },
     [fetchLeaderboard]
   );
@@ -138,20 +196,21 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
       return;
     }
 
-    socketRef.current?.emit(
-      'coordinator:reset-leaderboard',
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('coordinator:reset-leaderboard')
+      .then((response) => {
         if (!response.success) {
-          setError(response.error || 'Failed to reset leaderboard');
+          setError((response.error as string) || 'Failed to reset leaderboard');
         }
-      }
-    );
-  }, []);
+      })
+      .catch(() => setError('Failed to reset leaderboard'));
+  }, [sendWSWithResponse]);
 
   const handleReconnect = useCallback(() => {
-    setConnectionState('connecting');
-    socketRef.current?.connect();
-  }, []);
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+    connect();
+  }, [connect]);
 
   // Disconnected state
   if (connectionState === 'disconnected') {
@@ -212,7 +271,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">🏆 Leaderboard</h3>
+              <h3 className="text-xl font-bold text-gray-900">Leaderboard</h3>
               {availableEvents.length > 0 && (
                 <select
                   value={currentEvent}
@@ -255,7 +314,19 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
         {/* Leaderboard Table */}
         {leaderboard.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            <span className="text-5xl block mb-4">🏆</span>
+            <svg
+              className="w-12 h-12 text-gray-300 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 4h6a1 1 0 011 1v2h3a1 1 0 011 1v1a5 5 0 01-5 5h-1.5a3.5 3.5 0 01-7 0H8a5 5 0 01-5-5V8a1 1 0 011-1h3V5a1 1 0 011-1z"
+              />
+            </svg>
             <p className="text-lg font-medium">No scores yet</p>
             <p className="text-sm mt-1">
               Points will appear here when teams answer correctly in the buzzer round
@@ -295,11 +366,17 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center">
                         {index === 0 ? (
-                          <span className="text-2xl">🥇</span>
+                          <span className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center font-bold">
+                            1
+                          </span>
                         ) : index === 1 ? (
-                          <span className="text-2xl">🥈</span>
+                          <span className="w-8 h-8 bg-gray-300 text-gray-800 rounded-full flex items-center justify-center font-bold">
+                            2
+                          </span>
                         ) : index === 2 ? (
-                          <span className="text-2xl">🥉</span>
+                          <span className="w-8 h-8 bg-amber-300 text-amber-900 rounded-full flex items-center justify-center font-bold">
+                            3
+                          </span>
                         ) : (
                           <span className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600">
                             {index + 1}
@@ -310,7 +387,19 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <span className="text-lg">👥</span>
+                          <svg
+                            className="w-5 h-5 text-primary-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-3-3.87M7 7a4 4 0 118 0 4 4 0 01-8 0zm10 4a4 4 0 10-8 0 4 4 0 008 0z"
+                            />
+                          </svg>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">{team.name1}</p>
@@ -350,14 +439,14 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
       {leaderboard.length >= 1 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">
-            🎉 Top Performers
+            Top Performers
           </h3>
           <div className="flex items-end justify-center gap-4">
             {/* Second Place */}
             {leaderboard[1] && (
               <div className="flex flex-col items-center">
                 <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-3xl">🥈</span>
+                  <span className="text-2xl font-bold text-gray-700">2</span>
                 </div>
                 <div className="bg-gray-200 rounded-t-xl w-28 h-24 flex flex-col items-center justify-center">
                   <p className="font-bold text-gray-800 text-sm text-center px-1">
@@ -373,7 +462,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
             {leaderboard[0] && (
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 bg-yellow-300 rounded-full flex items-center justify-center mb-2 shadow-lg">
-                  <span className="text-4xl">🥇</span>
+                  <span className="text-3xl font-bold text-yellow-900">1</span>
                 </div>
                 <div className="bg-yellow-400 rounded-t-xl w-32 h-32 flex flex-col items-center justify-center shadow-lg">
                   <p className="font-bold text-yellow-900 text-center px-1">
@@ -389,7 +478,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
             {leaderboard[2] && (
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 bg-amber-200 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-2xl">🥉</span>
+                  <span className="text-xl font-bold text-amber-900">3</span>
                 </div>
                 <div className="bg-amber-200 rounded-t-xl w-24 h-20 flex flex-col items-center justify-center">
                   <p className="font-bold text-amber-900 text-xs text-center px-1">

@@ -61,7 +61,14 @@ export default function CodeHuntPage() {
       {/* Info Card */}
       <Card className="p-4 bg-blue-50 border-blue-200">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">💡</span>
+          <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 2a7 7 0 00-4 12.74V17a1 1 0 001 1h6a1 1 0 001-1v-2.26A7 7 0 0012 2zm-3 19h6"
+            />
+          </svg>
           <div>
             <h4 className="font-semibold text-blue-900">Code Hunt Buzzer System</h4>
             <p className="text-sm text-blue-700 mt-1">

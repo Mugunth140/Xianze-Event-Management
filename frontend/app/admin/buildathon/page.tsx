@@ -788,7 +788,16 @@ export default function BuildathonPage() {
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <StatCard
-              icon={<span className="text-2xl">📈</span>}
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3v18h18M7 13l3 3 7-7"
+                  />
+                </svg>
+              }
               value={metrics.totalRequests}
               label="Total Requests"
               iconColor="text-primary-600"
@@ -796,7 +805,16 @@ export default function BuildathonPage() {
             {metrics.requestsByEndpoint.map((ep) => (
               <StatCard
                 key={ep.endpoint}
-                icon={<span className="text-2xl">🔗</span>}
+                icon={
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m8.828-1.172a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5"
+                    />
+                  </svg>
+                }
                 value={ep.count}
                 label={`/${ep.endpoint}`}
                 iconColor="text-blue-600"

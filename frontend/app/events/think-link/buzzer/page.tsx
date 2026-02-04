@@ -1,7 +1,7 @@
 'use client';
 
+import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 
 type BuzzerState =
   | 'connecting'
@@ -13,16 +13,10 @@ type BuzzerState =
   | 'locked'
   | 'disconnected';
 
-interface BuzzerStatus {
-  isActive: boolean;
-  isBuzzerEnabled: boolean;
-  canPress: boolean;
-}
-
-interface SessionCheckResponse {
-  success: boolean;
-  isActive: boolean;
-  isBuzzerEnabled: boolean;
+interface WSMessage {
+  type: string;
+  requestId?: string;
+  data?: Record<string, unknown>;
 }
 
 const EVENT_SLUG = 'think-link';
@@ -33,40 +27,80 @@ export default function BuzzerPage() {
   const [name2, setName2] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [_isPressed, setIsPressed] = useState(false);
   const [wasFirst, setWasFirst] = useState(false);
   const [winnerNames, setWinnerNames] = useState('');
-  const [_isRegistered, setIsRegistered] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const isRegisteredRef = useRef(false);
   const isPressedRef = useRef(false);
   const winnerNamesRef = useRef('');
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
 
-  const getApiUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    // Remove /api suffix if present for WebSocket connection
-    return apiUrl.replace(/\/api$/, '');
-  };
+  // Helper to send WebSocket message
+  const sendWS = useCallback((type: string, data?: Record<string, unknown>) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const message: WSMessage = { type, data };
+      ws.send(JSON.stringify(message));
+    }
+  }, []);
 
-  useEffect(() => {
-    const socket = io(`${getApiUrl()}/buzzer`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    });
+  // Helper to send WebSocket message with response
+  const sendWSWithResponse = useCallback(
+    (type: string, data?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+      return new Promise((resolve, reject) => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
+        }
 
-    socketRef.current = socket;
+        const requestId = crypto.randomUUID();
+        const message: WSMessage = { type, requestId, data };
 
-    socket.on('connect', () => {
+        const handleResponse = (event: MessageEvent) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.requestId === requestId) {
+              ws.removeEventListener('message', handleResponse);
+              resolve(response.data || {});
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        };
+
+        ws.addEventListener('message', handleResponse);
+        ws.send(JSON.stringify(message));
+
+        setTimeout(() => {
+          ws.removeEventListener('message', handleResponse);
+          reject(new Error('Request timeout'));
+        }, 10000);
+      });
+    },
+    []
+  );
+
+  // Connect to WebSocket
+  const connect = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    setState('connecting');
+    const wsUrl = getWSUrl();
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
       setError('');
+      reconnectAttemptsRef.current = 0;
+
       // Check if session is active
-      socket.emit(
-        'participant:check-session',
-        { eventSlug: EVENT_SLUG },
-        (response: SessionCheckResponse) => {
+      sendWSWithResponse('participant:check-session', { eventSlug: EVENT_SLUG })
+        .then((response) => {
           if (response.success && response.isActive) {
-            // If already registered (reconnect), go to waiting
             if (isRegisteredRef.current) {
               setState('waiting');
             } else {
@@ -75,128 +109,152 @@ export default function BuzzerPage() {
           } else {
             setState('no-session');
           }
+        })
+        .catch(() => {
+          setState('no-session');
+        });
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const { type, data = {} } = msg;
+
+        switch (type) {
+          case 'buzzer:state': {
+            const status = data as {
+              isActive?: boolean;
+              isBuzzerEnabled?: boolean;
+              canPress?: boolean;
+            };
+            if (!status.isActive) {
+              setState('no-session');
+              isRegisteredRef.current = false;
+              setMessage('Session ended. Thank you for participating!');
+            } else if (isRegisteredRef.current) {
+              if (status.isBuzzerEnabled && status.canPress) {
+                setState('ready');
+                isPressedRef.current = false;
+                setMessage('');
+              } else if (!status.canPress && !isPressedRef.current) {
+                setState('waiting');
+                setMessage('Stand by for the next question...');
+              }
+            }
+            break;
+          }
+
+          case 'buzzer:enabled':
+            if (isRegisteredRef.current) {
+              setState('ready');
+              isPressedRef.current = false;
+              setWasFirst(false);
+              winnerNamesRef.current = '';
+              setWinnerNames('');
+              setMessage('');
+            }
+            break;
+
+          case 'buzzer:disabled':
+            if (isRegisteredRef.current && !isPressedRef.current) {
+              setState('waiting');
+              setMessage('Stand by...');
+            }
+            break;
+
+          case 'session:started':
+            if (!isRegisteredRef.current) {
+              setState('register');
+              setMessage('');
+            }
+            break;
+
+          case 'session:ended':
+            setState('no-session');
+            isRegisteredRef.current = false;
+            setMessage('Session ended. Thank you for participating!');
+            break;
+
+          case 'buzzer:locked': {
+            const lockData = data as { winnerNames?: string };
+            winnerNamesRef.current = lockData.winnerNames || '';
+            setWinnerNames(lockData.winnerNames || '');
+            if (!isPressedRef.current) {
+              setState('locked');
+              setMessage(`${lockData.winnerNames} pressed first!`);
+            }
+            break;
+          }
+
+          case 'answer:correct':
+            if (isRegisteredRef.current) {
+              setMessage('Correct answer! Waiting for next question...');
+              setState('waiting');
+              isPressedRef.current = false;
+              setWasFirst(false);
+            }
+            break;
+
+          case 'answer:wrong': {
+            const wrongData = data as { wrongTeam?: string };
+            if (isRegisteredRef.current) {
+              if (wrongData.wrongTeam && winnerNamesRef.current === wrongData.wrongTeam) {
+                setMessage('Wrong answer! Buzzer continuing...');
+              }
+              isPressedRef.current = false;
+              setWasFirst(false);
+            }
+            break;
+          }
+
+          case 'buzzer:reset':
+            if (isRegisteredRef.current) {
+              setState('waiting');
+              isPressedRef.current = false;
+              setWasFirst(false);
+              winnerNamesRef.current = '';
+              setWinnerNames('');
+              setMessage('Waiting for next question...');
+            }
+            break;
         }
-      );
-    });
+      } catch {
+        // Parse error - ignore
+      }
+    };
 
-    socket.on('disconnect', () => {
-      setState('disconnected');
-    });
+    ws.onclose = () => {
+      wsRef.current = null;
 
-    socket.on('connect_error', () => {
+      // Auto reconnect
+      if (reconnectAttemptsRef.current < 10) {
+        setState('connecting');
+        reconnectAttemptsRef.current++;
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, 2000);
+      } else {
+        setState('disconnected');
+      }
+    };
+
+    ws.onerror = () => {
       setError('Unable to connect to server. Please try again.');
-      setState('disconnected');
-    });
+    };
+  }, [sendWSWithResponse]);
 
-    // Buzzer state updates
-    socket.on('buzzer:state', (status: BuzzerStatus) => {
-      if (!status.isActive) {
-        setState('no-session');
-        isRegisteredRef.current = false;
-        setIsRegistered(false);
-        setMessage('Session ended. Thank you for participating!');
-      } else if (isRegisteredRef.current) {
-        if (status.isBuzzerEnabled && status.canPress) {
-          setState('ready');
-          isPressedRef.current = false;
-          setIsPressed(false);
-          setMessage('');
-        } else if (!status.canPress && !isPressedRef.current) {
-          setState('waiting');
-          setMessage('Stand by for the next question...');
-        }
-      }
-    });
-
-    // Buzzer enabled
-    socket.on('buzzer:enabled', () => {
-      if (isRegisteredRef.current) {
-        setState('ready');
-        isPressedRef.current = false;
-        setIsPressed(false);
-        setWasFirst(false);
-        winnerNamesRef.current = '';
-        setWinnerNames('');
-        setMessage('');
-      }
-    });
-
-    // Buzzer disabled (paused)
-    socket.on('buzzer:disabled', () => {
-      if (isRegisteredRef.current && !isPressedRef.current) {
-        setState('waiting');
-        setMessage('Stand by...');
-      }
-    });
-
-    // Session started - allow registration
-    socket.on('session:started', () => {
-      if (!isRegisteredRef.current) {
-        setState('register');
-        setMessage('');
-      }
-    });
-
-    // Session ended
-    socket.on('session:ended', () => {
-      setState('no-session');
-      isRegisteredRef.current = false;
-      setIsRegistered(false);
-      setMessage('Session ended. Thank you for participating!');
-    });
-
-    // Buzzer locked (someone won)
-    socket.on('buzzer:locked', (data: { winnerNames: string }) => {
-      winnerNamesRef.current = data.winnerNames;
-      setWinnerNames(data.winnerNames);
-      if (!isPressedRef.current) {
-        setState('locked');
-        setMessage(`${data.winnerNames} pressed first!`);
-      }
-    });
-
-    // Correct answer
-    socket.on('answer:correct', () => {
-      if (isRegisteredRef.current) {
-        setMessage('Correct answer! Waiting for next question...');
-        setState('waiting');
-        isPressedRef.current = false;
-        setIsPressed(false);
-        setWasFirst(false);
-      }
-    });
-
-    // Wrong answer
-    socket.on('answer:wrong', (data: { wrongTeam: string }) => {
-      if (isRegisteredRef.current) {
-        if (data.wrongTeam && winnerNamesRef.current === data.wrongTeam) {
-          // The team that buzzed gave wrong answer
-          setMessage('Wrong answer! Buzzer continuing...');
-        }
-        isPressedRef.current = false;
-        setIsPressed(false);
-        setWasFirst(false);
-      }
-    });
-
-    // Reset
-    socket.on('buzzer:reset', () => {
-      if (isRegisteredRef.current) {
-        setState('waiting');
-        isPressedRef.current = false;
-        setIsPressed(false);
-        setWasFirst(false);
-        winnerNamesRef.current = '';
-        setWinnerNames('');
-        setMessage('Waiting for next question...');
-      }
-    });
+  useEffect(() => {
+    connect();
 
     return () => {
-      socket.disconnect();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [connect]);
 
   const handleJoin = useCallback(() => {
     if (!name1.trim() || !name2.trim()) {
@@ -204,37 +262,34 @@ export default function BuzzerPage() {
       return;
     }
 
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    socket.emit(
-      'team:join',
-      { name1: name1.trim(), name2: name2.trim(), eventSlug: EVENT_SLUG },
-      (response: { success: boolean; error?: string }) => {
+    sendWSWithResponse('team:join', {
+      name1: name1.trim(),
+      name2: name2.trim(),
+      eventSlug: EVENT_SLUG,
+    })
+      .then((response) => {
         if (response.success) {
           isRegisteredRef.current = true;
-          setIsRegistered(true);
           setState('waiting');
           setMessage('Joined! Waiting for buzzer to be enabled...');
           setError('');
         } else {
-          setError(response.error || 'Failed to join');
+          setError((response.error as string) || 'Failed to join');
         }
-      }
-    );
-  }, [name1, name2]);
+      })
+      .catch(() => {
+        setError('Failed to join. Please try again.');
+      });
+  }, [name1, name2, sendWSWithResponse]);
 
   const handleBuzzerPress = useCallback(() => {
-    const socket = socketRef.current;
-    if (!socket || state !== 'ready') return;
+    if (state !== 'ready') return;
 
     isPressedRef.current = true;
-    setIsPressed(true);
     setState('pressed');
 
-    socket.emit(
-      'buzzer:press',
-      (response: { success: boolean; first?: boolean; error?: string }) => {
+    sendWSWithResponse('buzzer:press')
+      .then((response) => {
         if (response.success) {
           if (response.first) {
             setWasFirst(true);
@@ -244,20 +299,22 @@ export default function BuzzerPage() {
             setState('locked');
           }
         } else {
-          setError(response.error || 'Failed to register buzz');
+          setError((response.error as string) || 'Failed to register buzz');
           isPressedRef.current = false;
-          setIsPressed(false);
           setState('ready');
         }
-      }
-    );
-  }, [state]);
+      })
+      .catch(() => {
+        setError('Failed to register buzz');
+        isPressedRef.current = false;
+        setState('ready');
+      });
+  }, [state, sendWSWithResponse]);
 
-  // Handle reconnection
   const handleReconnect = useCallback(() => {
-    setState('connecting');
-    socketRef.current?.connect();
-  }, []);
+    reconnectAttemptsRef.current = 0;
+    connect();
+  }, [connect]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 flex flex-col">
