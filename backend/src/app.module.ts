@@ -54,10 +54,10 @@ import { UsersModule } from './modules/users/users.module';
 
     // In-memory cache (NestJS built-in)
     CacheModule.registerAsync({
+      isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        isGlobal: true,
         ttl: config.get<number>('CACHE_TTL_SECONDS') || 300,
         max: config.get<number>('CACHE_MAX_ITEMS') || 500,
       }),
