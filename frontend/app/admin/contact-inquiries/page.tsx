@@ -31,6 +31,9 @@ export default function ContactInquiriesPage() {
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
   const [deleteInquiry, setDeleteInquiry] = useState<ContactInquiry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [replyInquiry, setReplyInquiry] = useState<ContactInquiry | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -132,6 +135,50 @@ export default function ContactInquiriesPage() {
     }
   };
 
+  const handleReply = async () => {
+    if (!replyInquiry || !replyMessage.trim()) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+
+    try {
+      setSendingReply(true);
+      const res = await fetch(getApiUrl(`/contact/${replyInquiry.id}/reply`), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: replyMessage }),
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error('Failed to send reply');
+      }
+
+      setReplyInquiry(null);
+      setReplyMessage('');
+      setSelectedInquiry(null);
+      setError('');
+      // Show success message
+      alert('Reply sent successfully!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send reply');
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
   if (loading) {
     return <PageLoader message="Loading inquiries..." />;
   }
@@ -229,6 +276,17 @@ export default function ContactInquiriesPage() {
         size="lg"
         footer={
           <>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (selectedInquiry) {
+                  setReplyInquiry(selectedInquiry);
+                  setSelectedInquiry(null);
+                }
+              }}
+            >
+              Reply
+            </Button>
             {isAdmin && (
               <Button
                 variant="danger"
@@ -238,7 +296,7 @@ export default function ContactInquiriesPage() {
                 Delete
               </Button>
             )}
-            <Button variant="primary" onClick={() => setSelectedInquiry(null)}>
+            <Button variant="ghost" onClick={() => setSelectedInquiry(null)}>
               Close
             </Button>
           </>
@@ -271,6 +329,88 @@ export default function ContactInquiriesPage() {
               <div className="mt-2 p-4 rounded-xl bg-[var(--admin-bg-tertiary)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] whitespace-pre-wrap">
                 {selectedInquiry.message}
               </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Reply Modal */}
+      <Modal
+        isOpen={!!replyInquiry}
+        onClose={() => {
+          setReplyInquiry(null);
+          setReplyMessage('');
+        }}
+        title="Reply to Inquiry"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="primary"
+              onClick={handleReply}
+              disabled={!replyMessage.trim() || sendingReply}
+              loading={sendingReply}
+            >
+              Send Reply
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReplyInquiry(null);
+                setReplyMessage('');
+              }}
+              disabled={sendingReply}
+            >
+              Cancel
+            </Button>
+          </>
+        }
+      >
+        {replyInquiry && (
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-[var(--admin-text-muted)]">Name</p>
+                <p className="font-semibold text-[var(--admin-text-primary)]">
+                  {replyInquiry.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--admin-text-muted)]">Email</p>
+                <p className="font-semibold text-[var(--admin-text-primary)]">
+                  {replyInquiry.email}
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-[var(--admin-text-muted)] mb-2">Original Message</p>
+              <div className="p-4 rounded-xl bg-[var(--admin-bg-tertiary)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] whitespace-pre-wrap text-sm">
+                {replyInquiry.message}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--admin-text-primary)] mb-2">
+                Your Reply
+              </label>
+              <textarea
+                className="w-full px-4 py-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-bg-secondary)] text-[var(--admin-text-primary)] placeholder-[var(--admin-text-muted)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-none"
+                rows={8}
+                placeholder="Type your reply here... This will be sent from contact@xianze.tech"
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                maxLength={2000}
+                disabled={sendingReply}
+              />
+              <p className="text-xs text-[var(--admin-text-muted)] mt-2">
+                {replyMessage.length} / 2000 characters
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-primary-50 border border-primary-200">
+              <p className="text-sm text-primary-700">
+                <strong>📧 Note:</strong> Your reply will be sent from{' '}
+                <span className="font-mono">contact@xianze.tech</span> and will include the
+                original message for context.
+              </p>
             </div>
           </div>
         )}

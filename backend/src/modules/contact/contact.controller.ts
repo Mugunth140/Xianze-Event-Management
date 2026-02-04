@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/user.entity';
 import { ContactService } from './contact.service';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { ReplyContactDto } from './dto/reply-contact.dto';
 
 @Controller('contact')
 export class ContactController {
@@ -61,6 +62,24 @@ export class ContactController {
     return {
       success: true,
       message: 'Inquiry deleted successfully',
+    };
+  }
+
+  /**
+   * POST /api/contact/:id/reply
+   *
+   * Send reply to a contact inquiry from contact@xianze.tech
+   * Only coordinators and admins can reply
+   */
+  @Post(':id/reply')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COORDINATOR, UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async reply(@Param('id', ParseIntPipe) id: number, @Body() dto: ReplyContactDto) {
+    await this.contactService.replyToInquiry(id, dto.message);
+    return {
+      success: true,
+      message: 'Reply sent successfully',
     };
   }
 }

@@ -174,4 +174,34 @@ export class MailService {
       },
     });
   }
+
+  /**
+   * Send reply to contact inquiry from contact@xianze.tech
+   */
+  async sendContactReply(
+    email: string,
+    name: string,
+    originalMessage: string,
+    replyMessage: string,
+  ): Promise<boolean> {
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        from: '"XIANZE Team" <contact@xianze.tech>',
+        subject: 'Re: Your inquiry - XIANZE 2026',
+        template: './contact-coordinator-reply',
+        context: {
+          name,
+          originalMessage,
+          replyMessage,
+          year: new Date().getFullYear(),
+        },
+      });
+      this.logger.log(`Coordinator reply sent to ${email}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send coordinator reply to ${email}`, error);
+      throw error;
+    }
+  }
 }

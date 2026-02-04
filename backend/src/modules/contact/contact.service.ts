@@ -42,4 +42,17 @@ export class ContactService {
 
     await this.contactRepository.remove(contact);
   }
+
+  async replyToInquiry(id: number, message: string): Promise<void> {
+    const contact = await this.contactRepository.findOne({ where: { id } });
+
+    if (!contact) {
+      throw new NotFoundException('Contact inquiry not found');
+    }
+
+    // Send reply from contact@xianze.tech
+    await this.mailService.sendContactReply(contact.email, contact.name, contact.message, message);
+
+    this.logger.log(`Reply sent to ${contact.email} for inquiry #${id}`);
+  }
 }
