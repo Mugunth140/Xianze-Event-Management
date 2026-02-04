@@ -114,16 +114,12 @@ export class PaperPresentationController {
         file: MulterFile,
         cb: (error: Error | null, acceptFile: boolean) => void,
       ) => {
-        const allowedMimes = [
-          'application/vnd.ms-powerpoint',
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          'application/pdf',
-        ];
-        const allowedExts = ['.ppt', '.pptx', '.pdf'];
+        const allowedMimes = ['application/pdf'];
+        const allowedExts = ['.pdf'];
         const ext = extname(file.originalname).toLowerCase();
 
         if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
-          return cb(new BadRequestException('Only PPT, PPTX, and PDF files are allowed'), false);
+          return cb(new BadRequestException('Only PDF files are allowed'), false);
         }
         cb(null, true);
       },
@@ -268,6 +264,107 @@ export class PaperPresentationController {
 
     const submission = await this.service.updateSubmission(id, dto);
     return { success: true, data: submission };
+  }
+
+  /**
+   * POST /api/paper-presentation/submissions/:id/slides
+   * Replace submission slides (Coordinator/Admin)
+   */
+  @Post('submissions/:id/slides')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
+  @UseInterceptors(
+    FileInterceptor('slides', {
+      storage: diskStorage({
+        destination: '/data/presentations',
+        filename: (
+          _req: Request,
+          file: MulterFile,
+          cb: (error: Error | null, filename: string) => void,
+        ) => {
+          cb(null, generateFilename(file.originalname));
+        },
+      }),
+      limits: {
+        fileSize: 15 * 1024 * 1024, // 15MB max
+      },
+      fileFilter: (
+        _req: Request,
+        file: MulterFile,
+        cb: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
+        const allowedMimes = [
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'application/pdf',
+        ];
+        const allowedExts = ['.ppt', '.pptx', '.pdf'];
+        const ext = extname(file.originalname).toLowerCase();
+
+        if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
+          return cb(new BadRequestException('Only PPT, PPTX, and PDF files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async updateSlides(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+        errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+      }),
+    )
+    file: MulterFile,
+  ) {
+    const submission = await this.service.findById(id);
+    const newSlidePath = `/presentations/${file.filename}`;
+    const uploadExt = extname(file.originalname).toLowerCase();
+
+    let newPdfPath: string | null = null;
+    if (uploadExt === '.pdf') {
+      newPdfPath = newSlidePath;
+    } else if (uploadExt === '.ppt' || uploadExt === '.pptx') {
+      try {
+        newPdfPath = await convertSlidesToPdf(join('/data', newSlidePath));
+      } catch {
+        const newFilePath = join('/data', newSlidePath);
+        if (existsSync(newFilePath)) {
+          try {
+            unlinkSync(newFilePath);
+          } catch {
+            /* ignore */
+          }
+        }
+        throw new BadRequestException(
+          'Failed to convert PPT/PPTX to PDF. Please upload a PDF file.',
+        );
+      }
+    }
+
+    const oldSlidePath = join('/data', submission.slidePath);
+    if (existsSync(oldSlidePath)) {
+      try {
+        unlinkSync(oldSlidePath);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (submission.pdfPath && submission.pdfPath !== submission.slidePath) {
+      const oldPdfPath = join('/data', submission.pdfPath);
+      if (existsSync(oldPdfPath)) {
+        try {
+          unlinkSync(oldPdfPath);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    const updated = await this.service.updateSlides(id, newSlidePath, newPdfPath);
+    return { success: true, data: updated };
   }
 
   /**

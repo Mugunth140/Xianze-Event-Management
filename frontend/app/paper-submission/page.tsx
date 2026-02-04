@@ -1,8 +1,8 @@
 'use client';
 
+import { getApiUrl } from '@/lib/api';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
-import { getApiUrl } from '@/lib/api';
 
 export default function PaperSubmissionPage() {
   const [formData, setFormData] = useState({
@@ -23,7 +23,14 @@ export default function PaperSubmissionPage() {
     setLoading(true);
 
     if (!file) {
-      setError('Please upload your presentation slides');
+      setError('Please upload your presentation slides (PDF only)');
+      setLoading(false);
+      return;
+    }
+
+    const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+    if (!isPdf) {
+      setError('Only PDF files are allowed for submission');
       setLoading(false);
       return;
     }
@@ -104,7 +111,7 @@ export default function PaperSubmissionPage() {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-700 border border-amber-200">
-              PDF/PPT/PPTX only — ready for slideshow
+              PDF only — ready for slideshow
             </span>
             <Link
               href="/events"
@@ -205,7 +212,7 @@ export default function PaperSubmissionPage() {
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-400 transition-colors">
               <input
                 type="file"
-                accept=".ppt,.pptx,.pdf"
+                accept=".pdf,application/pdf"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="hidden"
                 id="file-upload"
@@ -229,13 +236,11 @@ export default function PaperSubmissionPage() {
                 {file ? (
                   <p className="text-primary-600 font-medium">{file.name}</p>
                 ) : (
-                  <p className="text-gray-500">Click to upload PDF, PPT or PPTX (max 15MB)</p>
+                  <p className="text-gray-500">Click to upload PDF (max 15MB)</p>
                 )}
               </label>
             </div>
-            <p className="mt-2 text-xs text-gray-500">
-              For best presentation experience, we recommend uploading a <strong>PDF</strong>.
-            </p>
+            <p className="mt-2 text-xs text-gray-500">Only PDF files are accepted for submission.</p>
           </div>
 
           {/* Submit Button */}

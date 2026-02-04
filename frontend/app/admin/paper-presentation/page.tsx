@@ -1,6 +1,7 @@
 'use client';
 
 import { getApiUrl } from '@/lib/api';
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Badge from '../components/ui/Badge';
@@ -9,7 +10,6 @@ import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
-import dynamic from 'next/dynamic';
 
 const PaperPresenter = dynamic(() => import('../components/events/PaperPresenter'), {
   ssr: false,
@@ -53,6 +53,8 @@ export default function PaperPresentationPage() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [uploadingSlides, setUploadingSlides] = useState(false);
   const [editForm, setEditForm] = useState({
     teamMembers: '',
     college: '',
@@ -158,6 +160,7 @@ export default function PaperPresentationPage() {
 
   const handleEditOpen = (sub: PaperSubmission) => {
     setEditingId(sub.id);
+    setEditFile(null);
     setEditForm({
       teamMembers: sub.teamMembers.join(', '),
       college: sub.college,
@@ -197,6 +200,37 @@ export default function PaperPresentationPage() {
       setError('Failed to update submission');
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleSlidesUpload = async (id: number) => {
+    if (!canEdit) return;
+    if (!editFile) {
+      setError('Please select a PPT, PPTX, or PDF file to upload');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const data = new FormData();
+    data.append('slides', editFile);
+
+    setUploadingSlides(true);
+    try {
+      const res = await fetch(getApiUrl(`/paper-presentation/submissions/${id}/slides`), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+      setEditFile(null);
+      fetchData();
+    } catch {
+      setError('Failed to replace slides');
+    } finally {
+      setUploadingSlides(false);
     }
   };
 
@@ -470,11 +504,41 @@ export default function PaperPresentationPage() {
                       onChange={(e) => setEditForm({ ...editForm, teamMembers: e.target.value })}
                     />
                   </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Replace Slides (PPT/PPTX/PDF)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".ppt,.pptx,.pdf"
+                      onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                      className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    />
+                    {editFile && (
+                      <p className="mt-2 text-xs text-gray-500">Selected: {editFile.name}</p>
+                    )}
+                  </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button size="sm" onClick={() => handleEditSave(sub.id)} loading={savingEdit}>
                       Save Changes
                     </Button>
-                    <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleSlidesUpload(sub.id)}
+                      loading={uploadingSlides}
+                      disabled={!editFile}
+                    >
+                      Replace Slides
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditFile(null);
+                      }}
+                    >
                       Cancel
                     </Button>
                   </div>
