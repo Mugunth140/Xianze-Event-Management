@@ -4,6 +4,9 @@ import { getApiUrl } from '@/lib/api';
 import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+// Module-level flag to prevent React Strict Mode double-mount
+let hasConnected = false;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PDFDocumentProxy = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,20 +163,73 @@ export default function ThinkLinkPresenter({
   );
 
   useEffect(() => {
+    // Prevent double connection in React Strict Mode
+    if (hasConnected && buzzerSocketRef.current?.readyState === WebSocket.OPEN) {
+      console.log('[ThinkLinkPresenter] Already connected, skipping duplicate mount');
+      return;
+    }
+    hasConnected = true;
+
     const wsUrl = getWSUrl();
+    console.log('[ThinkLinkPresenter] Connecting to WebSocket:', wsUrl);
     const ws = new WebSocket(wsUrl);
     buzzerSocketRef.current = ws;
 
+    // Helper to send message with response using this specific WebSocket instance
+    const sendWSMessage = (
+      type: string,
+      data?: Record<string, unknown>
+    ): Promise<Record<string, unknown>> => {
+      return new Promise((resolve, reject) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          reject(new Error('WebSocket not connected'));
+          return;
+        }
+
+        const requestId = crypto.randomUUID();
+        const message: WSMessage = { type, requestId, data };
+
+        const handleResponse = (event: MessageEvent) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.requestId === requestId) {
+              ws.removeEventListener('message', handleResponse);
+              resolve(response.data || {});
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        };
+
+        ws.addEventListener('message', handleResponse);
+        ws.send(JSON.stringify(message));
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          ws.removeEventListener('message', handleResponse);
+          reject(new Error('Request timeout'));
+        }, 10000);
+      });
+    };
+
     ws.onopen = () => {
+      console.log('[ThinkLinkPresenter] WebSocket connected');
       // Join as coordinator and start session
-      sendWSWithResponse('coordinator:join')
-        .then(() => sendWSWithResponse('coordinator:select-event', { eventSlug: 'think-link' }))
-        .then(() => sendWSWithResponse('coordinator:start-session'))
+      sendWSMessage('coordinator:join')
         .then(() => {
+          console.log('[ThinkLinkPresenter] Coordinator joined');
+          return sendWSMessage('coordinator:select-event', { eventSlug: 'think-link' });
+        })
+        .then(() => {
+          console.log('[ThinkLinkPresenter] Event selected: think-link');
+          return sendWSMessage('coordinator:start-session');
+        })
+        .then(() => {
+          console.log('[ThinkLinkPresenter] Session started');
           setWsReady(true);
         })
-        .catch(() => {
-          // Connection failed - ignore
+        .catch((err) => {
+          console.error('[ThinkLinkPresenter] Setup failed:', err);
           setWsReady(true); // Set ready anyway to unblock UI
         });
     };
@@ -214,16 +270,40 @@ export default function ThinkLinkPresenter({
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
+      console.log('[ThinkLinkPresenter] WebSocket closed:', event.code, event.reason);
       buzzerSocketRef.current = null;
+      setWsReady(false);
+    };
+
+    ws.onerror = (error) => {
+      console.error('[ThinkLinkPresenter] WebSocket error:', error);
+      setWsReady(false);
     };
 
     return () => {
-      ws.close();
+      console.log('[ThinkLinkPresenter] Cleanup called, WebSocket state:', ws.readyState);
+      // Don't close on first cleanup (React Strict Mode), only on actual unmount
+      if (ws.readyState === WebSocket.OPEN) {
+        console.log('[ThinkLinkPresenter] Ending session and closing WebSocket');
+        // Try to end session gracefully, but don't wait for response
+        try {
+          ws.send(JSON.stringify({ type: 'coordinator:end-session' }));
+        } catch (err) {
+          console.error('[ThinkLinkPresenter] Failed to end session:', err);
+        }
+        // Close after a brief delay to allow message to send
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.close();
+          }
+        }, 100);
+      }
       buzzerSocketRef.current = null;
     };
+    // Empty dependency array - only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sendWSWithResponse]);
+  }, []);
 
   // Render current page
   useEffect(() => {
@@ -263,6 +343,26 @@ export default function ThinkLinkPresenter({
     renderPage();
   }, [currentPage, loading]);
 
+  // Cleanup handler to end session properly
+  const handleClose = useCallback(() => {
+    const ws = buzzerSocketRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      console.log('[ThinkLinkPresenter] Ending session on close');
+      try {
+        ws.send(JSON.stringify({ type: 'coordinator:end-session' }));
+      } catch (err) {
+        console.error('[ThinkLinkPresenter] Failed to end session:', err);
+      }
+      // Close WebSocket after brief delay
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      }, 100);
+    }
+    onClose();
+  }, [onClose]);
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -270,7 +370,7 @@ export default function ThinkLinkPresenter({
         if (document.fullscreenElement) {
           document.exitFullscreen();
         }
-        onClose();
+        handleClose();
       } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
         goToNext();
       } else if (e.key === 'ArrowLeft' && currentPage > 1) {
@@ -286,7 +386,7 @@ export default function ThinkLinkPresenter({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentPage, totalPages, isTimedOut]
+    [currentPage, totalPages, isTimedOut, handleClose]
   );
 
   useEffect(() => {
@@ -357,8 +457,14 @@ export default function ThinkLinkPresenter({
   }, []);
 
   const enableBuzzerForSlide = useCallback(() => {
-    sendWS('coordinator:enable-buzzer');
-  }, [sendWS]);
+    const ws = buzzerSocketRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.warn('[ThinkLinkPresenter] Cannot enable buzzer - WebSocket not ready');
+      return;
+    }
+    console.log('[ThinkLinkPresenter] Enabling buzzer for slide');
+    ws.send(JSON.stringify({ type: 'coordinator:enable-buzzer' }));
+  }, []);
 
   const startTimer = () => {
     setIsTimedOut(false);
@@ -410,7 +516,7 @@ export default function ThinkLinkPresenter({
       <div className="fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center gap-4">
         <div className="text-red-500 text-xl">{error}</div>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
         >
           Go Back
@@ -438,7 +544,7 @@ export default function ThinkLinkPresenter({
               Fullscreen
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
             >
               Exit
