@@ -371,10 +371,20 @@ export default function ThinkLinkPresenter({
   useEffect(() => {
     if (!loading && !hasAutoStartedRef.current) {
       hasAutoStartedRef.current = true;
-      resetAndStartTimer();
-      enableBuzzerForSlide();
+      // Auto-start buzzer session
+      sendWSWithResponse('coordinator:start-session')
+        .then(() => {
+          resetAndStartTimer();
+          enableBuzzerForSlide();
+        })
+        .catch((err) => {
+          console.error('Failed to start buzzer session:', err);
+          // Continue anyway
+          resetAndStartTimer();
+          enableBuzzerForSlide();
+        });
     }
-  }, [loading, resetAndStartTimer, enableBuzzerForSlide]);
+  }, [loading, resetAndStartTimer, enableBuzzerForSlide, sendWSWithResponse]);
 
   const enterFullscreen = () => {
     const container = document.getElementById('think-link-presenter');
@@ -493,9 +503,9 @@ export default function ThinkLinkPresenter({
 
           {/* Buzzer winner - bottom center */}
           {buzzerWinner && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
-              <div className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-sm font-semibold shadow-lg">
-                {buzzerWinner}
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-none z-20">
+              <div className="px-8 py-4 rounded-2xl bg-emerald-500/95 backdrop-blur text-white text-4xl font-bold shadow-2xl animate-pulse border-4 border-white/30">
+                🏆 {buzzerWinner}
               </div>
             </div>
           )}
