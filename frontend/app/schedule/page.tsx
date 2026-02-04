@@ -398,12 +398,6 @@ const SchedulePage = () => {
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary-50 border border-primary-100 text-xs font-bold text-primary-700 mb-6 tracking-wide uppercase shadow-sm">
             Event Timeline
           </span>
-          <h1 className="text-4xl md:text-6xl font-display font-bold text-gray-900 mb-6 tracking-tight">
-            The <span className="text-primary-600">Schedule</span>
-          </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Follow the flow of innovation. A packed day of coding, gaming, and technical excellence.
-          </p>
         </motion.div>
 
         {/* --- STARTING EVENTS (08:30 - 10:30) --- */}
