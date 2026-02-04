@@ -400,9 +400,9 @@ export default function CtrlQuizPage() {
                   </Button>
                   {roundState?.activeRound === 2 && (
                     <Button variant="danger" onClick={handleEnd}>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 6h12v12H6z" />
-                    </svg>
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 6h12v12H6z" />
+                      </svg>
                       Finish Quiz
                     </Button>
                   )}
@@ -684,7 +684,10 @@ export default function CtrlQuizPage() {
                     <li
                       key={p.id}
                       className="flex items-center justify-between px-4 py-3 transition-all duration-300 hover:bg-gray-50"
-                      style={{ animation: 'leaderboardFade 240ms ease', animationDelay: `${i * 40}ms` }}
+                      style={{
+                        animation: 'leaderboardFade 240ms ease',
+                        animationDelay: `${i * 40}ms`,
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-700">

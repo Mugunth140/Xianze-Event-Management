@@ -1,5 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { buzzerWSServer } from '../think-link/buzzer/buzzer-ws.server';
 import {
@@ -43,6 +45,8 @@ export class CtrlQuizService {
     private readonly submissionRepo: Repository<CtrlQuizSubmission>,
     @InjectRepository(CtrlQuizRoundState)
     private readonly roundStateRepo: Repository<CtrlQuizRoundState>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   // ========================
@@ -108,25 +112,43 @@ export class CtrlQuizService {
       order: (maxOrder?.max || 0) + 1,
       round: questionRound,
     });
-    return this.questionRepo.save(question);
+    const saved = await this.questionRepo.save(question);
+    await this.cacheManager.del('ctrl-quiz:questions:all');
+    return saved;
   }
 
   async getAllQuestions(): Promise<CtrlQuizQuestion[]> {
-    return this.questionRepo.find({
+    const cached = await this.cacheManager.get<CtrlQuizQuestion[]>('ctrl-quiz:questions:all');
+    if (cached) {
+      return cached;
+    }
+    const questions = await this.questionRepo.find({
       where: { isActive: true },
       order: { round: 'ASC', order: 'ASC' },
     });
+    await this.cacheManager.set('ctrl-quiz:questions:all', questions, 300);
+    return questions;
   }
 
   async getQuestionById(id: number): Promise<CtrlQuizQuestion> {
+    const cacheKey = `ctrl-quiz:question:${id}`;
+    const cached = await this.cacheManager.get<CtrlQuizQuestion>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const question = await this.questionRepo.findOne({ where: { id } });
     if (!question) throw new NotFoundException(`Question ${id} not found`);
+    await this.cacheManager.set(cacheKey, question, 300);
     return question;
   }
 
   async deleteQuestion(id: number): Promise<void> {
     const question = await this.getQuestionById(id);
     await this.questionRepo.remove(question);
+    await Promise.all([
+      this.cacheManager.del('ctrl-quiz:questions:all'),
+      this.cacheManager.del(`ctrl-quiz:question:${id}`),
+    ]);
   }
 
   async getNextQuestion(participantId: number): Promise<CtrlQuizQuestion | null> {

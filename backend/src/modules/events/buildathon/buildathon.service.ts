@@ -1,5 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { Cache } from 'cache-manager';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Repository } from 'typeorm';
@@ -33,6 +35,8 @@ export class BuildathonService {
     private readonly apiStateRepo: Repository<BuildathonApiState>,
     @InjectRepository(BuildathonRequestLog)
     private readonly requestLogRepo: Repository<BuildathonRequestLog>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   // ========================
@@ -209,6 +213,12 @@ export class BuildathonService {
     }
     // Log request
     await this.logRequest('customers', ip, userAgent);
+    const cacheKey = 'buildathon:data:customers';
+    const cached = await this.cacheManager.get<unknown[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    await this.cacheManager.set(cacheKey, customersData, 3600);
     return customersData;
   }
 
@@ -218,6 +228,12 @@ export class BuildathonService {
       throw new BadRequestException('Orders endpoint is currently disabled');
     }
     await this.logRequest('orders', ip, userAgent);
+    const cacheKey = 'buildathon:data:orders';
+    const cached = await this.cacheManager.get<unknown[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    await this.cacheManager.set(cacheKey, ordersData, 3600);
     return ordersData;
   }
 
@@ -227,6 +243,12 @@ export class BuildathonService {
       throw new BadRequestException('Products endpoint is currently disabled');
     }
     await this.logRequest('products', ip, userAgent);
+    const cacheKey = 'buildathon:data:products';
+    const cached = await this.cacheManager.get<unknown[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    await this.cacheManager.set(cacheKey, productsData, 3600);
     return productsData;
   }
 
