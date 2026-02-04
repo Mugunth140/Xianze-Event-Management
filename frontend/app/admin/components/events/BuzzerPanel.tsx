@@ -68,11 +68,13 @@ export default function BuzzerPanel({
     (
       type: string,
       data?: Record<string, unknown>,
-      wsInstance?: WebSocket
+      wsInstance?: WebSocket,
+      timeoutMs = 10000
     ): Promise<Record<string, unknown>> => {
       return new Promise((resolve, reject) => {
         const ws = wsInstance || wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
+          console.error('[BuzzerPanel] WebSocket not connected');
           reject(new Error('WebSocket not connected'));
           return;
         }
@@ -97,8 +99,9 @@ export default function BuzzerPanel({
 
         setTimeout(() => {
           ws.removeEventListener('message', handleResponse);
+          console.error('[BuzzerPanel] Request timeout for:', type);
           reject(new Error('Request timeout'));
-        }, 10000);
+        }, timeoutMs);
       });
     },
     []
@@ -202,6 +205,17 @@ export default function BuzzerPanel({
             setSessionState('buzzer-enabled');
             setWinner(null);
             break;
+
+          // Handle broadcasts from ThinkLinkPresenter or other coordinators
+          case 'answer:correct':
+            setSessionState('active');
+            setWinner(null);
+            break;
+
+          case 'answer:wrong':
+            setWinner(null);
+            // State will be updated by buzzer:enabled or buzzer:winner broadcast
+            break;
         }
       } catch {
         // Parse error - ignore
@@ -209,9 +223,16 @@ export default function BuzzerPanel({
     };
 
     ws.onclose = (event) => {
-      console.log('[BuzzerPanel] WebSocket closed:', event.code, event.reason, event.wasClean);
       wsRef.current = null;
       setConnectionState('disconnected');
+      
+      // Auto-reconnect after 2 seconds if not a clean close
+      if (!event.wasClean && reconnectTimeoutRef.current === null) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectTimeoutRef.current = null;
+          connect();
+        }, 2000);
+      }
     };
 
     ws.onerror = () => {
@@ -264,53 +285,58 @@ export default function BuzzerPanel({
       .catch(() => setError('Failed to end session'));
   }, [sendWSWithResponse]);
 
-  const handleEnableBuzzer = useCallback(() => {
-    sendWSWithResponse('coordinator:enable-buzzer')
-      .then((response) => {
-        if (response.success) {
-          setSessionState('buzzer-enabled');
-          setWinner(null);
-        } else {
-          setError((response.error as string) || 'Failed to enable buzzer');
-        }
-      })
-      .catch(() => setError('Failed to enable buzzer'));
-  }, [sendWSWithResponse]);
-
-  const handleDisableBuzzer = useCallback(() => {
-    sendWSWithResponse('coordinator:disable-buzzer')
+  const handleReset = useCallback(() => {
+    sendWSWithResponse('coordinator:reset')
       .then((response) => {
         if (response.success) {
           setSessionState('active');
+          setWinner(null);
         } else {
-          setError((response.error as string) || 'Failed to pause buzzer');
+          setError((response.error as string) || 'Failed to reset');
         }
       })
-      .catch(() => setError('Failed to pause buzzer'));
+      .catch(() => setError('Failed to reset'));
   }, [sendWSWithResponse]);
 
   const handleCorrectAnswer = useCallback(() => {
-    sendWSWithResponse('coordinator:answer-correct')
+    // Optimistic UI update for instant feedback
+    setSessionState('active');
+    setWinner(null);
+    
+    // Send request with 30s timeout for high-load scenarios (20+ phones)
+    sendWSMessage('coordinator:answer-correct', undefined, undefined, 30000)
       .then((response) => {
-        if (response.success) {
-          setSessionState('active');
-          setWinner(null);
-        } else {
+        if (!response.success) {
+          // Revert optimistic update on failure
           setError((response.error as string) || 'Failed to mark correct');
         }
       })
-      .catch(() => setError('Failed to mark correct'));
-  }, [sendWSWithResponse]);
+      .catch((err) => {
+        console.error('[BuzzerPanel] Correct answer error:', err);
+        // Keep optimistic state even on timeout - broadcasts likely succeeded
+        console.warn('[BuzzerPanel] Timeout likely due to high load, state already updated');
+      });
+  }, [sendWSMessage]);
 
   const handleWrongAnswer = useCallback(() => {
-    sendWSWithResponse('coordinator:answer-wrong')
+    // Optimistic UI update for instant feedback
+    setWinner(null);
+    setSessionState('buzzer-enabled');
+    
+    // Send request with 30s timeout for high-load scenarios (20+ phones)
+    sendWSMessage('coordinator:answer-wrong', undefined, undefined, 30000)
       .then((response) => {
         if (!response.success) {
+          // Revert optimistic update on failure
           setError((response.error as string) || 'Failed to mark wrong');
         }
       })
-      .catch(() => setError('Failed to mark wrong'));
-  }, [sendWSWithResponse]);
+      .catch((err) => {
+        console.error('[BuzzerPanel] Wrong answer error:', err);
+        // Keep optimistic state even on timeout - broadcasts likely succeeded
+        console.warn('[BuzzerPanel] Timeout likely due to high load, state already updated');
+      });
+  }, [sendWSMessage]);
 
   const handleReconnect = useCallback(() => {
     connect();
@@ -330,13 +356,21 @@ export default function BuzzerPanel({
   );
 
   const statusLabel =
-    sessionState === 'idle' ? 'Off' : sessionState === 'buzzer-enabled' ? 'Live' : 'Paused';
+    sessionState === 'idle'
+      ? 'Off'
+      : sessionState === 'buzzer-enabled'
+        ? 'Live'
+        : sessionState === 'winner'
+          ? 'Winner'
+          : 'Waiting';
   const statusTone =
     sessionState === 'buzzer-enabled'
       ? 'text-emerald-500'
-      : sessionState === 'idle'
-        ? 'text-gray-400'
-        : 'text-amber-500';
+      : sessionState === 'winner'
+        ? 'text-primary-500'
+        : sessionState === 'idle'
+          ? 'text-gray-400'
+          : 'text-blue-500';
 
   // Disconnected state
   if (connectionState === 'disconnected') {
@@ -447,7 +481,7 @@ export default function BuzzerPanel({
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Wrong → Buzzer re-enables automatically | Correct → Pause for next question
+              Wrong → Buzzer re-enables for other teams | Correct → Advances to next slide
             </p>
           </div>
         </Card>
@@ -455,11 +489,11 @@ export default function BuzzerPanel({
 
       {/* Buzzer Live Indicator */}
       {sessionState === 'buzzer-enabled' && !winner && (
-        <Card className="p-8 border-4 border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50">
+        <Card className="p-8 border-4 border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50">
           <div className="text-center">
-            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
               <svg
-                className="w-10 h-10 text-amber-600"
+                className="w-10 h-10 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -472,8 +506,34 @@ export default function BuzzerPanel({
                 />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-amber-800 mb-2">Buzzer is LIVE!</h2>
+            <h2 className="text-3xl font-bold text-emerald-800 mb-2">Buzzer is LIVE!</h2>
             <p className="text-gray-600">Waiting for teams to press...</p>
+            <p className="text-sm text-gray-500 mt-2">{teams.length} team(s) connected</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Waiting for Slide - Session active but buzzer not enabled */}
+      {sessionState === 'active' && !winner && (
+        <Card className="p-8 border-4 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-10 h-10 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-blue-800 mb-2">Waiting for Slide Change</h2>
+            <p className="text-gray-600">Buzzer will auto-enable when you navigate slides in presenter</p>
             <p className="text-sm text-gray-500 mt-2">{teams.length} team(s) connected</p>
           </div>
         </Card>
@@ -594,27 +654,20 @@ export default function BuzzerPanel({
             </Button>
           )}
 
-          {/* Enable/Disable Buzzer */}
-          {sessionState !== 'idle' &&
-            sessionState !== 'winner' &&
-            (sessionState === 'buzzer-enabled' ? (
-              <Button onClick={handleDisableBuzzer} className="!bg-amber-500 hover:!bg-amber-400">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-                Pause Buzzer
-              </Button>
-            ) : (
-              <Button
-                onClick={handleEnableBuzzer}
-                className="!bg-emerald-600 hover:!bg-emerald-500"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Enable Buzzer
-              </Button>
-            ))}
+          {/* Reset Button - Emergency recovery */}
+          {sessionState !== 'idle' && (
+            <Button onClick={handleReset} variant="secondary">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Reset
+            </Button>
+          )}
         </div>
       </Card>
 

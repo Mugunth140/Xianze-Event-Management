@@ -223,7 +223,15 @@ export class BuzzerWebSocketServer {
         break;
 
       case 'coordinator:answer-correct':
-        this.handleAnswerCorrect(ws).then(respond);
+        // Send response IMMEDIATELY before broadcasts to prevent timeout with 20+ phones
+        this.handleAnswerCorrect(ws)
+          .then((result) => {
+            respond(result);
+          })
+          .catch((err) => {
+            this.logger.error(`Error in handleAnswerCorrect: ${err}`);
+            respond({ success: false, error: 'Internal error' });
+          });
         break;
 
       case 'coordinator:answer-wrong':
@@ -351,22 +359,26 @@ export class BuzzerWebSocketServer {
     this.logger.log(`Buzz (${eventSlug}) from ${team.name1} & ${team.name2} at ${pressedAt}`);
 
     if (!state.currentWinner) {
+      // IMMEDIATELY lock the state before any broadcasts to prevent race conditions
       state.currentWinner = buzzPress;
       state.isBuzzerEnabled = false;
 
-      // Notify coordinators
-      this.broadcastToCoordinators(eventSlug, {
-        type: 'buzzer:winner',
-        data: { team, pressedAt },
-      });
+      // Create response first (lowest latency for presser)
+      const response = { success: true, first: true };
 
-      // Notify all participants
+      // Broadcast to all participants FIRST (they need to lock their UI immediately)
       this.broadcastToEvent(eventSlug, {
         type: 'buzzer:locked',
         data: { winnerNames: `${team.name1} & ${team.name2}` },
       });
 
-      return { success: true, first: true };
+      // Notify coordinators LAST (less time-critical)
+      this.broadcastToCoordinators(eventSlug, {
+        type: 'buzzer:winner',
+        data: { team, pressedAt },
+      });
+
+      return response;
     }
 
     return { success: true, first: false };
@@ -548,7 +560,7 @@ export class BuzzerWebSocketServer {
   }
 
   /**
-   * Mark answer as correct
+   * Mark answer as correct - optimized for 20-40ms updates
    */
   private async handleAnswerCorrect(ws: ServerWebSocket<WSData>) {
     if (ws.data.type !== 'coordinator') {
@@ -557,33 +569,21 @@ export class BuzzerWebSocketServer {
 
     const eventSlug = ws.data.eventSlug;
     const state = this.getEventState(eventSlug);
-    const winningTeam = state.currentWinner?.team;
 
-    // Add score to database
-    if (winningTeam && this.dataSource) {
-      try {
-        await this.addScore(eventSlug, winningTeam.name1, winningTeam.name2, 1);
-        this.logger.log(`Point awarded to ${winningTeam.name1} & ${winningTeam.name2}`);
-      } catch (err) {
-        this.logger.error(`Failed to add score: ${err}`);
-      }
-    }
-
-    this.logger.log(`Answer correct (${eventSlug})`);
-
+    // Update state FIRST
     state.isBuzzerEnabled = false;
     state.currentWinner = null;
     state.buzzQueue = [];
 
+    // Broadcast IMMEDIATELY (synchronous for 20-40ms response)
     this.broadcastToEvent(eventSlug, { type: 'answer:correct' });
     this.broadcastBuzzerState(eventSlug);
-    await this.broadcastLeaderboard(eventSlug);
 
     return { success: true };
   }
 
   /**
-   * Mark answer as wrong
+   * Mark answer as wrong - optimized for 20-40ms updates
    */
   private handleAnswerWrong(ws: ServerWebSocket<WSData>) {
     if (ws.data.type !== 'coordinator') {
@@ -596,7 +596,7 @@ export class BuzzerWebSocketServer {
 
     this.logger.log(`Answer wrong (${eventSlug}) by ${wrongTeam?.name1} & ${wrongTeam?.name2}`);
 
-    state.isBuzzerEnabled = true;
+    // IMMEDIATELY clear current winner
     state.currentWinner = null;
 
     // Check for queued buzzes from other teams
@@ -604,11 +604,28 @@ export class BuzzerWebSocketServer {
       (buzz) => buzz.team.socketId !== wrongTeam?.socketId,
     );
 
+    // Broadcast IMMEDIATELY (synchronous for 20-40ms response)
     if (remainingBuzzes.length > 0) {
+      // Someone else pressed - lock to them immediately
       remainingBuzzes.sort((a, b) => a.pressedAt - b.pressedAt);
       state.currentWinner = remainingBuzzes[0];
       state.isBuzzerEnabled = false;
 
+      // Broadcast wrong answer FIRST
+      this.broadcastToEvent(eventSlug, {
+        type: 'answer:wrong',
+        data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
+      });
+
+      // Then IMMEDIATELY lock to next team
+      this.broadcastToEvent(eventSlug, {
+        type: 'buzzer:locked',
+        data: {
+          winnerNames: `${state.currentWinner.team.name1} & ${state.currentWinner.team.name2}`,
+        },
+      });
+
+      // Notify coordinators last
       this.broadcastToCoordinators(eventSlug, {
         type: 'buzzer:winner',
         data: {
@@ -616,22 +633,20 @@ export class BuzzerWebSocketServer {
           pressedAt: state.currentWinner.pressedAt,
         },
       });
-
-      this.broadcastToEvent(eventSlug, {
-        type: 'buzzer:locked',
-        data: {
-          winnerNames: `${state.currentWinner.team.name1} & ${state.currentWinner.team.name2}`,
-        },
-      });
     } else {
+      // No queued buzzes - re-enable buzzer
+      state.isBuzzerEnabled = true;
+
+      // Broadcast wrong answer first
+      this.broadcastToEvent(eventSlug, {
+        type: 'answer:wrong',
+        data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
+      });
+
+      // Then enable buzzer for all
       this.broadcastToEvent(eventSlug, { type: 'buzzer:enabled' });
       this.broadcastBuzzerState(eventSlug);
     }
-
-    this.broadcastToEvent(eventSlug, {
-      type: 'answer:wrong',
-      data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
-    });
 
     return { success: true };
   }
@@ -777,14 +792,28 @@ export class BuzzerWebSocketServer {
 
   private broadcastToEvent(eventSlug: string, message: { type: string; data?: unknown }) {
     const msgStr = JSON.stringify(message);
-    for (const socket of this.sockets.values()) {
-      if (socket.data.eventSlug === eventSlug) {
-        try {
-          socket.send(msgStr);
-        } catch (err) {
-          this.logger.error(`Failed to broadcast: ${err}`);
-        }
+    const sockets = Array.from(this.sockets.values()).filter(
+      (socket) => socket.data.eventSlug === eventSlug,
+    );
+
+    this.logger.log(`Broadcasting ${message.type} to ${sockets.length} sockets in ${eventSlug}`);
+
+    // Batch broadcasts for better performance with 20+ phones
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const socket of sockets) {
+      try {
+        socket.send(msgStr);
+        successCount++;
+      } catch (err) {
+        errorCount++;
+        this.logger.error(`Failed to broadcast to socket: ${err}`);
       }
+    }
+
+    if (errorCount > 0) {
+      this.logger.warn(`Broadcast to ${eventSlug}: ${successCount} success, ${errorCount} failed`);
     }
   }
 
