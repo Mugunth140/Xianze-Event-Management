@@ -4,9 +4,6 @@ import { getApiUrl } from '@/lib/api';
 import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Module-level flag to prevent React Strict Mode double-mount
-let hasConnected = false;
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PDFDocumentProxy = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,60 +112,12 @@ export default function ThinkLinkPresenter({
     };
   }, [presentationId]);
 
-  // Helper to send WebSocket message
-  const sendWS = useCallback((type: string, data?: Record<string, unknown>) => {
-    const ws = buzzerSocketRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const message: WSMessage = { type, data };
-      ws.send(JSON.stringify(message));
-    }
-  }, []);
-
-  // Helper to send WebSocket message with response
-  const sendWSWithResponse = useCallback(
-    (type: string, data?: Record<string, unknown>): Promise<Record<string, unknown>> => {
-      return new Promise((resolve, reject) => {
-        const ws = buzzerSocketRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          reject(new Error('WebSocket not connected'));
-          return;
-        }
-
-        const requestId = crypto.randomUUID();
-        const message: WSMessage = { type, requestId, data };
-
-        const handleResponse = (event: MessageEvent) => {
-          try {
-            const response = JSON.parse(event.data);
-            if (response.requestId === requestId) {
-              ws.removeEventListener('message', handleResponse);
-              resolve(response.data || {});
-            }
-          } catch {
-            // Ignore parse errors
-          }
-        };
-
-        ws.addEventListener('message', handleResponse);
-        ws.send(JSON.stringify(message));
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          ws.removeEventListener('message', handleResponse);
-          reject(new Error('Request timeout'));
-        }, 10000);
-      });
-    },
-    []
-  );
-
   useEffect(() => {
     // Prevent double connection in React Strict Mode
-    if (hasConnected && buzzerSocketRef.current?.readyState === WebSocket.OPEN) {
+    if (buzzerSocketRef.current?.readyState === WebSocket.OPEN) {
       console.log('[ThinkLinkPresenter] Already connected, skipping duplicate mount');
       return;
     }
-    hasConnected = true;
 
     const wsUrl = getWSUrl();
     console.log('[ThinkLinkPresenter] Connecting to WebSocket:', wsUrl);
@@ -292,12 +241,8 @@ export default function ThinkLinkPresenter({
         } catch (err) {
           console.error('[ThinkLinkPresenter] Failed to end session:', err);
         }
-        // Close after a brief delay to allow message to send
-        setTimeout(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.close();
-          }
-        }, 100);
+        // Close immediately since we're in cleanup
+        ws.close();
       }
       buzzerSocketRef.current = null;
     };

@@ -66,12 +66,25 @@ function getWSUrl(): string {
   }
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const apiHost = apiUrl ? new URL(apiUrl).hostname : null;
+  let apiHost: string | null = null;
+  
+  // Parse API URL safely - handle both absolute and relative URLs
+  if (apiUrl) {
+    try {
+      // If it starts with http/https, it's absolute
+      if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
+        apiHost = new URL(apiUrl).hostname;
+      }
+      // Otherwise it's relative (like /api), use window.location.hostname
+    } catch {
+      // If URL parsing fails, treat as relative
+    }
+  }
+  
   const windowHost = window.location.hostname;
   const isLocalHost = (host: string | null) => host === 'localhost' || host === '127.0.0.1';
   const baseHost = apiHost && !isLocalHost(apiHost) ? apiHost : windowHost;
-  const isSecure =
-    window.location.protocol === 'https:' || (apiUrl ? new URL(apiUrl).protocol === 'https:' : false);
+  const isSecure = window.location.protocol === 'https:';
   const protocol = isSecure ? 'wss:' : 'ws:';
   const wsPort = process.env.NEXT_PUBLIC_WS_PORT || (isLocalHost(baseHost) ? '5001' : '');
   const portSegment = wsPort ? `:${wsPort}` : '';
