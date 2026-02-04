@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
+import { spawn } from 'child_process';
 import type { Response } from 'express';
 import { createReadStream, existsSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
@@ -48,6 +49,38 @@ const generateFilename = (originalname: string): string => {
   const randomStr = Math.random().toString(36).substring(2, 10);
   const ext = extname(originalname).toLowerCase();
   return `paper-${timestamp}-${randomStr}${ext}`;
+};
+
+const convertSlidesToPdf = async (absolutePath: string): Promise<string> => {
+  const outputDir = '/data/presentations';
+  const baseName = basename(absolutePath, extname(absolutePath));
+  const pdfFilename = `${baseName}.pdf`;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn('soffice', [
+      '--headless',
+      '--convert-to',
+      'pdf',
+      '--outdir',
+      outputDir,
+      absolutePath,
+    ]);
+
+    let stderr = '';
+    proc.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on('error', (err) => reject(err));
+    proc.on('close', (code) => {
+      const pdfPath = join(outputDir, pdfFilename);
+      if (code === 0 && existsSync(pdfPath)) {
+        resolve(`/presentations/${pdfFilename}`);
+        return;
+      }
+      reject(new Error(stderr || 'Conversion failed'));
+    });
+  });
 };
 
 @Controller('paper-presentation')
@@ -124,9 +157,21 @@ export class PaperPresentationController {
     }
 
     const slidePath = `/presentations/${file.filename}`;
+    const uploadExt = extname(file.originalname).toLowerCase();
 
-    // If uploaded file is PDF, we treat it as the slideshow PDF
-    const pdfPath = extname(file.originalname).toLowerCase() === '.pdf' ? slidePath : null;
+    let pdfPath: string | null = null;
+    if (uploadExt === '.pdf') {
+      pdfPath = slidePath;
+    } else if (uploadExt === '.ppt' || uploadExt === '.pptx') {
+      try {
+        pdfPath = await convertSlidesToPdf(join('/data', slidePath));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        throw new BadRequestException(
+          'Failed to convert PPT/PPTX to PDF. Please upload a PDF file.',
+        );
+      }
+    }
 
     const submission = await this.service.create(
       { teamName: derivedTeamName, teamMembers, college, topic, phone },
@@ -264,6 +309,17 @@ export class PaperPresentationController {
       pdfPath = join('/data', submission.pdfPath);
     } else if (submission.slidePath.toLowerCase().endsWith('.pdf')) {
       pdfPath = join('/data', submission.slidePath);
+    } else if (
+      submission.slidePath.toLowerCase().endsWith('.ppt') ||
+      submission.slidePath.toLowerCase().endsWith('.pptx')
+    ) {
+      try {
+        const convertedPdfPath = await convertSlidesToPdf(join('/data', submission.slidePath));
+        await this.service.updatePdfPath(submission.id, convertedPdfPath);
+        pdfPath = join('/data', convertedPdfPath);
+      } catch {
+        throw new BadRequestException('Unable to convert PPT/PPTX to PDF for slideshow.');
+      }
     } else {
       throw new NotFoundException(
         'PDF not available for this presentation. Please re-upload in PDF format.',
