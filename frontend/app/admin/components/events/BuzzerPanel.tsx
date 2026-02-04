@@ -225,7 +225,7 @@ export default function BuzzerPanel({
     ws.onclose = (event) => {
       wsRef.current = null;
       setConnectionState('disconnected');
-      
+
       // Auto-reconnect after 2 seconds if not a clean close
       if (!event.wasClean && reconnectTimeoutRef.current === null) {
         reconnectTimeoutRef.current = setTimeout(() => {
@@ -302,7 +302,7 @@ export default function BuzzerPanel({
     // Optimistic UI update for instant feedback
     setSessionState('active');
     setWinner(null);
-    
+
     // Send request with 30s timeout for high-load scenarios (20+ phones)
     sendWSMessage('coordinator:answer-correct', undefined, undefined, 30000)
       .then((response) => {
@@ -322,7 +322,7 @@ export default function BuzzerPanel({
     // Optimistic UI update for instant feedback
     setWinner(null);
     setSessionState('buzzer-enabled');
-    
+
     // Send request with 30s timeout for high-load scenarios (20+ phones)
     sendWSMessage('coordinator:answer-wrong', undefined, undefined, 30000)
       .then((response) => {
@@ -533,7 +533,9 @@ export default function BuzzerPanel({
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-blue-800 mb-2">Waiting for Slide Change</h2>
-            <p className="text-gray-600">Buzzer will auto-enable when you navigate slides in presenter</p>
+            <p className="text-gray-600">
+              Buzzer will auto-enable when you navigate slides in presenter
+            </p>
             <p className="text-sm text-gray-500 mt-2">{teams.length} team(s) connected</p>
           </div>
         </Card>

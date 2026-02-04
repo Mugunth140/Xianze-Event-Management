@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import type { ServerWebSocket } from 'bun';
 import { DataSource } from 'typeorm';
+import { CtrlQuizParticipant } from '../../ctrl-quiz/ctrl-quiz.entity';
 import { BuzzerScore } from './entities/buzzer-score.entity';
 
 /**
@@ -60,6 +61,7 @@ const BUZZER_EVENTS = [
   { slug: 'tech-quiz', name: 'Tech Quiz' },
   { slug: 'general-quiz', name: 'General Quiz' },
   { slug: 'rapid-fire', name: 'Rapid Fire' },
+  { slug: 'ctrl-quiz', name: 'Ctrl + Quiz' },
   { slug: 'custom', name: 'Custom Event' },
 ];
 
@@ -99,6 +101,14 @@ export class BuzzerWebSocketServer {
   setDataSource(dataSource: DataSource) {
     this.dataSource = dataSource;
     this.logger.log('DataSource connected to BuzzerWebSocketServer');
+  }
+
+  /**
+   * Broadcast leaderboard update to all coordinators for an event
+   * Can be called from external services (e.g., ctrl-quiz)
+   */
+  async notifyLeaderboardUpdate(eventSlug: string) {
+    await this.broadcastLeaderboard(eventSlug);
   }
 
   /**
@@ -891,8 +901,23 @@ export class BuzzerWebSocketServer {
     return repo.save(score);
   }
 
-  private async getLeaderboard(eventSlug: string): Promise<BuzzerScore[]> {
+  private async getLeaderboard(eventSlug: string): Promise<BuzzerScore[] | CtrlQuizParticipant[]> {
     if (!this.dataSource) return [];
+
+    // Handle ctrl-quiz separately since it uses its own entity
+    if (eventSlug === 'ctrl-quiz') {
+      const repo = this.dataSource.getRepository(CtrlQuizParticipant);
+      const participants = await repo.find();
+      // Sort by score DESC, then by lastSubmitTime ASC (fastest first)
+      return participants.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        const aTime = a.lastSubmitTime?.getTime() || Infinity;
+        const bTime = b.lastSubmitTime?.getTime() || Infinity;
+        return aTime - bTime;
+      });
+    }
 
     const repo = this.dataSource.getRepository(BuzzerScore);
     return repo.find({
@@ -903,6 +928,13 @@ export class BuzzerWebSocketServer {
 
   private async resetLeaderboard(eventSlug: string) {
     if (!this.dataSource) return;
+
+    // Handle ctrl-quiz separately
+    if (eventSlug === 'ctrl-quiz') {
+      const repo = this.dataSource.getRepository(CtrlQuizParticipant);
+      await repo.update({}, { score: 0, lastSubmitTime: null });
+      return;
+    }
 
     const repo = this.dataSource.getRepository(BuzzerScore);
     await repo.delete({ eventSlug });

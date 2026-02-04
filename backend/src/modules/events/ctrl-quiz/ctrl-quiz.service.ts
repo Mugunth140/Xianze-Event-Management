@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { buzzerWSServer } from '../think-link/buzzer/buzzer-ws.server';
 import {
   CtrlQuizParticipant,
   CtrlQuizQuestion,
@@ -14,18 +15,19 @@ export interface CreateQuestionDto {
   options: string[];
   correctIndex: number;
   timeLimit?: number;
+  round?: number;
 }
 
 export interface JoinParticipantDto {
-  email: string;
   name: string;
+  email?: string;
   phone?: string;
 }
 
 export interface LeaderboardEntry {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   score: number;
   lastSubmitTime: Date | null;
 }
@@ -52,6 +54,9 @@ export class CtrlQuizService {
     if (!state) {
       state = this.roundStateRepo.create({ id: 1 });
       await this.roundStateRepo.save(state);
+    } else if (!state.activeRound) {
+      state.activeRound = 1;
+      await this.roundStateRepo.save(state);
     }
     return state;
   }
@@ -60,6 +65,15 @@ export class CtrlQuizService {
     const state = await this.getRoundState();
     state.status = RoundStatus.ACTIVE;
     state.roundDuration = durationMinutes;
+    state.startedAt = new Date();
+    return this.roundStateRepo.save(state);
+  }
+
+  async startRound(round: number, durationMinutes: number): Promise<CtrlQuizRoundState> {
+    const state = await this.getRoundState();
+    state.status = RoundStatus.ACTIVE;
+    state.roundDuration = durationMinutes;
+    state.activeRound = round;
     state.startedAt = new Date();
     return this.roundStateRepo.save(state);
   }
@@ -81,15 +95,18 @@ export class CtrlQuizService {
   // ========================
 
   async createQuestion(dto: CreateQuestionDto): Promise<CtrlQuizQuestion> {
+    const questionRound = dto.round && dto.round > 0 ? dto.round : 1;
     const maxOrder = await this.questionRepo
       .createQueryBuilder('q')
       .select('MAX(q.order)', 'max')
+      .where('q.round = :round', { round: questionRound })
       .getRawOne();
 
     const question = this.questionRepo.create({
       ...dto,
       timeLimit: dto.timeLimit || 30,
       order: (maxOrder?.max || 0) + 1,
+      round: questionRound,
     });
     return this.questionRepo.save(question);
   }
@@ -97,7 +114,7 @@ export class CtrlQuizService {
   async getAllQuestions(): Promise<CtrlQuizQuestion[]> {
     return this.questionRepo.find({
       where: { isActive: true },
-      order: { order: 'ASC' },
+      order: { round: 'ASC', order: 'ASC' },
     });
   }
 
@@ -119,12 +136,16 @@ export class CtrlQuizService {
     });
     if (!participant) throw new NotFoundException('Participant not found');
 
+    const state = await this.getRoundState();
+    const activeRound = state.activeRound || 1;
+
     const answeredIds = participant.submissions.map((s) => s.questionId);
 
     const qb = this.questionRepo
       .createQueryBuilder('q')
       .where('q.isActive = :isActive', { isActive: true })
-      .orderBy('q.order', 'ASC');
+      .andWhere('q.round = :round', { round: activeRound })
+      .orderBy('RANDOM()');
 
     if (answeredIds.length > 0) {
       qb.andWhere('q.id NOT IN (:...ids)', { ids: answeredIds });
@@ -138,20 +159,40 @@ export class CtrlQuizService {
   // ========================
 
   async joinParticipant(dto: JoinParticipantDto): Promise<CtrlQuizParticipant> {
-    let participant = await this.participantRepo.findOne({ where: { email: dto.email } });
-
-    if (participant) {
-      if (dto.name) participant.name = dto.name;
-      if (dto.phone) participant.phone = dto.phone;
-      return this.participantRepo.save(participant);
+    const trimmedName = dto.name?.trim();
+    if (!trimmedName) {
+      throw new BadRequestException('Name is required');
     }
 
+    let participant = await this.participantRepo.findOne({ where: { name: trimmedName } });
+
+    if (participant) {
+      if (dto.name) participant.name = trimmedName;
+      if (dto.phone) participant.phone = dto.phone;
+      const updated = await this.participantRepo.save(participant);
+      return updated;
+    }
+
+    const participantCount = await this.participantRepo.count();
+    if (participantCount >= 2) {
+      throw new BadRequestException('Only two participants are allowed');
+    }
+
+    const generatedEmail = dto.email || `ctrl-quiz-${Date.now()}@xianze.local`;
+
     participant = this.participantRepo.create({
-      email: dto.email,
-      name: dto.name,
+      email: generatedEmail,
+      name: trimmedName,
       phone: dto.phone || null,
     });
-    return this.participantRepo.save(participant);
+    const saved = await this.participantRepo.save(participant);
+
+    // Broadcast leaderboard update to coordinators when new participant joins
+    buzzerWSServer.notifyLeaderboardUpdate('ctrl-quiz').catch(() => {
+      // Ignore broadcast errors
+    });
+
+    return saved;
   }
 
   async getAllParticipants(): Promise<CtrlQuizParticipant[]> {
@@ -194,6 +235,11 @@ export class CtrlQuizService {
     }
     participant.lastSubmitTime = new Date();
     await this.participantRepo.save(participant);
+
+    // Broadcast leaderboard update to coordinators
+    buzzerWSServer.notifyLeaderboardUpdate('ctrl-quiz').catch(() => {
+      // Ignore broadcast errors - WS might not be connected
+    });
 
     return { message: 'Answer saved' };
   }
@@ -246,9 +292,14 @@ export class CtrlQuizService {
 
   async resetQuiz(): Promise<void> {
     await this.submissionRepo.clear();
-    await this.participantRepo.update({}, { score: 0, lastSubmitTime: null });
+    await this.participantRepo
+      .createQueryBuilder()
+      .update()
+      .set({ score: 0, lastSubmitTime: null })
+      .execute();
     const state = await this.getRoundState();
     state.status = RoundStatus.WAITING;
+    state.activeRound = 1;
     state.startedAt = null;
     await this.roundStateRepo.save(state);
   }

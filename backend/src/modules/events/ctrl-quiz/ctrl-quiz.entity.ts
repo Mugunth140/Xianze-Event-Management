@@ -38,6 +38,9 @@ export class CtrlQuizQuestion {
   @Column({ type: 'int', default: 0 })
   order: number;
 
+  @Column({ type: 'int', default: 1 })
+  round: number;
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
@@ -55,13 +58,13 @@ export class CtrlQuizQuestion {
  * Participant in Ctrl + Quiz
  */
 @Entity('ctrl_quiz_participants')
-@Index(['email'], { unique: true })
+@Index(['name'], { unique: true })
 export class CtrlQuizParticipant {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  email: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   name: string;
@@ -129,6 +132,9 @@ export class CtrlQuizRoundState {
 
   @Column({ type: 'int', default: 30 })
   roundDuration: number; // minutes
+
+  @Column({ type: 'int', default: 1 })
+  activeRound: number;
 
   @Column({ type: 'datetime', nullable: true })
   startedAt: Date | null;
