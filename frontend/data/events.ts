@@ -87,6 +87,7 @@ export const events: Event[] = [
       'Computer Vision',
       'IoT',
       'Natural Language Processing',
+      'Gen AI',
     ],
     notes: [],
   },

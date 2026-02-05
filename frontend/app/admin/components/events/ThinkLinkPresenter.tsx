@@ -197,6 +197,7 @@ export default function ThinkLinkPresenter({
           case 'answer:wrong':
             setBuzzerWinner('');
             resumeTimer();
+            enableBuzzerForSlide();
             break;
 
           case 'session:ended':
