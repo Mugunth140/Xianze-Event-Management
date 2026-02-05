@@ -20,7 +20,7 @@ import { CreateQuestionDto, CtrlQuizService, JoinParticipantDto } from './ctrl-q
 
 @Controller('ctrl-quiz')
 export class CtrlQuizController {
-  constructor(private readonly service: CtrlQuizService) { }
+  constructor(private readonly service: CtrlQuizService) {}
 
   // ========================
   // ROUND STATE (Coordinator)

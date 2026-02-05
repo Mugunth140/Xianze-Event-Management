@@ -318,7 +318,7 @@ export default function CtrlQuizMCQPage() {
               />
             </div>
             <p className="text-sm text-slate-500">
-              Only two participants are allowed for this quiz.
+              Enter both player names to join as a team. Up to 30 teams can participate.
             </p>
             <button
               onClick={handleJoin}

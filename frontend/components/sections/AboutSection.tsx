@@ -116,7 +116,7 @@ export default function AboutSection() {
             {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
               {' '}
-              Loaded{' '}
+              10K +{' '}
             </div>{' '}
             <div className="text-sm sm:text-base text-gray-600 font-medium">Cash Prizes</div>{' '}
           </div>{' '}

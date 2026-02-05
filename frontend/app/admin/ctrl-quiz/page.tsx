@@ -208,12 +208,27 @@ export default function CtrlQuizPage() {
   };
 
   const handleReset = async () => {
-    if (!confirm('This will reset all participant progress. Continue?')) return;
+    if (
+      !confirm(
+        'This will permanently remove ALL participants and their scores from the leaderboard. The quiz will be reset to a fresh state. Continue?',
+      )
+    )
+      return;
     const token = localStorage.getItem('token');
-    await fetch(getApiUrl('/ctrl-quiz/reset'), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Optimistically clear the leaderboard for instant UI feedback
+    setLeaderboard([]);
+    try {
+      const res = await fetch(getApiUrl('/ctrl-quiz/reset'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || 'Failed to reset quiz');
+      }
+    } catch {
+      setError('Network error while resetting quiz');
+    }
     fetchData();
   };
 

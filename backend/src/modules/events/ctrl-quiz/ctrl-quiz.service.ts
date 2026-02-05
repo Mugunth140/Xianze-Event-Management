@@ -1,8 +1,15 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Cache } from 'cache-manager';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { buzzerWSServer } from '../think-link/buzzer/buzzer-ws.server';
 import {
   CtrlQuizParticipant,
@@ -11,6 +18,19 @@ import {
   CtrlQuizSubmission,
   RoundStatus,
 } from './ctrl-quiz.entity';
+
+/** Maximum number of participant teams allowed per quiz session */
+const MAX_PARTICIPANTS = 30;
+
+/** Cache TTL in seconds */
+const CACHE_TTL = 300;
+
+/** Cache key constants to avoid magic strings */
+const CACHE_KEYS = {
+  QUESTIONS_ALL: 'ctrl-quiz:questions:all',
+  LEADERBOARD: 'ctrl-quiz:leaderboard',
+  question: (id: number) => `ctrl-quiz:question:${id}`,
+} as const;
 
 export interface CreateQuestionDto {
   questionText: string;
@@ -36,6 +56,8 @@ export interface LeaderboardEntry {
 
 @Injectable()
 export class CtrlQuizService {
+  private readonly logger = new Logger(CtrlQuizService.name);
+
   constructor(
     @InjectRepository(CtrlQuizQuestion)
     private readonly questionRepo: Repository<CtrlQuizQuestion>,
@@ -47,7 +69,19 @@ export class CtrlQuizService {
     private readonly roundStateRepo: Repository<CtrlQuizRoundState>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly dataSource: DataSource,
   ) {}
+
+  /**
+   * Invalidate all ctrl-quiz related caches.
+   * Called after mutations that affect questions, participants, or leaderboard.
+   */
+  private async invalidateAllCaches(): Promise<void> {
+    await Promise.allSettled([
+      this.cacheManager.del(CACHE_KEYS.QUESTIONS_ALL),
+      this.cacheManager.del(CACHE_KEYS.LEADERBOARD),
+    ]);
+  }
 
   // ========================
   // ROUND STATE
@@ -113,32 +147,30 @@ export class CtrlQuizService {
       round: questionRound,
     });
     const saved = await this.questionRepo.save(question);
-    await this.cacheManager.del('ctrl-quiz:questions:all');
+    await this.cacheManager.del(CACHE_KEYS.QUESTIONS_ALL);
     return saved;
   }
 
   async getAllQuestions(): Promise<CtrlQuizQuestion[]> {
-    const cached = await this.cacheManager.get<CtrlQuizQuestion[]>('ctrl-quiz:questions:all');
-    if (cached) {
-      return cached;
-    }
+    const cached = await this.cacheManager.get<CtrlQuizQuestion[]>(CACHE_KEYS.QUESTIONS_ALL);
+    if (cached) return cached;
+
     const questions = await this.questionRepo.find({
       where: { isActive: true },
       order: { round: 'ASC', order: 'ASC' },
     });
-    await this.cacheManager.set('ctrl-quiz:questions:all', questions, 300);
+    await this.cacheManager.set(CACHE_KEYS.QUESTIONS_ALL, questions, CACHE_TTL);
     return questions;
   }
 
   async getQuestionById(id: number): Promise<CtrlQuizQuestion> {
-    const cacheKey = `ctrl-quiz:question:${id}`;
+    const cacheKey = CACHE_KEYS.question(id);
     const cached = await this.cacheManager.get<CtrlQuizQuestion>(cacheKey);
-    if (cached) {
-      return cached;
-    }
+    if (cached) return cached;
+
     const question = await this.questionRepo.findOne({ where: { id } });
     if (!question) throw new NotFoundException(`Question ${id} not found`);
-    await this.cacheManager.set(cacheKey, question, 300);
+    await this.cacheManager.set(cacheKey, question, CACHE_TTL);
     return question;
   }
 
@@ -146,8 +178,8 @@ export class CtrlQuizService {
     const question = await this.getQuestionById(id);
     await this.questionRepo.remove(question);
     await Promise.all([
-      this.cacheManager.del('ctrl-quiz:questions:all'),
-      this.cacheManager.del(`ctrl-quiz:question:${id}`),
+      this.cacheManager.del(CACHE_KEYS.QUESTIONS_ALL),
+      this.cacheManager.del(CACHE_KEYS.question(id)),
     ]);
   }
 
@@ -186,32 +218,32 @@ export class CtrlQuizService {
       throw new BadRequestException('Name is required');
     }
 
-    let participant = await this.participantRepo.findOne({ where: { name: trimmedName } });
-
-    if (participant) {
-      if (dto.name) participant.name = trimmedName;
-      if (dto.phone) participant.phone = dto.phone;
-      const updated = await this.participantRepo.save(participant);
-      return updated;
+    // Allow returning participants to rejoin (session recovery)
+    const existing = await this.participantRepo.findOne({ where: { name: trimmedName } });
+    if (existing) {
+      if (dto.phone) existing.phone = dto.phone;
+      return this.participantRepo.save(existing);
     }
 
+    // Enforce participant cap
     const participantCount = await this.participantRepo.count();
-    if (participantCount >= 2) {
-      throw new BadRequestException('Only two participants are allowed');
+    if (participantCount >= MAX_PARTICIPANTS) {
+      throw new ConflictException(
+        `Maximum of ${MAX_PARTICIPANTS} participants reached. Please wait for the coordinator to reset.`,
+      );
     }
 
-    const generatedEmail = dto.email || `ctrl-quiz-${Date.now()}@xianze.local`;
-
-    participant = this.participantRepo.create({
-      email: generatedEmail,
+    const participant = this.participantRepo.create({
+      email: dto.email || `ctrl-quiz-${Date.now()}@xianze.local`,
       name: trimmedName,
       phone: dto.phone || null,
     });
     const saved = await this.participantRepo.save(participant);
 
-    // Broadcast leaderboard update to coordinators when new participant joins
+    // Invalidate leaderboard cache and broadcast update
+    await this.cacheManager.del(CACHE_KEYS.LEADERBOARD);
     buzzerWSServer.notifyLeaderboardUpdate('ctrl-quiz').catch(() => {
-      // Ignore broadcast errors
+      // Ignore broadcast errors — WS may not be connected
     });
 
     return saved;
@@ -258,9 +290,10 @@ export class CtrlQuizService {
     participant.lastSubmitTime = new Date();
     await this.participantRepo.save(participant);
 
-    // Broadcast leaderboard update to coordinators
+    // Invalidate leaderboard cache and broadcast update
+    await this.cacheManager.del(CACHE_KEYS.LEADERBOARD);
     buzzerWSServer.notifyLeaderboardUpdate('ctrl-quiz').catch(() => {
-      // Ignore broadcast errors - WS might not be connected
+      // Ignore broadcast errors — WS may not be connected
     });
 
     return { message: 'Answer saved' };
@@ -271,24 +304,27 @@ export class CtrlQuizService {
   // ========================
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const participants = await this.participantRepo.find();
+    const cached = await this.cacheManager.get<LeaderboardEntry[]>(CACHE_KEYS.LEADERBOARD);
+    if (cached) return cached;
 
-    return participants
-      .sort((a, b) => {
-        if (b.score !== a.score) {
-          return b.score - a.score;
-        }
-        const aTime = a.lastSubmitTime?.getTime() || Infinity;
-        const bTime = b.lastSubmitTime?.getTime() || Infinity;
-        return aTime - bTime;
-      })
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        email: p.email,
-        score: p.score,
-        lastSubmitTime: p.lastSubmitTime,
-      }));
+    // Sort in DB for efficiency: highest score first, earliest submit time as tiebreaker
+    const participants = await this.participantRepo
+      .createQueryBuilder('p')
+      .orderBy('p.score', 'DESC')
+      .addOrderBy('COALESCE(p.lastSubmitTime, "9999-12-31")', 'ASC')
+      .getMany();
+
+    const leaderboard: LeaderboardEntry[] = participants.map((p) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      score: p.score,
+      lastSubmitTime: p.lastSubmitTime,
+    }));
+
+    // Short TTL — leaderboard is frequently invalidated on submit/join/reset
+    await this.cacheManager.set(CACHE_KEYS.LEADERBOARD, leaderboard, 10);
+    return leaderboard;
   }
 
   // ========================
@@ -312,17 +348,38 @@ export class CtrlQuizService {
   // RESET
   // ========================
 
+  /**
+   * Full quiz reset — removes ALL participants & submissions, resets round state.
+   * Uses a transaction so the reset is atomic (all-or-nothing).
+   */
   async resetQuiz(): Promise<void> {
-    await this.submissionRepo.clear();
-    await this.participantRepo
-      .createQueryBuilder()
-      .update()
-      .set({ score: 0, lastSubmitTime: null })
-      .execute();
-    const state = await this.getRoundState();
-    state.status = RoundStatus.WAITING;
-    state.activeRound = 1;
-    state.startedAt = null;
-    await this.roundStateRepo.save(state);
+    this.logger.log('Resetting quiz: removing all participants, submissions, and round state');
+
+    await this.dataSource.transaction(async (manager) => {
+      // Order matters: submissions reference participants, so clear submissions first
+      await manager.getRepository(CtrlQuizSubmission).clear();
+      await manager.getRepository(CtrlQuizParticipant).clear();
+
+      // Reset round state to initial values
+      const roundStateRepo = manager.getRepository(CtrlQuizRoundState);
+      let state = await roundStateRepo.findOne({ where: { id: 1 } });
+      if (!state) {
+        state = roundStateRepo.create({ id: 1 });
+      }
+      state.status = RoundStatus.WAITING;
+      state.activeRound = 1;
+      state.startedAt = null;
+      await roundStateRepo.save(state);
+    });
+
+    // Invalidate every cache key this module uses
+    await this.invalidateAllCaches();
+
+    // Push an empty leaderboard to all connected coordinators
+    buzzerWSServer.notifyLeaderboardUpdate('ctrl-quiz').catch(() => {
+      // Ignore broadcast errors
+    });
+
+    this.logger.log('Quiz reset complete');
   }
 }
