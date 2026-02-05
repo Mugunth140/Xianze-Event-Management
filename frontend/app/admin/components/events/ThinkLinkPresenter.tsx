@@ -557,13 +557,6 @@ export default function ThinkLinkPresenter({
               </div>
             </div>
           )}
-
-          {/* Slide number - top left */}
-          <div className="absolute top-6 left-6 pointer-events-none">
-            <div className="px-3 py-1 rounded-lg bg-black/40 backdrop-blur text-3xl font-bold text-white/80">
-              {currentPage} / {totalPages}
-            </div>
-          </div>
         </div>
       </div>
 
