@@ -19,8 +19,8 @@ export default function CodeHuntBuzzerPage() {
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Code Hunt Buzzer Removed</h1>
         <p className="text-emerald-200">
-          The buzzer round is no longer part of Code Hunt. Please check with the coordinator for
-          the updated format.
+          The buzzer round is no longer part of Code Hunt. Please check with the coordinator for the
+          updated format.
         </p>
       </div>
     </div>

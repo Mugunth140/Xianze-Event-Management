@@ -240,7 +240,9 @@ export default function PaperSubmissionPage() {
                 )}
               </label>
             </div>
-            <p className="mt-2 text-xs text-gray-500">Only PDF files are accepted for submission.</p>
+            <p className="mt-2 text-xs text-gray-500">
+              Only PDF files are accepted for submission.
+            </p>
           </div>
 
           {/* Submit Button */}

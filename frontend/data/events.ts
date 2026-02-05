@@ -37,6 +37,26 @@ export const events: Event[] = [
   },
   {
     id: 2,
+    name: 'Bug Smash',
+    tagline: 'Bug Smash is a fast-paced challenge focused on finding and fixing errors.',
+    image: '/event-debugging.svg',
+    color: 'bg-yellow-500',
+    bgColor: 'bg-yellow-50',
+    rules: [
+      'Teams consist of maximum 2 members',
+      'No smart devices allowed',
+      'C, C++, Java, Python, and JavaScript.',
+    ],
+    instructions: [
+      'One elimination round',
+      'Time-bound challenges',
+      'Find and fix bugs in the given code snippets',
+    ],
+    notes: ['Systems will be provided'],
+    noteTheme: 'green',
+  },
+  {
+    id: 3,
     name: 'Paper Presentation',
     tagline: 'Technology paper presentations where participants present their research findings.',
     image: '/event-presentation.svg',
@@ -71,7 +91,7 @@ export const events: Event[] = [
     notes: [],
   },
   {
-    id: 3,
+    id: 4,
     name: 'Ctrl+ Quiz',
     tagline: 'Twist and turn your IQ to identify shortcut keys, basic commands, and abbreviations.',
     image: '/event-quiz.svg',
@@ -90,7 +110,23 @@ export const events: Event[] = [
     notes: ['Topics include C, C++, Java, Python, and SQL'],
   },
   {
-    id: 4,
+    id: 5,
+    name: 'Code Hunt: Word Edition',
+    tagline:
+      'A fun and challenging tech event where teams battle through riddles, jumbled words, and Dumb Charades.',
+    image: '/event-query.svg',
+    color: 'bg-green-500',
+    bgColor: 'bg-green-50',
+    rules: [
+      'Team should have 2 members',
+      'Round 1: 15 fun and technical MCQs (Riddles, Jumbled Words)',
+      'Round 2: Act and find technical words (Dumb Charades)',
+    ],
+    instructions: [],
+    notes: [],
+  },
+  {
+    id: 6,
     name: 'Think & Link (Connection)',
     tagline:
       'Connection. The challenge focuses on visual tasks where participants think and make connections within the given time.',
@@ -106,7 +142,7 @@ export const events: Event[] = [
     notes: ['No external resources allowed'],
   },
   {
-    id: 5,
+    id: 7,
     name: 'Gaming',
     tagline: 'Free Fire multi-round competitive gaming tournament featuring high-stakes matches.',
     image: '/event-gaming.svg',
