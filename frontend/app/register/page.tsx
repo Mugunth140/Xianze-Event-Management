@@ -1418,8 +1418,8 @@ const Register = () => {
                   {formData.paymentMode === 'cash' && (
                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                       <p className="text-sm text-emerald-800 font-medium text-center">
-                        You&asop;ve chosen to pay by cash. Please visit the registration desk at the
-                        event venue to complete your payment and collect your event pass.
+                        You &apos;ve chosen to pay by cash. Please visit the registration desk at
+                        the event venue to complete your payment and collect your event pass.
                       </p>
                     </div>
                   )}

@@ -50,7 +50,7 @@ export class AnalyticsService {
     private readonly registrationRepository: Repository<Registration>,
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
-  ) {}
+  ) { }
 
   async getOverview() {
     const totalRegistrations = await this.registrationRepository.count();
