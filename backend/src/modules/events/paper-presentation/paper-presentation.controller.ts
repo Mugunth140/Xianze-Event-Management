@@ -19,7 +19,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
-import { spawn } from 'child_process';
 import type { Response } from 'express';
 import { createReadStream, existsSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
@@ -49,38 +48,6 @@ const generateFilename = (originalname: string): string => {
   const randomStr = Math.random().toString(36).substring(2, 10);
   const ext = extname(originalname).toLowerCase();
   return `paper-${timestamp}-${randomStr}${ext}`;
-};
-
-const convertSlidesToPdf = async (absolutePath: string): Promise<string> => {
-  const outputDir = '/data/presentations';
-  const baseName = basename(absolutePath, extname(absolutePath));
-  const pdfFilename = `${baseName}.pdf`;
-
-  return new Promise((resolve, reject) => {
-    const proc = spawn('soffice', [
-      '--headless',
-      '--convert-to',
-      'pdf',
-      '--outdir',
-      outputDir,
-      absolutePath,
-    ]);
-
-    let stderr = '';
-    proc.stderr?.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    proc.on('error', (err) => reject(err));
-    proc.on('close', (code) => {
-      const pdfPath = join(outputDir, pdfFilename);
-      if (code === 0 && existsSync(pdfPath)) {
-        resolve(`/presentations/${pdfFilename}`);
-        return;
-      }
-      reject(new Error(stderr || 'Conversion failed'));
-    });
-  });
 };
 
 @Controller('paper-presentation')
@@ -153,21 +120,7 @@ export class PaperPresentationController {
     }
 
     const slidePath = `/presentations/${file.filename}`;
-    const uploadExt = extname(file.originalname).toLowerCase();
-
-    let pdfPath: string | null = null;
-    if (uploadExt === '.pdf') {
-      pdfPath = slidePath;
-    } else if (uploadExt === '.ppt' || uploadExt === '.pptx') {
-      try {
-        pdfPath = await convertSlidesToPdf(join('/data', slidePath));
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (err) {
-        throw new BadRequestException(
-          'Failed to convert PPT/PPTX to PDF. Please upload a PDF file.',
-        );
-      }
-    }
+    const pdfPath = slidePath; // PDF-only uploads, so slidePath is the PDF
 
     const submission = await this.service.create(
       { teamName: derivedTeamName, teamMembers, college, topic, phone },
@@ -293,16 +246,12 @@ export class PaperPresentationController {
         file: MulterFile,
         cb: (error: Error | null, acceptFile: boolean) => void,
       ) => {
-        const allowedMimes = [
-          'application/vnd.ms-powerpoint',
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          'application/pdf',
-        ];
-        const allowedExts = ['.ppt', '.pptx', '.pdf'];
+        const allowedMimes = ['application/pdf'];
+        const allowedExts = ['.pdf'];
         const ext = extname(file.originalname).toLowerCase();
 
         if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
-          return cb(new BadRequestException('Only PPT, PPTX, and PDF files are allowed'), false);
+          return cb(new BadRequestException('Only PDF files are allowed'), false);
         }
         cb(null, true);
       },
@@ -320,28 +269,7 @@ export class PaperPresentationController {
   ) {
     const submission = await this.service.findById(id);
     const newSlidePath = `/presentations/${file.filename}`;
-    const uploadExt = extname(file.originalname).toLowerCase();
-
-    let newPdfPath: string | null = null;
-    if (uploadExt === '.pdf') {
-      newPdfPath = newSlidePath;
-    } else if (uploadExt === '.ppt' || uploadExt === '.pptx') {
-      try {
-        newPdfPath = await convertSlidesToPdf(join('/data', newSlidePath));
-      } catch {
-        const newFilePath = join('/data', newSlidePath);
-        if (existsSync(newFilePath)) {
-          try {
-            unlinkSync(newFilePath);
-          } catch {
-            /* ignore */
-          }
-        }
-        throw new BadRequestException(
-          'Failed to convert PPT/PPTX to PDF. Please upload a PDF file.',
-        );
-      }
-    }
+    const newPdfPath = newSlidePath; // PDF-only uploads
 
     const oldSlidePath = join('/data', submission.slidePath);
     if (existsSync(oldSlidePath)) {
@@ -400,24 +328,12 @@ export class PaperPresentationController {
   async getSlideshow(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const submission = await this.service.findById(id);
 
-    // Use PDF if available, otherwise check if original is PDF
-    let pdfPath: string;
-    if (submission.pdfPath) {
-      pdfPath = join('/data', submission.pdfPath);
-    } else if (submission.slidePath.toLowerCase().endsWith('.pdf')) {
-      pdfPath = join('/data', submission.slidePath);
-    } else if (
-      submission.slidePath.toLowerCase().endsWith('.ppt') ||
-      submission.slidePath.toLowerCase().endsWith('.pptx')
-    ) {
-      try {
-        const convertedPdfPath = await convertSlidesToPdf(join('/data', submission.slidePath));
-        await this.service.updatePdfPath(submission.id, convertedPdfPath);
-        pdfPath = join('/data', convertedPdfPath);
-      } catch {
-        throw new BadRequestException('Unable to convert PPT/PPTX to PDF for slideshow.');
-      }
-    } else {
+    // Serve the PDF directly
+    const pdfPath = submission.pdfPath
+      ? join('/data', submission.pdfPath)
+      : join('/data', submission.slidePath);
+
+    if (!pdfPath.toLowerCase().endsWith('.pdf')) {
       throw new NotFoundException(
         'PDF not available for this presentation. Please re-upload in PDF format.',
       );

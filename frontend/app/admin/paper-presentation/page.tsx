@@ -149,7 +149,7 @@ export default function PaperPresentationPage() {
       });
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename || `slides-${id}.pptx`;
+      a.download = filename || `slides-${id}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -208,7 +208,7 @@ export default function PaperPresentationPage() {
   const handleSlidesUpload = async (id: number) => {
     if (!canEdit) return;
     if (!editFile) {
-      setError('Please select a PPT, PPTX, or PDF file to upload');
+      setError('Please select a PDF file to upload');
       return;
     }
 
@@ -514,11 +514,11 @@ export default function PaperPresentationPage() {
                   </div>
                   <div className="mt-4">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Replace Slides (PPT/PPTX/PDF)
+                      Replace Slides (PDF)
                     </label>
                     <input
                       type="file"
-                      accept=".ppt,.pptx,.pdf"
+                      accept=".pdf,application/pdf"
                       onChange={(e) => setEditFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                     />
