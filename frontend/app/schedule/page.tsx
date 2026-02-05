@@ -55,6 +55,13 @@ const GENERAL_EVENTS_START: GeneralEvent[] = [
 
 const GENERAL_EVENTS_END: GeneralEvent[] = [
   {
+    id: 'fun-games',
+    title: 'Fun Games',
+    time: '10:30 AM – 01:00 PM',
+    icon: '🎮',
+    color: 'bg-pink-100 text-pink-700',
+  },
+  {
     id: 'lunch',
     title: 'Lunch Break',
     time: '01:00 PM – 02:20 PM',
@@ -64,7 +71,7 @@ const GENERAL_EVENTS_END: GeneralEvent[] = [
   {
     id: 'valedictory',
     title: 'Valedictory Ceremony',
-    time: '02:30 PM – 03:30 PM',
+    time: '02:15 PM – 03:30 PM',
     icon: '🏆',
     color: 'bg-emerald-100 text-emerald-700',
   },
