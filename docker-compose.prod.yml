@@ -40,8 +40,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 128M
+          cpus: "1"
+          memory: 512M
 
   backend:
     build:
@@ -78,8 +78,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512M
+          cpus: "2"
+          memory: 2G
 
   # SSL Manager - handles certificate renewal AND nginx reload in one container
   ssl-manager:
@@ -107,6 +107,11 @@ services:
       '
     depends_on:
       - nginx
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
@@ -138,6 +143,11 @@ services:
     restart: always
     networks:
       - xianze-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
 
 networks:
   xianze-network:
