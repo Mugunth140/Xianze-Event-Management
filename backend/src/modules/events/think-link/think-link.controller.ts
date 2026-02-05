@@ -69,7 +69,7 @@ if (!existsSync(uploadDir)) {
 @Controller('think-link')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ThinkLinkController {
-  constructor(private readonly service: ThinkLinkService) {}
+  constructor(private readonly service: ThinkLinkService) { }
 
   /**
    * POST /api/think-link/presentations
@@ -211,7 +211,7 @@ export class ThinkLinkController {
    * Delete a presentation
    */
   @Delete('presentations/:id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
   @HttpCode(HttpStatus.OK)
   async delete(@Param('id', ParseIntPipe) id: number) {
     const presentation = await this.service.findById(id);

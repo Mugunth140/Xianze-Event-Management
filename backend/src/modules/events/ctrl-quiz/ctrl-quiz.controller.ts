@@ -20,7 +20,7 @@ import { CreateQuestionDto, CtrlQuizService, JoinParticipantDto } from './ctrl-q
 
 @Controller('ctrl-quiz')
 export class CtrlQuizController {
-  constructor(private readonly service: CtrlQuizService) {}
+  constructor(private readonly service: CtrlQuizService) { }
 
   // ========================
   // ROUND STATE (Coordinator)
@@ -102,7 +102,7 @@ export class CtrlQuizController {
 
   @Delete('questions/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
   @HttpCode(HttpStatus.OK)
   async deleteQuestion(@Param('id', ParseIntPipe) id: number) {
     await this.service.deleteQuestion(id);
