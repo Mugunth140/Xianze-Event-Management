@@ -10,10 +10,8 @@ import useAuth from '../hooks/useAuth';
 
 const EVENTS = [
   { slug: 'buildathon', name: 'Buildathon' },
-  { slug: 'bug-smash', name: 'Bug Smash' },
   { slug: 'paper-presentation', name: 'Paper Presentation' },
   { slug: 'ctrl-quiz', name: 'Ctrl+ Quiz' },
-  { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'think-link', name: 'Think & Link' },
   { slug: 'gaming', name: 'Gaming' },
   { slug: 'fun-games', name: 'Fun Games' },

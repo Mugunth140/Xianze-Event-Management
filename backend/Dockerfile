@@ -31,8 +31,8 @@ RUN mkdir -p dist/modules/mail/templates && \
 
 # Stage 3: Production
 FROM oven/bun:1-alpine AS runner
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl for health checks and LibreOffice for PPT/PPTX conversion
+RUN apk add --no-cache curl libreoffice
 LABEL maintainer="XIANZE Team" description="XIANZE Backend API" runtime="bun"
 
 RUN addgroup --system --gid 1001 bunjs && \

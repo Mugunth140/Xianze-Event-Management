@@ -38,8 +38,9 @@ export class CtrlQuizController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.COORDINATOR)
   @HttpCode(HttpStatus.OK)
-  async startQuiz(@Body('duration') duration?: number) {
-    const state = await this.service.startQuiz(duration || 30);
+  async startQuiz(@Body('duration') duration?: number, @Body('round') round?: number) {
+    const roundValue = round && round > 0 ? round : 1;
+    const state = await this.service.startRound(roundValue, duration || 30);
     return { success: true, data: state };
   }
 
@@ -84,6 +85,9 @@ export class CtrlQuizController {
     if (dto.correctIndex < 0 || dto.correctIndex >= dto.options.length) {
       throw new BadRequestException('correctIndex out of range');
     }
+    if (dto.round !== undefined && dto.round !== 1 && dto.round !== 2) {
+      throw new BadRequestException('round must be 1 or 2');
+    }
     const question = await this.service.createQuestion(dto);
     return { success: true, data: question };
   }
@@ -112,8 +116,8 @@ export class CtrlQuizController {
   @Post('join')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async joinParticipant(@Body() dto: JoinParticipantDto) {
-    if (!dto.email || !dto.name) {
-      throw new BadRequestException('Email and name are required');
+    if (!dto.name) {
+      throw new BadRequestException('Name is required');
     }
     const participant = await this.service.joinParticipant(dto);
     return { success: true, data: participant };
@@ -153,7 +157,16 @@ export class CtrlQuizController {
     const question = await this.service.getNextQuestion(participantId);
 
     if (!question) {
-      return { success: true, data: null };
+      return {
+        success: true,
+        data: null,
+        meta: {
+          status: state.status,
+          activeRound: state.activeRound,
+          roundStartedAt: state.startedAt,
+          roundDuration: state.roundDuration,
+        },
+      };
     }
 
     return {
@@ -164,6 +177,8 @@ export class CtrlQuizController {
         options: question.options,
         roundStartedAt: state.startedAt,
         roundDuration: state.roundDuration,
+        activeRound: state.activeRound,
+        status: state.status,
       },
     };
   }

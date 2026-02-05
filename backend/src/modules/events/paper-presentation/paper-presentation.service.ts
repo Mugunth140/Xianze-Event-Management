@@ -102,6 +102,29 @@ export class PaperPresentationService {
   }
 
   /**
+   * Update PDF path for a submission
+   */
+  async updatePdfPath(id: number, pdfPath: string): Promise<PaperSubmission> {
+    const submission = await this.findById(id);
+    submission.pdfPath = pdfPath;
+    return this.submissionRepository.save(submission);
+  }
+
+  /**
+   * Update slide and PDF paths for a submission
+   */
+  async updateSlides(
+    id: number,
+    slidePath: string,
+    pdfPath: string | null,
+  ): Promise<PaperSubmission> {
+    const submission = await this.findById(id);
+    submission.slidePath = slidePath;
+    submission.pdfPath = pdfPath;
+    return this.submissionRepository.save(submission);
+  }
+
+  /**
    * Get submission statistics
    */
   async getStats(): Promise<SubmissionStats> {

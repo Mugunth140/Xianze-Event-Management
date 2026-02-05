@@ -115,12 +115,10 @@ export default function ThinkLinkPresenter({
   useEffect(() => {
     // Prevent double connection in React Strict Mode
     if (buzzerSocketRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[ThinkLinkPresenter] Already connected, skipping duplicate mount');
       return;
     }
 
     const wsUrl = getWSUrl();
-    console.log('[ThinkLinkPresenter] Connecting to WebSocket:', wsUrl);
     const ws = new WebSocket(wsUrl);
     buzzerSocketRef.current = ws;
 
@@ -162,19 +160,11 @@ export default function ThinkLinkPresenter({
     };
 
     ws.onopen = () => {
-      console.log('[ThinkLinkPresenter] WebSocket connected');
       // Join as coordinator and start session
       sendWSMessage('coordinator:join')
+        .then(() => sendWSMessage('coordinator:select-event', { eventSlug: 'think-link' }))
+        .then(() => sendWSMessage('coordinator:start-session'))
         .then(() => {
-          console.log('[ThinkLinkPresenter] Coordinator joined');
-          return sendWSMessage('coordinator:select-event', { eventSlug: 'think-link' });
-        })
-        .then(() => {
-          console.log('[ThinkLinkPresenter] Event selected: think-link');
-          return sendWSMessage('coordinator:start-session');
-        })
-        .then(() => {
-          console.log('[ThinkLinkPresenter] Session started');
           setWsReady(true);
         })
         .catch((err) => {
@@ -219,27 +209,23 @@ export default function ThinkLinkPresenter({
       }
     };
 
-    ws.onclose = (event) => {
-      console.log('[ThinkLinkPresenter] WebSocket closed:', event.code, event.reason);
+    ws.onclose = () => {
       buzzerSocketRef.current = null;
       setWsReady(false);
     };
 
-    ws.onerror = (error) => {
-      console.error('[ThinkLinkPresenter] WebSocket error:', error);
+    ws.onerror = () => {
       setWsReady(false);
     };
 
     return () => {
-      console.log('[ThinkLinkPresenter] Cleanup called, WebSocket state:', ws.readyState);
       // Don't close on first cleanup (React Strict Mode), only on actual unmount
       if (ws.readyState === WebSocket.OPEN) {
-        console.log('[ThinkLinkPresenter] Ending session and closing WebSocket');
         // Try to end session gracefully, but don't wait for response
         try {
           ws.send(JSON.stringify({ type: 'coordinator:end-session' }));
-        } catch (err) {
-          console.error('[ThinkLinkPresenter] Failed to end session:', err);
+        } catch {
+          // Ignore errors during cleanup
         }
         // Close immediately since we're in cleanup
         ws.close();
@@ -292,11 +278,10 @@ export default function ThinkLinkPresenter({
   const handleClose = useCallback(() => {
     const ws = buzzerSocketRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
-      console.log('[ThinkLinkPresenter] Ending session on close');
       try {
         ws.send(JSON.stringify({ type: 'coordinator:end-session' }));
-      } catch (err) {
-        console.error('[ThinkLinkPresenter] Failed to end session:', err);
+      } catch {
+        // Ignore errors during cleanup
       }
       // Close WebSocket after brief delay
       setTimeout(() => {
@@ -404,10 +389,8 @@ export default function ThinkLinkPresenter({
   const enableBuzzerForSlide = useCallback(() => {
     const ws = buzzerSocketRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.warn('[ThinkLinkPresenter] Cannot enable buzzer - WebSocket not ready');
       return;
     }
-    console.log('[ThinkLinkPresenter] Enabling buzzer for slide');
     ws.send(JSON.stringify({ type: 'coordinator:enable-buzzer' }));
   }, []);
 
@@ -552,8 +535,8 @@ export default function ThinkLinkPresenter({
           {/* Buzzer winner - bottom center */}
           {buzzerWinner && (
             <div className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-              <div className="px-8 py-4 rounded-2xl bg-emerald-500/95 backdrop-blur text-white text-4xl font-bold shadow-2xl animate-pulse border-4 border-white/30">
-                🏆 {buzzerWinner}
+              <div className="px-8 py-3 rounded-xl bg-emerald-500/95 backdrop-blur text-white text-2xl font-bold shadow-2xl animate-none border-4 border-white/30">
+                {buzzerWinner}
               </div>
             </div>
           )}

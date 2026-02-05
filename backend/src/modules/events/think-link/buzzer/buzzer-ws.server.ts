@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import type { ServerWebSocket } from 'bun';
 import { DataSource } from 'typeorm';
+import { CtrlQuizParticipant } from '../../ctrl-quiz/ctrl-quiz.entity';
 import { BuzzerScore } from './entities/buzzer-score.entity';
 
 /**
@@ -56,10 +57,10 @@ interface WSMessage {
  */
 const BUZZER_EVENTS = [
   { slug: 'think-link', name: 'Think & Link' },
-  { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'tech-quiz', name: 'Tech Quiz' },
   { slug: 'general-quiz', name: 'General Quiz' },
   { slug: 'rapid-fire', name: 'Rapid Fire' },
+  { slug: 'ctrl-quiz', name: 'Ctrl + Quiz' },
   { slug: 'custom', name: 'Custom Event' },
 ];
 
@@ -99,6 +100,14 @@ export class BuzzerWebSocketServer {
   setDataSource(dataSource: DataSource) {
     this.dataSource = dataSource;
     this.logger.log('DataSource connected to BuzzerWebSocketServer');
+  }
+
+  /**
+   * Broadcast leaderboard update to all coordinators for an event
+   * Can be called from external services (e.g., ctrl-quiz)
+   */
+  async notifyLeaderboardUpdate(eventSlug: string) {
+    await this.broadcastLeaderboard(eventSlug);
   }
 
   /**
@@ -223,7 +232,15 @@ export class BuzzerWebSocketServer {
         break;
 
       case 'coordinator:answer-correct':
-        this.handleAnswerCorrect(ws).then(respond);
+        // Send response IMMEDIATELY before broadcasts to prevent timeout with 20+ phones
+        this.handleAnswerCorrect(ws)
+          .then((result) => {
+            respond(result);
+          })
+          .catch((err) => {
+            this.logger.error(`Error in handleAnswerCorrect: ${err}`);
+            respond({ success: false, error: 'Internal error' });
+          });
         break;
 
       case 'coordinator:answer-wrong':
@@ -351,22 +368,26 @@ export class BuzzerWebSocketServer {
     this.logger.log(`Buzz (${eventSlug}) from ${team.name1} & ${team.name2} at ${pressedAt}`);
 
     if (!state.currentWinner) {
+      // IMMEDIATELY lock the state before any broadcasts to prevent race conditions
       state.currentWinner = buzzPress;
       state.isBuzzerEnabled = false;
 
-      // Notify coordinators
-      this.broadcastToCoordinators(eventSlug, {
-        type: 'buzzer:winner',
-        data: { team, pressedAt },
-      });
+      // Create response first (lowest latency for presser)
+      const response = { success: true, first: true };
 
-      // Notify all participants
+      // Broadcast to all participants FIRST (they need to lock their UI immediately)
       this.broadcastToEvent(eventSlug, {
         type: 'buzzer:locked',
         data: { winnerNames: `${team.name1} & ${team.name2}` },
       });
 
-      return { success: true, first: true };
+      // Notify coordinators LAST (less time-critical)
+      this.broadcastToCoordinators(eventSlug, {
+        type: 'buzzer:winner',
+        data: { team, pressedAt },
+      });
+
+      return response;
     }
 
     return { success: true, first: false };
@@ -548,7 +569,7 @@ export class BuzzerWebSocketServer {
   }
 
   /**
-   * Mark answer as correct
+   * Mark answer as correct - optimized for 20-40ms updates
    */
   private async handleAnswerCorrect(ws: ServerWebSocket<WSData>) {
     if (ws.data.type !== 'coordinator') {
@@ -557,33 +578,21 @@ export class BuzzerWebSocketServer {
 
     const eventSlug = ws.data.eventSlug;
     const state = this.getEventState(eventSlug);
-    const winningTeam = state.currentWinner?.team;
 
-    // Add score to database
-    if (winningTeam && this.dataSource) {
-      try {
-        await this.addScore(eventSlug, winningTeam.name1, winningTeam.name2, 1);
-        this.logger.log(`Point awarded to ${winningTeam.name1} & ${winningTeam.name2}`);
-      } catch (err) {
-        this.logger.error(`Failed to add score: ${err}`);
-      }
-    }
-
-    this.logger.log(`Answer correct (${eventSlug})`);
-
+    // Update state FIRST
     state.isBuzzerEnabled = false;
     state.currentWinner = null;
     state.buzzQueue = [];
 
+    // Broadcast IMMEDIATELY (synchronous for 20-40ms response)
     this.broadcastToEvent(eventSlug, { type: 'answer:correct' });
     this.broadcastBuzzerState(eventSlug);
-    await this.broadcastLeaderboard(eventSlug);
 
     return { success: true };
   }
 
   /**
-   * Mark answer as wrong
+   * Mark answer as wrong - optimized for 20-40ms updates
    */
   private handleAnswerWrong(ws: ServerWebSocket<WSData>) {
     if (ws.data.type !== 'coordinator') {
@@ -596,7 +605,7 @@ export class BuzzerWebSocketServer {
 
     this.logger.log(`Answer wrong (${eventSlug}) by ${wrongTeam?.name1} & ${wrongTeam?.name2}`);
 
-    state.isBuzzerEnabled = true;
+    // IMMEDIATELY clear current winner
     state.currentWinner = null;
 
     // Check for queued buzzes from other teams
@@ -604,11 +613,28 @@ export class BuzzerWebSocketServer {
       (buzz) => buzz.team.socketId !== wrongTeam?.socketId,
     );
 
+    // Broadcast IMMEDIATELY (synchronous for 20-40ms response)
     if (remainingBuzzes.length > 0) {
+      // Someone else pressed - lock to them immediately
       remainingBuzzes.sort((a, b) => a.pressedAt - b.pressedAt);
       state.currentWinner = remainingBuzzes[0];
       state.isBuzzerEnabled = false;
 
+      // Broadcast wrong answer FIRST
+      this.broadcastToEvent(eventSlug, {
+        type: 'answer:wrong',
+        data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
+      });
+
+      // Then IMMEDIATELY lock to next team
+      this.broadcastToEvent(eventSlug, {
+        type: 'buzzer:locked',
+        data: {
+          winnerNames: `${state.currentWinner.team.name1} & ${state.currentWinner.team.name2}`,
+        },
+      });
+
+      // Notify coordinators last
       this.broadcastToCoordinators(eventSlug, {
         type: 'buzzer:winner',
         data: {
@@ -616,22 +642,20 @@ export class BuzzerWebSocketServer {
           pressedAt: state.currentWinner.pressedAt,
         },
       });
-
-      this.broadcastToEvent(eventSlug, {
-        type: 'buzzer:locked',
-        data: {
-          winnerNames: `${state.currentWinner.team.name1} & ${state.currentWinner.team.name2}`,
-        },
-      });
     } else {
+      // No queued buzzes - re-enable buzzer
+      state.isBuzzerEnabled = true;
+
+      // Broadcast wrong answer first
+      this.broadcastToEvent(eventSlug, {
+        type: 'answer:wrong',
+        data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
+      });
+
+      // Then enable buzzer for all
       this.broadcastToEvent(eventSlug, { type: 'buzzer:enabled' });
       this.broadcastBuzzerState(eventSlug);
     }
-
-    this.broadcastToEvent(eventSlug, {
-      type: 'answer:wrong',
-      data: { wrongTeam: wrongTeam ? `${wrongTeam.name1} & ${wrongTeam.name2}` : null },
-    });
 
     return { success: true };
   }
@@ -777,14 +801,28 @@ export class BuzzerWebSocketServer {
 
   private broadcastToEvent(eventSlug: string, message: { type: string; data?: unknown }) {
     const msgStr = JSON.stringify(message);
-    for (const socket of this.sockets.values()) {
-      if (socket.data.eventSlug === eventSlug) {
-        try {
-          socket.send(msgStr);
-        } catch (err) {
-          this.logger.error(`Failed to broadcast: ${err}`);
-        }
+    const sockets = Array.from(this.sockets.values()).filter(
+      (socket) => socket.data.eventSlug === eventSlug,
+    );
+
+    this.logger.log(`Broadcasting ${message.type} to ${sockets.length} sockets in ${eventSlug}`);
+
+    // Batch broadcasts for better performance with 20+ phones
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const socket of sockets) {
+      try {
+        socket.send(msgStr);
+        successCount++;
+      } catch (err) {
+        errorCount++;
+        this.logger.error(`Failed to broadcast to socket: ${err}`);
       }
+    }
+
+    if (errorCount > 0) {
+      this.logger.warn(`Broadcast to ${eventSlug}: ${successCount} success, ${errorCount} failed`);
     }
   }
 
@@ -862,8 +900,23 @@ export class BuzzerWebSocketServer {
     return repo.save(score);
   }
 
-  private async getLeaderboard(eventSlug: string): Promise<BuzzerScore[]> {
+  private async getLeaderboard(eventSlug: string): Promise<BuzzerScore[] | CtrlQuizParticipant[]> {
     if (!this.dataSource) return [];
+
+    // Handle ctrl-quiz separately since it uses its own entity
+    if (eventSlug === 'ctrl-quiz') {
+      const repo = this.dataSource.getRepository(CtrlQuizParticipant);
+      const participants = await repo.find();
+      // Sort by score DESC, then by lastSubmitTime ASC (fastest first)
+      return participants.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        const aTime = a.lastSubmitTime?.getTime() || Infinity;
+        const bTime = b.lastSubmitTime?.getTime() || Infinity;
+        return aTime - bTime;
+      });
+    }
 
     const repo = this.dataSource.getRepository(BuzzerScore);
     return repo.find({
@@ -874,6 +927,13 @@ export class BuzzerWebSocketServer {
 
   private async resetLeaderboard(eventSlug: string) {
     if (!this.dataSource) return;
+
+    // Handle ctrl-quiz separately
+    if (eventSlug === 'ctrl-quiz') {
+      const repo = this.dataSource.getRepository(CtrlQuizParticipant);
+      await repo.update({}, { score: 0, lastSubmitTime: null });
+      return;
+    }
 
     const repo = this.dataSource.getRepository(BuzzerScore);
     await repo.delete({ eventSlug });

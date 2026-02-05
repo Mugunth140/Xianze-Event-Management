@@ -276,6 +276,7 @@ export default function BuzzerPage() {
   const handleBuzzerPress = useCallback(() => {
     if (state !== 'ready') return;
 
+    // IMMEDIATELY update UI (optimistic) - feels instant on mobile
     isPressedRef.current = true;
     setState('pressed');
 
@@ -290,15 +291,17 @@ export default function BuzzerPage() {
             setState('locked');
           }
         } else {
-          setError((response.error as string) || 'Failed to register buzz');
+          // Revert on failure
           isPressedRef.current = false;
           setState('ready');
+          setError((response.error as string) || 'Failed to register buzz');
         }
       })
       .catch(() => {
-        setError('Failed to register buzz');
+        // Revert on error - allows retry
         isPressedRef.current = false;
         setState('ready');
+        setError('Connection error - try again!');
       });
   }, [state, sendWSWithResponse]);
 

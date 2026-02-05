@@ -12,8 +12,9 @@ services:
         - NEXT_PUBLIC_WHATSAPP_URL=${NEXT_PUBLIC_WHATSAPP_URL}
     container_name: xianze-frontend-builder
     volumes:
-      - frontend-static:/app/out
-    command: ["echo", "Build complete"]
+      - frontend-static:/app/out-static
+    command:
+      ["/bin/sh", "-c", "rm -rf /app/out-static/* && cp -r /app/out/. /app/out-static/"]
 
   nginx:
     build:

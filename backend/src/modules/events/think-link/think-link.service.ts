@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { ThinkLinkPresentation } from './think-link.entity';
 
@@ -8,6 +10,8 @@ export class ThinkLinkService {
   constructor(
     @InjectRepository(ThinkLinkPresentation)
     private readonly presentationRepository: Repository<ThinkLinkPresentation>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   /**
@@ -23,28 +27,43 @@ export class ThinkLinkService {
       filePath,
       totalSlides,
     });
-    return this.presentationRepository.save(presentation);
+    const saved = await this.presentationRepository.save(presentation);
+    await this.cacheManager.del('think-link:presentations:all');
+    return saved;
   }
 
   /**
    * Find all presentations ordered by creation date
    */
   async findAll(): Promise<ThinkLinkPresentation[]> {
-    return this.presentationRepository.find({
+    const cacheKey = 'think-link:presentations:all';
+    const cached = await this.cacheManager.get<ThinkLinkPresentation[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    const presentations = await this.presentationRepository.find({
       order: { createdAt: 'DESC' },
     });
+    await this.cacheManager.set(cacheKey, presentations, 300);
+    return presentations;
   }
 
   /**
    * Find presentation by ID
    */
   async findById(id: number): Promise<ThinkLinkPresentation> {
+    const cacheKey = `think-link:presentation:${id}`;
+    const cached = await this.cacheManager.get<ThinkLinkPresentation>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const presentation = await this.presentationRepository.findOne({
       where: { id },
     });
     if (!presentation) {
       throw new NotFoundException(`Presentation with ID ${id} not found`);
     }
+    await this.cacheManager.set(cacheKey, presentation, 300);
     return presentation;
   }
 
@@ -54,7 +73,12 @@ export class ThinkLinkService {
   async updateName(id: number, name: string): Promise<ThinkLinkPresentation> {
     const presentation = await this.findById(id);
     presentation.name = name;
-    return this.presentationRepository.save(presentation);
+    const saved = await this.presentationRepository.save(presentation);
+    await Promise.all([
+      this.cacheManager.del('think-link:presentations:all'),
+      this.cacheManager.del(`think-link:presentation:${id}`),
+    ]);
+    return saved;
   }
 
   /**
@@ -63,7 +87,12 @@ export class ThinkLinkService {
   async updateTotalSlides(id: number, totalSlides: number): Promise<ThinkLinkPresentation> {
     const presentation = await this.findById(id);
     presentation.totalSlides = totalSlides;
-    return this.presentationRepository.save(presentation);
+    const saved = await this.presentationRepository.save(presentation);
+    await Promise.all([
+      this.cacheManager.del('think-link:presentations:all'),
+      this.cacheManager.del(`think-link:presentation:${id}`),
+    ]);
+    return saved;
   }
 
   /**
@@ -72,6 +101,10 @@ export class ThinkLinkService {
   async delete(id: number): Promise<void> {
     const presentation = await this.findById(id);
     await this.presentationRepository.remove(presentation);
+    await Promise.all([
+      this.cacheManager.del('think-link:presentations:all'),
+      this.cacheManager.del(`think-link:presentation:${id}`),
+    ]);
   }
 
   /**

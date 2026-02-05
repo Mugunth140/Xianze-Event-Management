@@ -1,3 +1,4 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -48,6 +49,17 @@ import { UsersModule } from './modules/users/users.module';
             limit: config.get<number>('RATE_LIMIT_MAX') || 100,
           },
         ],
+      }),
+    }),
+
+    // In-memory cache (NestJS built-in)
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        ttl: config.get<number>('CACHE_TTL_SECONDS') || 300,
+        max: config.get<number>('CACHE_MAX_ITEMS') || 500,
       }),
     }),
 
