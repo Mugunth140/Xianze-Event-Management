@@ -64,14 +64,14 @@ const GENERAL_EVENTS_END: GeneralEvent[] = [
   {
     id: 'lunch',
     title: 'Lunch Break',
-    time: '01:00 PM – 02:20 PM',
+    time: '01:00 PM – 02:00 PM',
     icon: '🍱',
     color: 'bg-orange-100 text-orange-700',
   },
   {
     id: 'valedictory',
     title: 'Valedictory Ceremony',
-    time: '02:15 PM – 03:30 PM',
+    time: '02:00 PM – 03:30 PM',
     icon: '🏆',
     color: 'bg-emerald-100 text-emerald-700',
   },
@@ -104,7 +104,7 @@ const MEGA_TRACKS: MegaTrack[] = [
 const EVENTS_FLOW: EventFlow[] = [
   {
     id: 'bug-smashing',
-    title: 'Bug Smashing',
+    title: 'Bug Smash',
     color: 'bg-emerald-500',
     lightColor: 'bg-emerald-500/10',
     icon: '🐛',

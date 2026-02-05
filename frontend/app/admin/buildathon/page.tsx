@@ -9,6 +9,7 @@ import Button from '../components/ui/Button';
 import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { PageLoader } from '../components/ui/Spinner';
+import useConfirm from '../hooks/useConfirm';
 
 interface Team {
   id: number;
@@ -48,6 +49,7 @@ interface Stats {
 type Tab = 'overview' | 'teams' | 'documents' | 'api-control' | 'metrics';
 
 export default function BuildathonPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [teams, setTeams] = useState<Team[]>([]);
   const [apiState, setApiState] = useState<ApiState | null>(null);
@@ -168,7 +170,13 @@ export default function BuildathonPage() {
   };
 
   const handleDeleteTeam = async (id: number) => {
-    if (!confirm('Delete this team?')) return;
+    const ok = await confirm({
+      title: 'Delete Team',
+      message: 'Delete this team?',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
     const token = localStorage.getItem('token');
     await fetch(getApiUrl(`/buildathon/teams/${id}`), {
       method: 'DELETE',
@@ -229,7 +237,13 @@ export default function BuildathonPage() {
   };
 
   const handleResetMetrics = async () => {
-    if (!confirm('Reset all metrics? This will clear request logs.')) return;
+    const ok = await confirm({
+      title: 'Reset Metrics',
+      message: 'Reset all metrics? This will clear request logs.',
+      confirmText: 'Reset',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
     const token = localStorage.getItem('token');
     setResettingMetrics(true);
     try {
@@ -884,6 +898,7 @@ export default function BuildathonPage() {
           </Card>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

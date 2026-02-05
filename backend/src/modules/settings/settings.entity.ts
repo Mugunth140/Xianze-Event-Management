@@ -35,6 +35,7 @@ export class Setting {
 export const SETTING_KEYS = {
   REGISTRATION_OPEN: 'registration_open',
   REGISTRATION_CLOSED_MESSAGE: 'registration_closed_message',
+  ONLINE_PAYMENT_ENABLED: 'online_payment_enabled',
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '../components/layout';
 import Card from '../components/ui/Card';
 import useAuth from '../hooks/useAuth';
+import useConfirm from '../hooks/useConfirm';
 
 interface EventRoundConfig {
   id: number;
@@ -34,6 +35,7 @@ interface RoundAnalytics {
 type TabType = 'configuration' | 'analytics';
 
 export default function RoundsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const { token, user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('configuration');
   const [configs, setConfigs] = useState<EventRoundConfig[]>([]);
@@ -210,10 +212,13 @@ export default function RoundsPage() {
 
   const resetEvent = async (eventSlug: string) => {
     if (!token || !isAdmin) return;
-    if (
-      !confirm(`Are you sure you want to reset ${eventSlug}? This will clear all round progress.`)
-    )
-      return;
+    const ok = await confirm({
+      title: 'Reset Event',
+      message: `Are you sure you want to reset ${eventSlug}? This will clear all round progress.`,
+      confirmText: 'Reset',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
 
     setUpdating(eventSlug);
     setMessage(null);
@@ -269,9 +274,13 @@ export default function RoundsPage() {
 
   const resetRound = async (eventSlug: string, roundNumber: number) => {
     if (!token || !isAdmin) return;
-    if (!confirm(`Reset Round ${roundNumber} for ${eventSlug}? This will clear round entries.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Reset Round',
+      message: `Reset Round ${roundNumber} for ${eventSlug}? This will clear round entries.`,
+      confirmText: 'Reset',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
 
     setUpdating(`${eventSlug}-round-${roundNumber}`);
     setMessage(null);
@@ -677,6 +686,7 @@ export default function RoundsPage() {
           Analytics are available to admins and coordinators only.
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

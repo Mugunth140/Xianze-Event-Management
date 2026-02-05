@@ -8,6 +8,7 @@ import PageHeader from '../components/layout/PageHeader';
 import Button from '../components/ui/Button';
 import Card, { StatCard } from '../components/ui/Card';
 import { PageLoader } from '../components/ui/Spinner';
+import useConfirm from '../hooks/useConfirm';
 
 const ThinkLinkPresenter = dynamic(() => import('../components/events/ThinkLinkPresenter'), {
   ssr: false,
@@ -29,6 +30,7 @@ interface Stats {
 type Tab = 'general' | 'buzzer';
 
 export default function ThinkLinkPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -100,7 +102,13 @@ export default function ThinkLinkPage() {
 
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('token');
-    if (!confirm('Delete this presentation?')) return;
+    const ok = await confirm({
+      title: 'Delete Presentation',
+      message: 'Delete this presentation?',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
 
     try {
       await fetch(getApiUrl(`/think-link/presentations/${id}`), {
@@ -335,6 +343,7 @@ export default function ThinkLinkPage() {
       {activeTab === 'buzzer' && (
         <BuzzerPanel defaultEvent="think-link" buzzerPath="/events/think-link/buzzer" />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

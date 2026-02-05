@@ -10,6 +10,7 @@ import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { PageLoader } from '../components/ui/Spinner';
+import useConfirm from '../hooks/useConfirm';
 
 const PaperPresenter = dynamic(() => import('../components/events/PaperPresenter'), {
   ssr: false,
@@ -39,6 +40,7 @@ interface User {
 }
 
 export default function PaperPresentationPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [submissions, setSubmissions] = useState<PaperSubmission[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,7 +238,13 @@ export default function PaperPresentationPage() {
 
   const handleDeleteSubmission = async (id: number) => {
     if (!canDelete) return;
-    if (!confirm('Delete this submission?')) return;
+    const ok = await confirm({
+      title: 'Delete Submission',
+      message: 'Delete this submission?',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(getApiUrl(`/paper-presentation/submissions/${id}`), {
@@ -557,6 +565,7 @@ export default function PaperPresentationPage() {
           onClose={() => setPresentingSubmission(null)}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

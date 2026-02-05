@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import Card, { StatCard } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { PageLoader } from '../components/ui/Spinner';
+import useConfirm from '../hooks/useConfirm';
 
 interface Question {
   id: number;
@@ -43,6 +44,7 @@ interface Stats {
 type Tab = 'overview' | 'mcq' | 'leaderboard';
 
 export default function CtrlQuizPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [leaderboard, setLeaderboard] = useState<Participant[]>([]);
@@ -166,7 +168,13 @@ export default function CtrlQuizPage() {
   };
 
   const handleDeleteQuestion = async (id: number) => {
-    if (!confirm('Delete this question?')) return;
+    const ok = await confirm({
+      title: 'Delete Question',
+      message: 'Delete this question?',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
     const token = localStorage.getItem('token');
     try {
       await fetch(getApiUrl(`/ctrl-quiz/questions/${id}`), {
@@ -208,12 +216,14 @@ export default function CtrlQuizPage() {
   };
 
   const handleReset = async () => {
-    if (
-      !confirm(
+    const ok = await confirm({
+      title: 'Reset Quiz',
+      message:
         'This will permanently remove ALL participants and their scores from the leaderboard. The quiz will be reset to a fresh state. Continue?',
-      )
-    )
-      return;
+      confirmText: 'Reset',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
     const token = localStorage.getItem('token');
     // Optimistically clear the leaderboard for instant UI feedback
     setLeaderboard([]);
@@ -734,6 +744,7 @@ export default function CtrlQuizPage() {
           </Card>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

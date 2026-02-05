@@ -106,6 +106,9 @@ const Register = () => {
     loading: boolean;
   }>({ isOpen: true, loading: true });
 
+  //Online payment availability (controlled from admin settings)
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -131,23 +134,37 @@ const Register = () => {
 
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Check if registrations are open
+  // Check if registrations are open and fetch payment settings
   useEffect(() => {
     const checkRegistrationStatus = async () => {
       try {
-        const res = await fetch(getApiUrl('/settings/registration-status'));
-        if (res.ok) {
-          const data = await res.json();
-          setRegistrationStatus({
-            isOpen: data.isOpen,
-            loading: false,
-          });
+        const [regRes, payRes] = await Promise.all([
+          fetch(getApiUrl('/settings/registration-status')),
+          fetch(getApiUrl('/settings/online-payment-status')),
+        ]);
+
+        if (regRes.ok) {
+          const data = await regRes.json();
+          setRegistrationStatus({ isOpen: data.isOpen, loading: false });
         } else {
-          // If endpoint fails, assume open (fail-open)
           setRegistrationStatus({ isOpen: true, loading: false });
         }
+
+        if (payRes.ok) {
+          const data = await payRes.json();
+          setOnlinePaymentEnabled(data.enabled);
+          // When online payment is disabled, force cash mode
+          if (!data.enabled) {
+            setFormData((prev) => ({
+              ...prev,
+              paymentMode: 'cash',
+              transactionId: '',
+            }));
+            setScreenshot(null);
+          }
+        }
       } catch {
-        // Network error - assume open to not block registrations
+        // Network error — fail-open for both settings
         setRegistrationStatus({ isOpen: true, loading: false });
       }
     };
@@ -161,7 +178,7 @@ const Register = () => {
     'Bug Smash',
     'Paper Presentation',
     'Ctrl + Quiz',
-    'Think & Link',
+    'Think & Link (Connection)',
     'Gaming',
     'Code Hunt : Word Edition',
   ];
@@ -1388,32 +1405,40 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-center">
-                    <div className="inline-flex bg-gray-100 rounded-xl p-1">
-                      <button
-                        type="button"
-                        onClick={() => handlePaymentModeChange('online')}
-                        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                          formData.paymentMode === 'online'
-                            ? 'bg-white text-primary-700 shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        Online
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePaymentModeChange('cash')}
-                        className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                          formData.paymentMode === 'cash'
-                            ? 'bg-white text-primary-700 shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        Cash
-                      </button>
+                  {onlinePaymentEnabled ? (
+                    <div className="flex items-center justify-center">
+                      <div className="inline-flex bg-gray-100 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => handlePaymentModeChange('online')}
+                          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            formData.paymentMode === 'online'
+                              ? 'bg-white text-primary-700 shadow-sm'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          Online
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePaymentModeChange('cash')}
+                          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            formData.paymentMode === 'cash'
+                              ? 'bg-white text-primary-700 shadow-sm'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          Cash
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                      <p className="text-sm text-amber-800 font-medium text-center">
+                        Online payment is currently unavailable.
+                      </p>
+                    </div>
+                  )}
 
                   {formData.paymentMode === 'cash' && (
                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">

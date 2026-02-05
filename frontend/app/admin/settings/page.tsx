@@ -7,6 +7,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
+import { ConfirmModal } from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import useAuth from '../hooks/useAuth';
 
@@ -133,6 +134,13 @@ export default function SettingsPage() {
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [registrationSaving, setRegistrationSaving] = useState(false);
 
+  // Online payment control state
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
+  const [showRegistrationConfirm, setShowRegistrationConfirm] = useState(false);
+
   const assignedEventsLabel = useMemo(() => {
     if (!user) return 'Not assigned';
     if (user.assignedEvent) return user.assignedEvent;
@@ -144,22 +152,33 @@ export default function SettingsPage() {
   const fetchRegistrationStatus = useCallback(async () => {
     if (!token) return;
     setRegistrationLoading(true);
+    setPaymentLoading(true);
     try {
-      const res = await fetch(`${API_URL}/settings/registration-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const [regRes, payRes] = await Promise.all([
+        fetch(`${API_URL}/settings/registration-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/settings/online-payment-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      if (regRes.ok) {
+        const data = await regRes.json();
         setRegistrationOpen(data.isOpen);
+      }
+      if (payRes.ok) {
+        const data = await payRes.json();
+        setOnlinePaymentEnabled(data.enabled);
       }
     } catch {
       // Ignore errors; UI will remain in last known state
     } finally {
       setRegistrationLoading(false);
+      setPaymentLoading(false);
     }
   }, [token]);
 
-  // Toggle registration status
+  // Toggle registration status (called after confirmation)
   const toggleRegistration = async () => {
     if (!token || !isAdmin) return;
     setRegistrationSaving(true);
@@ -179,6 +198,31 @@ export default function SettingsPage() {
       // Ignore errors; UI will remain in last known state
     } finally {
       setRegistrationSaving(false);
+      setShowRegistrationConfirm(false);
+    }
+  };
+
+  // Toggle online payment (called after confirmation)
+  const toggleOnlinePayment = async () => {
+    if (!token || !isAdmin) return;
+    setPaymentSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/settings/online-payment-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enabled: !onlinePaymentEnabled }),
+      });
+      if (res.ok) {
+        setOnlinePaymentEnabled(!onlinePaymentEnabled);
+      }
+    } catch {
+      // Ignore errors; UI will remain in last known state
+    } finally {
+      setPaymentSaving(false);
+      setShowPaymentConfirm(false);
     }
   };
 
@@ -302,7 +346,7 @@ export default function SettingsPage() {
                   </Badge>
                   <Button
                     variant={registrationOpen ? 'danger' : 'primary'}
-                    onClick={toggleRegistration}
+                    onClick={() => setShowRegistrationConfirm(true)}
                     disabled={registrationSaving}
                   >
                     {registrationSaving
@@ -317,6 +361,78 @@ export default function SettingsPage() {
           </div>
         </Card>
       )}
+
+      {/* Online Payment Control - Admin Only */}
+      {isAdmin && (
+        <Card className="border-2 border-emerald-100 bg-emerald-50/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Online Payment</h2>
+              <p className="text-sm text-gray-500">
+                {onlinePaymentEnabled
+                  ? 'Participants can pay via UPI or cash at the venue.'
+                  : 'Online payment is disabled. Only cash payment at venue is available.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              {paymentLoading ? (
+                <div className="w-8 h-8 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Badge
+                    variant={onlinePaymentEnabled ? 'success' : 'warning'}
+                    className="text-sm px-3 py-1"
+                  >
+                    {onlinePaymentEnabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                  <Button
+                    variant={onlinePaymentEnabled ? 'danger' : 'primary'}
+                    onClick={() => setShowPaymentConfirm(true)}
+                    disabled={paymentSaving}
+                  >
+                    {paymentSaving
+                      ? 'Saving...'
+                      : onlinePaymentEnabled
+                        ? 'Disable Online Payment'
+                        : 'Enable Online Payment'}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        isOpen={showRegistrationConfirm}
+        onClose={() => setShowRegistrationConfirm(false)}
+        onConfirm={toggleRegistration}
+        title={registrationOpen ? 'Close Registrations' : 'Open Registrations'}
+        message={
+          registrationOpen
+            ? 'Are you sure you want to close registrations? New participants will not be able to register until you re-open them.'
+            : 'Are you sure you want to open registrations? Participants will be able to register for events.'
+        }
+        confirmText={registrationOpen ? 'Yes, Close' : 'Yes, Open'}
+        confirmVariant={registrationOpen ? 'danger' : 'primary'}
+        loading={registrationSaving}
+      />
+
+      <ConfirmModal
+        isOpen={showPaymentConfirm}
+        onClose={() => setShowPaymentConfirm(false)}
+        onConfirm={toggleOnlinePayment}
+        title={onlinePaymentEnabled ? 'Disable Online Payment' : 'Enable Online Payment'}
+        message={
+          onlinePaymentEnabled
+            ? 'Are you sure you want to disable online payment? Only cash payment at the venue will be available for new registrations.'
+            : 'Are you sure you want to enable online payment? Participants will see UPI payment options on the registration page.'
+        }
+        confirmText={onlinePaymentEnabled ? 'Yes, Disable' : 'Yes, Enable'}
+        confirmVariant={onlinePaymentEnabled ? 'danger' : 'primary'}
+        loading={paymentSaving}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

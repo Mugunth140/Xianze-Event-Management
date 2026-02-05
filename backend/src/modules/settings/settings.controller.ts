@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, UseGuards } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsString } from 'class-validator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -20,6 +20,16 @@ class UpdateRegistrationStatusDto {
 class UpdateRegistrationMessageDto {
   @IsString()
   message: string;
+}
+
+class UpdateOnlinePaymentDto {
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
+  @IsBoolean()
+  enabled: boolean;
 }
 
 @Controller('settings')
@@ -63,5 +73,26 @@ export class SettingsController {
   @Roles(UserRole.ADMIN)
   async updateRegistrationMessage(@Body() dto: UpdateRegistrationMessageDto) {
     return this.settingsService.setRegistrationClosedMessage(dto.message);
+  }
+
+  /**
+   * Get online payment status (public endpoint)
+   * Used by registration page to decide whether to show online payment option
+   */
+  @Get('online-payment-status')
+  async getOnlinePaymentStatus() {
+    const enabled = await this.settingsService.isOnlinePaymentEnabled();
+    return { enabled };
+  }
+
+  /**
+   * Toggle online payment availability (admin only)
+   */
+  @Patch('online-payment-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async toggleOnlinePayment(@Body() dto: UpdateOnlinePaymentDto) {
+    return this.settingsService.toggleOnlinePayment(dto.enabled);
   }
 }

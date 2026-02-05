@@ -13,6 +13,10 @@ const DEFAULT_SETTINGS: Record<SettingKey, { value: string; description: string 
     value: 'Registrations are currently closed. Please check back later.',
     description: 'Message shown when registrations are closed',
   },
+  [SETTING_KEYS.ONLINE_PAYMENT_ENABLED]: {
+    value: 'true',
+    description: 'Whether online (UPI) payment option is available on the registration page',
+  },
 };
 
 @Injectable()
@@ -116,5 +120,21 @@ export class SettingsService {
    */
   async setRegistrationClosedMessage(message: string): Promise<Setting> {
     return this.set(SETTING_KEYS.REGISTRATION_CLOSED_MESSAGE, message);
+  }
+
+  /**
+   * Check if online payment is enabled
+   */
+  async isOnlinePaymentEnabled(): Promise<boolean> {
+    return this.getBoolean(SETTING_KEYS.ONLINE_PAYMENT_ENABLED);
+  }
+
+  /**
+   * Toggle online payment availability
+   */
+  async toggleOnlinePayment(enabled: boolean): Promise<{ enabled: boolean }> {
+    await this.set(SETTING_KEYS.ONLINE_PAYMENT_ENABLED, enabled ? 'true' : 'false');
+    this.logger.log(`Online payment ${enabled ? 'enabled' : 'disabled'}`);
+    return { enabled };
   }
 }

@@ -2,6 +2,7 @@
 
 import { getWSUrl } from '@/lib/buzzer-ws';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useConfirm from '../../hooks/useConfirm';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -31,6 +32,7 @@ interface LeaderboardPanelProps {
 }
 
 export default function LeaderboardPanel({ defaultEvent = 'think-link' }: LeaderboardPanelProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting');
   const [leaderboard, setLeaderboard] = useState<TeamScore[]>([]);
   const [currentEvent, setCurrentEvent] = useState(defaultEvent);
@@ -191,10 +193,14 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
     [fetchLeaderboard]
   );
 
-  const handleResetLeaderboard = useCallback(() => {
-    if (!confirm('Are you sure you want to reset the leaderboard? All scores will be cleared.')) {
-      return;
-    }
+  const handleResetLeaderboard = useCallback(async () => {
+    const ok = await confirm({
+      title: 'Reset Leaderboard',
+      message: 'Are you sure you want to reset the leaderboard? All scores will be cleared.',
+      confirmText: 'Reset',
+      confirmVariant: 'danger',
+    });
+    if (!ok) return;
 
     sendWSWithResponse('coordinator:reset-leaderboard')
       .then((response) => {
@@ -203,7 +209,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
         }
       })
       .catch(() => setError('Failed to reset leaderboard'));
-  }, [sendWSWithResponse]);
+  }, [sendWSWithResponse, confirm]);
 
   const handleReconnect = useCallback(() => {
     if (wsRef.current) {
@@ -490,6 +496,7 @@ export default function LeaderboardPanel({ defaultEvent = 'think-link' }: Leader
           </div>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }
