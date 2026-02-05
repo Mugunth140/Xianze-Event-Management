@@ -60,7 +60,7 @@ const events = [
   { value: 'Buildathon', label: 'Buildathon' },
   { value: 'Bug Smash', label: 'Bug Smash' },
   { value: 'Paper Presentation', label: 'Paper Presentation' },
-  { value: 'Ctrl  + Quiz', label: 'Ctrl + Quiz' },
+  { value: 'Ctrl + Quiz', label: 'Ctrl + Quiz' },
   { value: 'Code Hunt : Word Edition', label: 'Code Hunt : Word Edition' },
   { value: 'Think & Link', label: 'Think & Link' },
   { value: 'Gaming', label: 'Gaming' },
