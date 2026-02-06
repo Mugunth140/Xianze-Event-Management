@@ -43,6 +43,36 @@ export class ExportsController {
     return this.sendExcel(res, rows, 'users');
   }
 
+  @Get('payments')
+  async exportPayments(@Query('status') status: string | undefined, @Res() res: Response) {
+    const rows = await this.exportsService.getPayments(status);
+    return this.sendExcel(res, rows, status ? `payments-${status}` : 'payments-all');
+  }
+
+  @Get('all-event-participation')
+  async exportAllEventParticipation(@Res() res: Response) {
+    const rows = await this.exportsService.getAllEventParticipation();
+    return this.sendExcel(res, rows, 'all-event-participation');
+  }
+
+  @Get('checked-in-no-participation')
+  async exportCheckedInNoParticipation(@Res() res: Response) {
+    const rows = await this.exportsService.getCheckedInNoParticipation();
+    return this.sendExcel(res, rows, 'checked-in-no-participation');
+  }
+
+  @Get('contact-inquiries')
+  async exportContactInquiries(@Res() res: Response) {
+    const rows = await this.exportsService.getContactInquiries();
+    return this.sendExcel(res, rows, 'contact-inquiries');
+  }
+
+  @Get('event-summary')
+  async exportEventSummary(@Res() res: Response) {
+    const rows = await this.exportsService.getEventSummary();
+    return this.sendExcel(res, rows, 'event-summary');
+  }
+
   private sendExcel(res: Response, data: unknown[], fileName: string) {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();

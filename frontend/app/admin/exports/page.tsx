@@ -10,7 +10,9 @@ import useAuth from '../hooks/useAuth';
 
 const EVENTS = [
   { slug: 'buildathon', name: 'Buildathon' },
+  { slug: 'bug-smash', name: 'Bug Smash' },
   { slug: 'paper-presentation', name: 'Paper Presentation' },
+  { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'ctrl-quiz', name: 'Ctrl+ Quiz' },
   { slug: 'think-link', name: 'Think & Link' },
   { slug: 'gaming', name: 'Gaming' },
@@ -95,6 +97,7 @@ export default function ExportsPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Registrations */}
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Registrations</h3>
           <p className="text-sm text-gray-500">Export all registrations or filtered by event.</p>
@@ -123,6 +126,7 @@ export default function ExportsPage() {
           </div>
         </Card>
 
+        {/* Attendance */}
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Attendance</h3>
           <p className="text-sm text-gray-500">Export venue check-ins or by event.</p>
@@ -149,6 +153,7 @@ export default function ExportsPage() {
           </div>
         </Card>
 
+        {/* Event Participation */}
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Event Participation</h3>
           <p className="text-sm text-gray-500">Export event scans and round scans.</p>
@@ -178,9 +183,122 @@ export default function ExportsPage() {
             >
               Round Scans
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                handleDownload(
+                  '/exports/all-event-participation',
+                  'all-event-participation.xlsx',
+                  'all-event-participation'
+                )
+              }
+              loading={loadingKey === 'all-event-participation'}
+            >
+              All Events
+            </Button>
           </div>
         </Card>
 
+        {/* Payments */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Payments</h3>
+          <p className="text-sm text-gray-500">
+            Export payment data filtered by verification status.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() =>
+                handleDownload(
+                  '/exports/payments?status=verified',
+                  'payments-verified.xlsx',
+                  'payments-verified'
+                )
+              }
+              loading={loadingKey === 'payments-verified'}
+            >
+              Verified
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                handleDownload(
+                  '/exports/payments?status=pending',
+                  'payments-pending.xlsx',
+                  'payments-pending'
+                )
+              }
+              loading={loadingKey === 'payments-pending'}
+            >
+              Pending
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                handleDownload(
+                  '/exports/payments?status=rejected',
+                  'payments-rejected.xlsx',
+                  'payments-rejected'
+                )
+              }
+              loading={loadingKey === 'payments-rejected'}
+            >
+              Rejected
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                handleDownload('/exports/payments', 'payments-all.xlsx', 'payments-all')
+              }
+              loading={loadingKey === 'payments-all'}
+            >
+              All Payments
+            </Button>
+          </div>
+        </Card>
+
+        {/* No-show Report */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">No-show Report</h3>
+          <p className="text-sm text-gray-500">
+            Participants who checked in at venue but haven&apos;t participated in any event yet.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() =>
+                handleDownload(
+                  '/exports/checked-in-no-participation',
+                  'no-show-report.xlsx',
+                  'no-show'
+                )
+              }
+              loading={loadingKey === 'no-show'}
+            >
+              Export No-shows
+            </Button>
+          </div>
+        </Card>
+
+        {/* Contact Inquiries */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Contact Inquiries</h3>
+          <p className="text-sm text-gray-500">
+            Export all contact form submissions and inquiries.
+          </p>
+          <Button
+            onClick={() =>
+              handleDownload(
+                '/exports/contact-inquiries',
+                'contact-inquiries.xlsx',
+                'contact-inquiries'
+              )
+            }
+            loading={loadingKey === 'contact-inquiries'}
+          >
+            Export Inquiries
+          </Button>
+        </Card>
+
+        {/* Users */}
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Users</h3>
           <p className="text-sm text-gray-500">Export all admin, coordinator, and member users.</p>
@@ -189,6 +307,22 @@ export default function ExportsPage() {
             loading={loadingKey === 'users'}
           >
             Export Users
+          </Button>
+        </Card>
+
+        {/* Event Summary */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Event Summary</h3>
+          <p className="text-sm text-gray-500">
+            Export a summary with registrations, check-ins, and participation counts per event.
+          </p>
+          <Button
+            onClick={() =>
+              handleDownload('/exports/event-summary', 'event-summary.xlsx', 'event-summary')
+            }
+            loading={loadingKey === 'event-summary'}
+          >
+            Export Summary
           </Button>
         </Card>
       </div>
