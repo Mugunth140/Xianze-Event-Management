@@ -11,7 +11,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -114,7 +114,7 @@ export class CtrlQuizController {
   // ========================
 
   @Post('join')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @SkipThrottle()
   async joinParticipant(@Body() dto: JoinParticipantDto) {
     if (!dto.name) {
       throw new BadRequestException('Name is required');
@@ -128,7 +128,7 @@ export class CtrlQuizController {
   // ========================
 
   @Post('submit/:questionId')
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @SkipThrottle()
   async submitAnswer(
     @Param('questionId', ParseIntPipe) questionId: number,
     @Body('participantId') participantId: number,
@@ -146,6 +146,7 @@ export class CtrlQuizController {
   // ========================
 
   @Post('next-question')
+  @SkipThrottle()
   async getNextQuestion(@Body('participantId') participantId: number) {
     if (!participantId) throw new BadRequestException('participantId required');
 
@@ -188,6 +189,7 @@ export class CtrlQuizController {
   // ========================
 
   @Get('leaderboard')
+  @SkipThrottle()
   async getLeaderboard() {
     const leaderboard = await this.service.getLeaderboard();
     return { success: true, data: leaderboard };
