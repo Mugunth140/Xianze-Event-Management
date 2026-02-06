@@ -178,7 +178,7 @@ const Register = () => {
     'Bug Smash',
     'Paper Presentation',
     'Ctrl + Quiz',
-    'Think & Link (Connection)',
+    'Think & Link',
     'Gaming',
     'Code Hunt : Word Edition',
   ];
