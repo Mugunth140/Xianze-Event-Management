@@ -46,6 +46,8 @@ export default function CtrlQuizMCQPage() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [quizNotActive, setQuizNotActive] = useState(false);
   const [activeRound, setActiveRound] = useState(1);
+  const [tabWarning, setTabWarning] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const teamName = session?.name || '';
 
   // Load session from localStorage
@@ -66,6 +68,56 @@ export default function CtrlQuizMCQPage() {
     }
     setLoading(false);
   }, []);
+
+  // Detect tab switching - warn participants
+  useEffect(() => {
+    if (!session) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount((prev) => prev + 1);
+        setTabWarning(true);
+      }
+    };
+
+    const handleBlur = () => {
+      setTabSwitchCount((prev) => prev + 1);
+      setTabWarning(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [session]);
+
+  // Prevent copy, cut, select-all, and context menu on quiz page
+  useEffect(() => {
+    if (!session) return;
+
+    const preventCopy = (e: ClipboardEvent) => e.preventDefault();
+    const preventContextMenu = (e: MouseEvent) => e.preventDefault();
+    const preventKeyShortcuts = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 'u'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('copy', preventCopy);
+    document.addEventListener('cut', preventCopy);
+    document.addEventListener('contextmenu', preventContextMenu);
+    document.addEventListener('keydown', preventKeyShortcuts);
+
+    return () => {
+      document.removeEventListener('copy', preventCopy);
+      document.removeEventListener('cut', preventCopy);
+      document.removeEventListener('contextmenu', preventContextMenu);
+      document.removeEventListener('keydown', preventKeyShortcuts);
+    };
+  }, [session]);
 
   const shuffleOptions = (options: string[]) => {
     const shuffled = options.map((text, index) => ({ text, originalIndex: index }));
@@ -440,7 +492,42 @@ export default function CtrlQuizMCQPage() {
 
   // Quiz in progress
   return (
-    <div className="min-h-screen bg-slate-50 p-4">
+    <div
+      className="min-h-screen bg-slate-50 p-4 select-none"
+      style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+    >
+      {/* Tab Switch Warning Overlay */}
+      {tabWarning && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Tab Switch Detected!</h3>
+            <p className="text-slate-600 mb-2">Switching tabs during the quiz is not allowed.</p>
+            <p className="text-red-600 font-semibold text-sm mb-6">Warnings: {tabSwitchCount}</p>
+            <button
+              onClick={() => setTabWarning(false)}
+              className="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-all"
+            >
+              Return to Quiz
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="max-w-2xl mx-auto">
         <div className="flex flex-col items-center justify-center gap-3 mb-6 text-slate-600">
@@ -449,7 +536,14 @@ export default function CtrlQuizMCQPage() {
           </div>
           <div className="text-center">
             <p className="font-medium text-slate-900">{teamName}</p>
-            <p className="text-xs text-slate-500">Round {activeRound}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-slate-500">Round {activeRound}</p>
+              {tabSwitchCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">
+                  ⚠ {tabSwitchCount} tab switch{tabSwitchCount > 1 ? 'es' : ''}
+                </span>
+              )}
+            </div>
           </div>
           {timeRemaining !== null && (
             <div
@@ -476,7 +570,10 @@ export default function CtrlQuizMCQPage() {
         {/* Question Card */}
         {currentQuestion ? (
           <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-200">
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-6 leading-relaxed">
+            <h2
+              className="text-xl md:text-2xl font-bold text-slate-900 mb-6 leading-relaxed select-none"
+              style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+            >
               {currentQuestion.questionText}
             </h2>
 
