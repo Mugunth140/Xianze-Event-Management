@@ -41,7 +41,9 @@ interface EventOption {
 
 const EVENTS: EventOption[] = [
   { slug: 'buildathon', name: 'Buildathon' },
+  { slug: 'bug-smash', name: 'Bug Smash' },
   { slug: 'paper-presentation', name: 'Paper Presentation' },
+  { slug: 'code-hunt', name: 'Code Hunt' },
   { slug: 'ctrl-quiz', name: 'Ctrl+ Quiz' },
   { slug: 'think-link', name: 'Think & Link' },
   { slug: 'gaming', name: 'Gaming' },
@@ -69,6 +71,8 @@ const findEventSlug = (eventName: string): string | null => {
     'think and link': 'think-link',
     'think & link': 'think-link',
     'paper presentation': 'paper-presentation',
+    'bug smash': 'bug-smash',
+    'code hunt': 'code-hunt',
     'fun games': 'fun-games',
     gaming: 'gaming',
   };

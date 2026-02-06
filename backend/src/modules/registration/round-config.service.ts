@@ -204,6 +204,7 @@ export class RoundConfigService {
 
   /**
    * Reset event to initial state
+   * Also clears all participation records
    */
   async resetEvent(eventSlug: string): Promise<EventRoundConfig> {
     const config = await this.roundConfigRepo.findOne({
@@ -213,6 +214,10 @@ export class RoundConfigService {
     if (!config) {
       throw new NotFoundException(`Event configuration not found: ${eventSlug}`);
     }
+
+    // Clear all participation records for this event
+    await this.eventParticipationRepo.delete({ eventSlug });
+    await this.roundParticipationRepo.delete({ eventSlug });
 
     config.isStarted = false;
     config.currentRound = 0;

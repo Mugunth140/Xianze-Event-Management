@@ -134,32 +134,26 @@ export class EventParticipationService {
       },
     });
 
-    if (existing) {
-      this.logger.warn(`Duplicate scan: ${registration.name} already scanned for ${eventSlug}`);
-      return {
-        success: true,
-        warning: true,
-        message: `Already registered for this event at ${existing.scannedAt.toLocaleTimeString()}`,
-        registration: {
-          id: registration.id,
-          name: registration.name,
-          email: registration.email,
-          college: registration.college,
-          event: registration.event,
-          passId: registration.passId || '',
-        },
-        participation: existing,
-      };
+    let saved: EventParticipation | null = existing;
+    let isNewParticipation = false;
+
+    if (!existing) {
+      // Create new participation record
+      const participation = this.eventParticipationRepo.create({
+        registrationId: registration.id,
+        eventSlug,
+        scannedBy,
+      });
+      saved = await this.eventParticipationRepo.save(participation);
+      isNewParticipation = true;
+      this.logger.log(`Event participation recorded: ${registration.name} -> ${eventSlug}`);
+    } else {
+      // Already registered - allow re-scanning for different round
+      this.logger.debug(
+        `Participant ${registration.name} already registered for ${eventSlug}, checking for round participation`,
+      );
     }
 
-    // Create new participation record
-    const participation = this.eventParticipationRepo.create({
-      registrationId: registration.id,
-      eventSlug,
-      scannedBy,
-    });
-
-    const saved = await this.eventParticipationRepo.save(participation);
     let roundRecorded: number | undefined;
 
     // Auto-record round participation if event has rounds and is started
@@ -192,10 +186,44 @@ export class EventParticipationService {
         this.logger.log(
           `Auto-recorded Round ${currentRound} for ${registration.name} -> ${eventSlug}`,
         );
+      } else if (!isNewParticipation) {
+        // Returning duplicate warning only for same round re-scan
+        this.logger.warn(
+          `Duplicate round scan: ${registration.name} already in round ${currentRound} of ${eventSlug}`,
+        );
+        return {
+          success: true,
+          warning: true,
+          message: `Already registered for Round ${currentRound} at ${existingRound.scannedAt.toLocaleTimeString()}`,
+          registration: {
+            id: registration.id,
+            name: registration.name,
+            email: registration.email,
+            college: registration.college,
+            event: registration.event,
+            passId: registration.passId || '',
+          },
+          participation: existingRound,
+        };
       }
+    } else if (existing && !isNewParticipation) {
+      // For events without rounds, return duplicate warning
+      this.logger.warn(`Duplicate scan: ${registration.name} already scanned for ${eventSlug}`);
+      return {
+        success: true,
+        warning: true,
+        message: `Already registered for this event at ${existing.scannedAt.toLocaleTimeString()}`,
+        registration: {
+          id: registration.id,
+          name: registration.name,
+          email: registration.email,
+          college: registration.college,
+          event: registration.event,
+          passId: registration.passId || '',
+        },
+        participation: existing,
+      };
     }
-
-    this.logger.log(`Event participation recorded: ${registration.name} -> ${eventSlug}`);
 
     const message = roundRecorded
       ? `${registration.name} registered for ${eventSlug} (Round ${roundRecorded})`
@@ -212,7 +240,7 @@ export class EventParticipationService {
         event: registration.event,
         passId: registration.passId || '',
       },
-      participation: saved,
+      participation: saved || undefined,
       roundRecorded,
     };
   }
