@@ -16,7 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import * as fs from 'fs';
 import { diskStorage } from 'multer';
@@ -80,7 +80,7 @@ export class BuildathonController {
   // ========================
 
   @Post('teams')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async registerTeam(@Body() dto: CreateTeamDto) {
     if (!dto.teamName || !dto.participant1) {
       throw new BadRequestException('Team name and at least one participant are required');
@@ -250,7 +250,7 @@ export class BuildathonController {
   // ========================
 
   @Get('data/customers')
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @SkipThrottle()
   async getCustomers(@Req() req: Request) {
     const ip = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -259,7 +259,7 @@ export class BuildathonController {
   }
 
   @Get('data/orders')
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @SkipThrottle()
   async getOrders(@Req() req: Request) {
     const ip = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -268,7 +268,7 @@ export class BuildathonController {
   }
 
   @Get('data/products')
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @SkipThrottle()
   async getProducts(@Req() req: Request) {
     const ip = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
