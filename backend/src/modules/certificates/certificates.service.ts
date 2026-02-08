@@ -211,6 +211,20 @@ export class CertificatesService {
     return this.emailLogRepo.find({ where: { batchId }, order: { sentAt: 'DESC' } });
   }
 
+  // ── Email Verification ──────────────────────────────────────────────
+
+  /**
+   * Check if an email address exists in the registrations table.
+   */
+  async checkEmailRegistered(email: string): Promise<boolean> {
+    if (!email) return false;
+    const normalizedEmail = email.toLowerCase().trim();
+    const registration = await this.registrationRepo.findOne({
+      where: { email: normalizedEmail },
+    });
+    return !!registration;
+  }
+
   // ── Certificate Requests ────────────────────────────────────────────
 
   async createComplaint(dto: CreateCertificateComplaintDto): Promise<CertificateComplaint> {

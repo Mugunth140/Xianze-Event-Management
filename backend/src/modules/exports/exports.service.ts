@@ -192,6 +192,71 @@ export class ExportsService {
     });
   }
 
+  /**
+   * Unique event participants (deduplicated by email) for a specific event.
+   * One person may be scanned at multiple events but should appear only once per event.
+   */
+  async getUniqueEventParticipants(eventSlug: string) {
+    const participations = await this.eventParticipationRepo.find({
+      where: { eventSlug },
+      order: { scannedAt: 'ASC' },
+    });
+
+    // Deduplicate by registrationId (one participant = one registration)
+    const seenIds = new Set<number>();
+    const uniqueParticipations = participations.filter((p) => {
+      if (seenIds.has(p.registrationId)) return false;
+      seenIds.add(p.registrationId);
+      return true;
+    });
+
+    const registrationIds = uniqueParticipations.map((p) => p.registrationId);
+    const registrations = registrationIds.length
+      ? await this.registrationRepo.find({ where: { id: In(registrationIds) } })
+      : [];
+
+    const registrationMap = new Map(registrations.map((r) => [r.id, r]));
+
+    return uniqueParticipations.map((p) => {
+      const reg = registrationMap.get(p.registrationId);
+      return {
+        registrationId: p.registrationId,
+        name: reg?.name || '',
+        email: reg?.email || '',
+        contact: reg?.contact || '',
+        college: reg?.college || '',
+        registeredEvent: reg?.event || '',
+        participatedEvent: p.eventSlug,
+        firstScannedAt: p.scannedAt,
+      };
+    });
+  }
+
+  /**
+   * Checked-in participants, optionally filtered by registered event.
+   */
+  async getCheckedInParticipants(event?: string) {
+    const where: Record<string, unknown> = { isCheckedIn: true };
+    if (event) where.event = event;
+
+    const registrations = await this.registrationRepo.find({
+      where,
+      order: { checkedInAt: 'DESC' },
+    });
+
+    return registrations.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      contact: r.contact,
+      college: r.college,
+      course: r.course,
+      branch: r.branch,
+      event: r.event,
+      checkedInAt: r.checkedInAt,
+    }));
+  }
+
   async getEventSummary() {
     const allRegistrations = await this.registrationRepo.find();
     const allCheckedIn = await this.registrationRepo.find({ where: { isCheckedIn: true } });

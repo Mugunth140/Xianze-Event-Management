@@ -27,6 +27,18 @@ export class CertificatesController {
   // ── Public Endpoints ────────────────────────────────────────────────
 
   /**
+   * POST /api/certificates/check-email
+   * Public — verify if email is registered before submitting request
+   */
+  @Post('check-email')
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async checkEmail(@Body('email') email: string) {
+    const registered = await this.certificatesService.checkEmailRegistered(email);
+    return { success: true, data: { registered } };
+  }
+
+  /**
    * POST /api/certificates/complaints
    * Public — submit a certificate request
    */

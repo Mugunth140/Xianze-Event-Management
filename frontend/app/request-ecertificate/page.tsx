@@ -19,6 +19,7 @@ export default function RequestECertificatePage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [notRegistered, setNotRegistered] = useState(false);
 
   const handleEventToggle = (eventName: string) => {
     setFormData((prev) => ({
@@ -32,6 +33,7 @@ export default function RequestECertificatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotRegistered(false);
 
     // Validations
     if (!formData.name.trim()) {
@@ -59,6 +61,21 @@ export default function RequestECertificatePage() {
 
     setLoading(true);
     try {
+      // First check if the email is registered
+      const checkResult = await apiRequest<{ data: { registered: boolean } }>(
+        '/certificates/check-email',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email: formData.email.trim().toLowerCase() }),
+        }
+      );
+
+      if (!checkResult.data.registered) {
+        setNotRegistered(true);
+        setLoading(false);
+        return;
+      }
+
       await apiRequest('/certificates/complaints', {
         method: 'POST',
         body: JSON.stringify({
@@ -222,6 +239,37 @@ export default function RequestECertificatePage() {
                   />
                 </svg>
                 <span>{error}</span>
+              </div>
+            )}
+
+            {notRegistered && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-4 space-y-2">
+                <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
+                  <span className="font-medium">This email is not registered for any event.</span>
+                </div>
+                <p className="text-yellow-300/80 text-sm pl-6">
+                  If you believe this is an error, please{' '}
+                  <Link
+                    href="/contact"
+                    className="underline text-violet-400 hover:text-violet-300 font-medium"
+                  >
+                    contact us
+                  </Link>{' '}
+                  for assistance.
+                </p>
               </div>
             )}
 

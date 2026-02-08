@@ -199,6 +199,64 @@ export default function ExportsPage() {
           </div>
         </Card>
 
+        {/* Unique Participants (Deduplicated) */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Unique Participants</h3>
+          <p className="text-sm text-gray-500">
+            Export deduplicated participants per event. Removes duplicate scans — each participant
+            appears only once.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() =>
+                handleDownload(
+                  `/exports/unique-event-participants?eventSlug=${encodeURIComponent(eventSlug)}`,
+                  `unique-participants-${eventSlug}.xlsx`,
+                  'unique-participants'
+                )
+              }
+              loading={loadingKey === 'unique-participants'}
+            >
+              Export {eventName}
+            </Button>
+          </div>
+        </Card>
+
+        {/* Checked-in Participants */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Checked-in Participants</h3>
+          <p className="text-sm text-gray-500">
+            Export all participants who checked in at the venue, or filtered by event.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() =>
+                handleDownload(
+                  '/exports/checked-in-participants',
+                  'checked-in-all.xlsx',
+                  'checked-in-all'
+                )
+              }
+              loading={loadingKey === 'checked-in-all'}
+            >
+              Export All
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                handleDownload(
+                  `/exports/checked-in-participants?event=${encodeURIComponent(eventName)}`,
+                  `checked-in-${eventSlug}.xlsx`,
+                  'checked-in-event'
+                )
+              }
+              loading={loadingKey === 'checked-in-event'}
+            >
+              Export {eventName}
+            </Button>
+          </div>
+        </Card>
+
         {/* Payments */}
         <Card className="p-6 space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Payments</h3>

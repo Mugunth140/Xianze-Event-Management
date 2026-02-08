@@ -61,6 +61,21 @@ export class ExportsController {
     return this.sendExcel(res, rows, 'checked-in-no-participation');
   }
 
+  @Get('unique-event-participants')
+  async exportUniqueEventParticipants(@Query('eventSlug') eventSlug: string, @Res() res: Response) {
+    const rows = await this.exportsService.getUniqueEventParticipants(eventSlug);
+    return this.sendExcel(res, rows, `unique-participants-${eventSlug}`);
+  }
+
+  @Get('checked-in-participants')
+  async exportCheckedInParticipants(
+    @Query('event') event: string | undefined,
+    @Res() res: Response,
+  ) {
+    const rows = await this.exportsService.getCheckedInParticipants(event);
+    return this.sendExcel(res, rows, event ? `checked-in-${event}` : 'checked-in-all');
+  }
+
   @Get('contact-inquiries')
   async exportContactInquiries(@Res() res: Response) {
     const rows = await this.exportsService.getContactInquiries();
