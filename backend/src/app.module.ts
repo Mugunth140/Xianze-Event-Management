@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BugSmashModule } from './modules/events/bug-smash/bug-smash.module';
 import { BuildathonModule } from './modules/events/buildathon/buildathon.module';
@@ -70,6 +71,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     ContactModule,
+    CertificatesModule,
     RegistrationModule,
     AnalyticsModule,
     SettingsModule,
