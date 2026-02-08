@@ -20,12 +20,20 @@ export class CertificatesService {
       ? '/data/certificates'
       : join(process.cwd(), 'data', 'certificates');
 
-    // Ensure directory exists
+    // Try to ensure directory exists (local dev only)
     if (!existsSync(this.certificatesDir)) {
-      mkdirSync(this.certificatesDir, { recursive: true });
+      try {
+        mkdirSync(this.certificatesDir, { recursive: true });
+        this.logger.log(`Created certificates directory: ${this.certificatesDir}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `Could not create certificates directory (will use existing mount): ${msg}`,
+        );
+      }
+    } else {
+      this.logger.log(`Certificates directory: ${this.certificatesDir}`);
     }
-
-    this.logger.log(`Certificates directory: ${this.certificatesDir}`);
   }
 
   /**

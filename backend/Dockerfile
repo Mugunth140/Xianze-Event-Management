@@ -46,7 +46,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
-RUN mkdir -p /data/transactions /data/presentations /data/think-link /data/uploads/buildathon && chown -R nestjs:bunjs /data
+RUN mkdir -p /data/transactions /data/presentations /data/think-link /data/uploads/buildathon /data/certificates && chown -R nestjs:bunjs /data
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
