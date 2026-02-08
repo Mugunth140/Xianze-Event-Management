@@ -10,7 +10,7 @@ const certificateEvents = events.filter((e) => e.name !== 'Gaming');
 
 const canSubmit = createSubmitDebounce(3000);
 
-export default function CertificateComplaintPage() {
+export default function RequestECertificatePage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -96,20 +96,15 @@ export default function CertificateComplaintPage() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">Request Submitted</h2>
           <p className="text-gray-400 mb-6">
-            Your certificate request has been submitted successfully. We&apos;ll review it and get
-            back to you soon.
+            Your certificate request has been submitted successfully. Your e-certificate will be
+            emailed to you shortly.
           </p>
-          <div className="flex flex-col gap-3">
-            <Link
-              href="/e-certificates"
-              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-all text-center"
-            >
-              Back to E-Certificates
-            </Link>
-            <Link href="/" className="text-gray-400 hover:text-gray-300 text-sm transition-colors">
-              Return to Home
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="inline-block px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-all text-center"
+          >
+            Return to Home
+          </Link>
         </div>
       </div>
     );
@@ -121,26 +116,28 @@ export default function CertificateComplaintPage() {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-900/20 via-transparent to-transparent" />
         <div className="relative max-w-4xl mx-auto px-4 pt-24 pb-8 sm:px-6 lg:px-8 text-center">
-          <Link
-            href="/e-certificates"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 mb-6">
+            <svg
+              className="w-5 h-5 text-violet-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M15 19l-7-7 7-7"
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
               />
             </svg>
-            Back to E-Certificates
-          </Link>
+            <span className="text-violet-300 text-sm font-medium">Xianze 2026</span>
+          </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 tracking-tight">
-            Request Certificate
+            Request E-Certificate
           </h1>
           <p className="text-gray-400 max-w-xl mx-auto">
-            If you haven&apos;t received your certificate for an event, fill out the form below and
-            we&apos;ll look into it.
+            Fill out the form below with your details and we&apos;ll email your participation
+            certificate to you.
           </p>
         </div>
       </div>
@@ -185,7 +182,7 @@ export default function CertificateComplaintPage() {
             {/* Events Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-3">
-                Select the event(s) you need the certificate for
+                Select the event(s) you participated in
               </label>
               <div className="space-y-2">
                 {certificateEvents.map((event) => (

@@ -7,7 +7,6 @@ import {
   HttpStatus,
   Param,
   Post,
-  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -20,7 +19,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/user.entity';
 import { CertificatesService } from './certificates.service';
 import { CreateCertificateComplaintDto } from './dto/create-certificate-complaint.dto';
-import { LookupCertificatesDto } from './dto/lookup-certificates.dto';
 
 @Controller('certificates')
 export class CertificatesController {
@@ -29,33 +27,8 @@ export class CertificatesController {
   // ── Public Endpoints ────────────────────────────────────────────────
 
   /**
-   * POST /api/certificates/lookup
-   * Public — look up available certificates by email
-   */
-  @Post('lookup')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @HttpCode(HttpStatus.OK)
-  async lookup(@Body() dto: LookupCertificatesDto) {
-    const result = await this.certificatesService.lookupCertificates(dto.email);
-    return { success: true, data: result };
-  }
-
-  /**
-   * GET /api/certificates/download?email=...&file=...
-   * Public — download a specific certificate PDF
-   */
-  @Get('download')
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
-  async download(@Query('email') email: string, @Query('file') file: string, @Res() res: Response) {
-    const filePath = this.certificatesService.getCertificatePath(email, file);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${file}"`);
-    return res.sendFile(filePath);
-  }
-
-  /**
    * POST /api/certificates/complaints
-   * Public — submit a certificate complaint/request
+   * Public — submit a certificate request
    */
   @Post('complaints')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -66,6 +39,31 @@ export class CertificatesController {
   }
 
   // ── Admin Endpoints ─────────────────────────────────────────────────
+
+  /**
+   * POST /api/certificates/send-batch
+   * Admin — trigger batch email send of all certificates
+   */
+  @Post('send-batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async sendBatch() {
+    const result = await this.certificatesService.sendBatchCertificates();
+    return { success: true, data: result };
+  }
+
+  /**
+   * GET /api/certificates/email-logs
+   * Admin — get all email send logs
+   */
+  @Get('email-logs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getEmailLogs() {
+    const logs = await this.certificatesService.findAllEmailLogs();
+    return { success: true, data: logs };
+  }
 
   /**
    * GET /api/certificates/complaints/export
@@ -87,12 +85,12 @@ export class CertificatesController {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Certificate Complaints');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Certificate Requests');
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="certificate-complaints-${new Date().toISOString().slice(0, 10)}.xlsx"`,
+      `attachment; filename="certificate-requests-${new Date().toISOString().slice(0, 10)}.xlsx"`,
     );
     res.setHeader(
       'Content-Type',
@@ -103,7 +101,7 @@ export class CertificatesController {
 
   /**
    * GET /api/certificates/complaints
-   * Admin — list all complaints
+   * Admin — list all certificate requests
    */
   @Get('complaints')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -115,13 +113,13 @@ export class CertificatesController {
 
   /**
    * DELETE /api/certificates/complaints/:id
-   * Admin — delete a complaint
+   * Admin — delete a certificate request
    */
   @Delete('complaints/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async deleteComplaint(@Param('id') id: string) {
     await this.certificatesService.deleteComplaint(+id);
-    return { success: true, message: 'Complaint deleted' };
+    return { success: true, message: 'Request deleted' };
   }
 }

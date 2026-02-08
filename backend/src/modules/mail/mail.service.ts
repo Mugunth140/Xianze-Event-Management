@@ -204,4 +204,40 @@ export class MailService {
       throw error;
     }
   }
+
+  /**
+   * Send certificate email with PDF attachments
+   */
+  async sendCertificateEmail(
+    email: string,
+    name: string,
+    attachments: Array<{ filename: string; path: string }>,
+  ): Promise<boolean> {
+    try {
+      const plural = attachments.length > 1;
+      await this.mailerService.sendMail({
+        to: email,
+        subject: "🎓 Your E-Certificate - Xianze'26",
+        template: './certificate-delivery',
+        context: {
+          name,
+          plural,
+          certificateCount: attachments.length,
+          year: new Date().getFullYear(),
+        },
+        attachments: attachments.map((a) => ({
+          filename: a.filename,
+          path: a.path,
+          contentType: 'application/pdf',
+        })),
+      });
+      this.logger.log(
+        `Certificate email sent to ${email} with ${attachments.length} attachment(s)`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send certificate email to ${email}`, error);
+      return false;
+    }
+  }
 }
