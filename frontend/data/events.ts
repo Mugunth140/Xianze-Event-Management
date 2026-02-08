@@ -128,7 +128,7 @@ export const events: Event[] = [
   },
   {
     id: 6,
-    name: 'Think & Link (Connection)',
+    name: 'Think & Link',
     tagline:
       'The challenge focuses on visual tasks where participants think and make connections within the given time.',
     image: '/event-connection.svg',
