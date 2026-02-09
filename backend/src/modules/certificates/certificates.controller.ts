@@ -8,10 +8,15 @@ import {
   Param,
   Post,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { Express } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
+import { memoryStorage } from 'multer';
 import * as XLSX from 'xlsx';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -63,6 +68,60 @@ export class CertificatesController {
   async sendBatch() {
     const result = await this.certificatesService.sendBatchCertificates();
     return { success: true, data: result };
+  }
+
+  /**
+   * POST /api/certificates/resend/:logId
+   * Admin — resend a failed/skipped certificate email
+   */
+  @Post('resend/:logId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async resendEmail(@Param('logId') logId: string) {
+    const result = await this.certificatesService.resendFailedEmail(+logId);
+    return { success: result.success, data: result };
+  }
+
+  /**
+   * POST /api/certificates/send-single
+   * Admin — manually send a certificate email from contact@xianze.tech
+   */
+  @Post('send-single')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+          cb(null, true);
+        } else {
+          cb(new Error('Only PDF files are allowed'), false);
+        }
+      },
+    }),
+  )
+  @HttpCode(HttpStatus.OK)
+  async sendSingle(
+    @Body('email') email: string,
+    @Body('name') name: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      return { success: false, error: 'PDF file is required' };
+    }
+    if (!email) {
+      return { success: false, error: 'Email is required' };
+    }
+    const result = await this.certificatesService.sendSingleCertificateEmail(
+      email.toLowerCase().trim(),
+      name?.trim() || 'Participant',
+      file.originalname,
+      file.buffer,
+    );
+    return { success: result.success, data: result };
   }
 
   /**

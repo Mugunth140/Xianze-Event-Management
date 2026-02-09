@@ -18,7 +18,7 @@ export class CertificateEmailLog {
   filenames: string; // JSON stringified array of attached filenames
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })
-  status: 'success' | 'failed' | 'pending' | 'no-files';
+  status: 'success' | 'failed' | 'pending' | 'no-files' | 'skipped';
 
   @Column({ type: 'text', nullable: true })
   error: string | null;

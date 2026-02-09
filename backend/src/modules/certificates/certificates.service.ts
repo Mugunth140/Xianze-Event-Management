@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { Registration } from '../registration/registration.entity';
 import { CreateCertificateComplaintDto } from './dto/create-certificate-complaint.dto';
@@ -15,10 +15,11 @@ export interface BatchSendResult {
   total: number;
   sent: number;
   failed: number;
+  skipped: number;
   noFiles: number;
   results: Array<{
     email: string;
-    status: 'success' | 'failed' | 'no-files';
+    status: 'success' | 'failed' | 'no-files' | 'skipped';
     filenames: string[];
     error?: string;
   }>;
@@ -62,11 +63,12 @@ export class CertificatesService {
   // ── Batch Email Sending ─────────────────────────────────────────────
 
   /**
-   * Scan certificates directory and send emails to all participants.
+   * Scan certificates directory and send emails to all checked-in participants.
    *
-   * Naming convention: {emailPrefix}_{eventSlug}.pdf
-   * e.g. test_buildathon.pdf, test_ctrl-quiz.pdf
-   * Looks up full email addresses from the registration table.
+   * Naming convention: {fullEmail}_{eventSlug}.pdf
+   * e.g. mugunth140@gmail.com_buildathon.pdf, mugunth140@kgcas.edu_ctrl-quiz.pdf
+   * Uses full email for direct lookup — no prefix ambiguity.
+   * Only sends to participants who checked in on event day.
    */
   async sendBatchCertificates(): Promise<BatchSendResult> {
     const batchId = randomBytes(4).toString('hex');
@@ -74,7 +76,7 @@ export class CertificatesService {
 
     // 1. Scan directory for all PDF files
     if (!existsSync(this.certificatesDir)) {
-      return { batchId, total: 0, sent: 0, failed: 0, noFiles: 0, results: [] };
+      return { batchId, total: 0, sent: 0, failed: 0, skipped: 0, noFiles: 0, results: [] };
     }
 
     const allFiles = readdirSync(this.certificatesDir).filter((f) =>
@@ -83,67 +85,90 @@ export class CertificatesService {
 
     if (allFiles.length === 0) {
       this.logger.warn(`[${batchId}] No PDF files found in certificates directory`);
-      return { batchId, total: 0, sent: 0, failed: 0, noFiles: 0, results: [] };
+      return { batchId, total: 0, sent: 0, failed: 0, skipped: 0, noFiles: 0, results: [] };
     }
 
-    // 2. Group files by email prefix
-    //    Pattern: {emailPrefix}_{eventSlug}.pdf  e.g. mugunth140_buildathon.pdf
-    const prefixMap = new Map<string, string[]>();
-    const filePattern = /^(.+?)_([a-z0-9-]+)\.pdf$/i;
+    // 2. Group files by full email address
+    //    Pattern: {fullEmail}_{eventSlug}.pdf  e.g. mugunth140@gmail.com_buildathon.pdf
+    const emailMap = new Map<string, string[]>();
+    const filePattern = /^(.+)_([a-z0-9-]+)\.pdf$/i;
 
     for (const file of allFiles) {
       const match = file.match(filePattern);
       if (match) {
-        const prefix = match[1].toLowerCase();
-        if (!prefixMap.has(prefix)) {
-          prefixMap.set(prefix, []);
+        const email = match[1].toLowerCase();
+        if (!emailMap.has(email)) {
+          emailMap.set(email, []);
         }
-        prefixMap.get(prefix)!.push(file);
+        emailMap.get(email)!.push(file);
       }
     }
 
     this.logger.log(
-      `[${batchId}] Found ${allFiles.length} PDF(s) for ${prefixMap.size} unique prefix(es)`,
+      `[${batchId}] Found ${allFiles.length} PDF(s) for ${emailMap.size} unique email(s)`,
     );
 
-    // 3. For each prefix, look up full email + name from registrations
+    // 3. For each email, verify registration + check-in, then send
     const results: BatchSendResult['results'] = [];
     let sent = 0;
     let failed = 0;
+    let skipped = 0;
 
-    for (const [prefix, filenames] of prefixMap) {
-      // Find a registration with matching email prefix
+    for (const [email, filenames] of emailMap) {
+      const sortedFiles = filenames.sort();
+
+      // Find registration with exact email match
       const registration = await this.registrationRepo.findOne({
-        where: { email: Like(`${prefix}@%`) },
+        where: { email },
         order: { createdAt: 'DESC' },
       });
 
       if (!registration) {
-        this.logger.warn(`[${batchId}] No registration found for prefix: ${prefix}`);
-        // Log as failed — no email address found
+        this.logger.warn(`[${batchId}] No registration found for email: ${email}`);
         await this.emailLogRepo.save(
           this.emailLogRepo.create({
             batchId,
-            email: `${prefix}@?`,
-            emailPrefix: prefix,
-            filenames: JSON.stringify(filenames.sort()),
+            email,
+            emailPrefix: email,
+            filenames: JSON.stringify(sortedFiles),
             status: 'failed',
-            error: 'No registration found for this email prefix',
+            error: 'No registration found for this email',
           }),
         );
         results.push({
-          email: `${prefix}@?`,
+          email,
           status: 'failed',
-          filenames: filenames.sort(),
+          filenames: sortedFiles,
           error: 'No registration found',
         });
         failed++;
         continue;
       }
 
-      const email = registration.email;
+      // Check if participant checked in on event day
+      if (!registration.isCheckedIn) {
+        this.logger.warn(`[${batchId}] Skipping ${email} — not checked in`);
+        await this.emailLogRepo.save(
+          this.emailLogRepo.create({
+            batchId,
+            email,
+            emailPrefix: email,
+            filenames: JSON.stringify(sortedFiles),
+            status: 'skipped',
+            error: 'Participant did not check in on event day',
+          }),
+        );
+        results.push({
+          email,
+          status: 'skipped',
+          filenames: sortedFiles,
+          error: 'Not checked in',
+        });
+        skipped++;
+        continue;
+      }
+
       const name = registration.name;
-      const sortedFiles = filenames.sort();
 
       // Build attachment list
       const attachments = sortedFiles.map((f) => ({
@@ -162,7 +187,7 @@ export class CertificatesService {
         this.emailLogRepo.create({
           batchId,
           email,
-          emailPrefix: prefix,
+          emailPrefix: email,
           filenames: JSON.stringify(sortedFiles),
           status,
           error,
@@ -184,14 +209,15 @@ export class CertificatesService {
     }
 
     this.logger.log(
-      `[${batchId}] Batch complete: ${sent} sent, ${failed} failed out of ${prefixMap.size}`,
+      `[${batchId}] Batch complete: ${sent} sent, ${failed} failed, ${skipped} skipped out of ${emailMap.size}`,
     );
 
     return {
       batchId,
-      total: prefixMap.size,
+      total: emailMap.size,
       sent,
       failed,
+      skipped,
       noFiles: 0,
       results,
     };
@@ -209,6 +235,82 @@ export class CertificatesService {
    */
   async findEmailLogsByBatch(batchId: string): Promise<CertificateEmailLog[]> {
     return this.emailLogRepo.find({ where: { batchId }, order: { sentAt: 'DESC' } });
+  }
+
+  /**
+   * Resend a previously failed or skipped certificate email.
+   */
+  async resendFailedEmail(logId: number): Promise<{ success: boolean; error?: string }> {
+    const log = await this.emailLogRepo.findOne({ where: { id: logId } });
+    if (!log) {
+      throw new NotFoundException('Email log entry not found');
+    }
+
+    if (log.status === 'success') {
+      return { success: false, error: 'Email was already sent successfully' };
+    }
+
+    const email = log.email;
+    const filenames: string[] = JSON.parse(log.filenames);
+
+    // Look up registration for the name
+    const registration = await this.registrationRepo.findOne({
+      where: { email },
+    });
+
+    const name = registration?.name || 'Participant';
+
+    // Build attachment list — verify files still exist
+    const attachments = filenames
+      .filter((f) => existsSync(join(this.certificatesDir, f)))
+      .map((f) => ({
+        filename: f,
+        path: join(this.certificatesDir, f),
+      }));
+
+    if (attachments.length === 0) {
+      log.status = 'failed';
+      log.error = 'Certificate PDF files not found in directory';
+      await this.emailLogRepo.save(log);
+      return { success: false, error: 'Certificate files not found' };
+    }
+
+    const success = await this.mailService.sendCertificateEmail(email, name, attachments);
+
+    log.status = success ? 'success' : 'failed';
+    log.error = success ? null : 'Email delivery failed on resend';
+    await this.emailLogRepo.save(log);
+
+    return { success, error: success ? undefined : 'Email delivery failed' };
+  }
+
+  /**
+   * Send a single certificate email manually from contact@xianze.tech.
+   */
+  async sendSingleCertificateEmail(
+    email: string,
+    name: string,
+    filename: string,
+    fileBuffer: Buffer,
+  ): Promise<{ success: boolean; logId: number; error?: string }> {
+    const batchId = `manual-${randomBytes(4).toString('hex')}`;
+
+    const success = await this.mailService.sendCertificateEmailFromContact(email, name, [
+      { filename, content: fileBuffer },
+    ]);
+
+    const log = await this.emailLogRepo.save(
+      this.emailLogRepo.create({
+        batchId,
+        email,
+        emailPrefix: email,
+        filenames: JSON.stringify([filename]),
+        status: success ? 'success' : 'failed',
+        error: success ? null : 'Email delivery failed',
+      }),
+    );
+
+    return { success, logId: log.id, error: success ? undefined : 'Email delivery failed' };
   }
 
   // ── Email Verification ──────────────────────────────────────────────

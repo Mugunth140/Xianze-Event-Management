@@ -240,4 +240,41 @@ export class MailService {
       return false;
     }
   }
+
+  /**
+   * Send certificate email from contact@xianze.tech with buffer attachments
+   */
+  async sendCertificateEmailFromContact(
+    email: string,
+    name: string,
+    attachments: Array<{ filename: string; content: Buffer }>,
+  ): Promise<boolean> {
+    try {
+      const plural = attachments.length > 1;
+      await this.mailerService.sendMail({
+        to: email,
+        from: '"XIANZE Team" <contact@xianze.tech>',
+        subject: "\uD83C\uDF93 Your E-Certificate - Xianze'26",
+        template: './certificate-delivery',
+        context: {
+          name,
+          plural,
+          certificateCount: attachments.length,
+          year: new Date().getFullYear(),
+        },
+        attachments: attachments.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: 'application/pdf',
+        })),
+      });
+      this.logger.log(
+        `Certificate email (from contact@) sent to ${email} with ${attachments.length} attachment(s)`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send certificate email (from contact@) to ${email}`, error);
+      return false;
+    }
+  }
 }
