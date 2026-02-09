@@ -48,7 +48,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Will I get a certificate?',
     answer:
-      'Yes! All participants will receive certificates, and winners will get special recognition and prizes. Proof of your awesomeness! 📜',
+      'Yes! All participants will receive e-certificates, and winners will get special recognition and prizes. Proof of your awesomeness! 📜',
     emoji: '🎖️',
   },
 ];
@@ -63,44 +63,37 @@ export default function Faqs() {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Header animation
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 85%',
+        once: true,
+      },
+    });
+
+    // Header
     if (headerRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         headerRef.current,
         { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
 
     // FAQ cards stagger animation
     if (cardsRef.current) {
-      const cards = cardsRef.current.querySelectorAll('.faq-card');
-      gsap.fromTo(
+      const cards = cardsRef.current.querySelectorAll('.faq-card-item'); // Updated class name
+      tl.fromTo(
         cards,
-        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: 'back.out(1.2)',
-          scrollTrigger: {
-            trigger: cardsRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'power3.out',
+        },
+        '-=0.35'
       );
     }
 
@@ -126,20 +119,18 @@ export default function Faqs() {
         className="fixed top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
         }}
       />
       <div
         className="fixed bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
-          filter: 'blur(80px)',
         }}
       />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div ref={headerRef} className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16 opacity-0">
           {/* Fun badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">🤔</span>
@@ -171,10 +162,11 @@ export default function Faqs() {
               key={index}
               onClick={() => toggleFAQ(index)}
               className={`
-                                faq-card group cursor-pointer
+                                faq-card-item group cursor-pointer
                                 p-5 sm:p-6 rounded-2xl
                                 bg-white/80 backdrop-blur-sm
                                 border-2 transition-all duration-300
+                                opacity-0
                                 ${
                                   openIndex === index
                                     ? 'border-primary-400 shadow-lg shadow-primary-500/10'
@@ -264,7 +256,7 @@ export default function Faqs() {
               <h3 className="text-3xl font-display font-bold text-gray-900 mb-4">
                 Still have questions?
               </h3>
-              <p className="text-gray-500 text-lg mb-10 leading-relaxed">
+              <p className="text-gray-600 text-lg mb-10 leading-relaxed">
                 Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly
                 team.
               </p>
@@ -277,7 +269,7 @@ export default function Faqs() {
                   <span>Get in touch</span>
                 </a>
                 <a
-                  href="mailto:support@xianze.tech"
+                  href="mailto:contact@xianze.tech"
                   className="min-w-[160px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                 >
                   <span>Email us</span>

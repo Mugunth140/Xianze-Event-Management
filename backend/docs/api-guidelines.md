@@ -8,7 +8,7 @@ This document provides guidelines for designing and implementing APIs in the XIA
 
 ### URL Structure
 
-```
+```text
 GET    /api/events              # List all events
 GET    /api/events/:id          # Get single event
 POST   /api/events              # Create event
@@ -19,7 +19,7 @@ DELETE /api/events/:id          # Delete event
 
 ### Nested Resources
 
-```
+```text
 GET    /api/events/:eventId/attendees      # List attendees for event
 POST   /api/events/:eventId/attendees      # Add attendee to event
 DELETE /api/events/:eventId/attendees/:id  # Remove attendee from event
@@ -37,7 +37,7 @@ DELETE /api/events/:eventId/attendees/:id  # Remove attendee from event
     /* resource data */
   },
   "meta": {
-    "timestamp": "2024-01-01T00:00:00.000Z"
+    "timestamp": "2026-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -70,7 +70,7 @@ DELETE /api/events/:eventId/attendees/:id  # Remove attendee from event
       "message": "Invalid email format"
     }
   ],
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "timestamp": "2026-01-01T00:00:00.000Z"
 }
 ```
 
@@ -136,5 +136,72 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard) // Protect all routes
 export class EventsController {
   // ...
+}
+```
+
+---
+
+## 🧾 Registration API (Payment Modes)
+
+### POST `/api/register`
+
+Supports both **online** and **cash** registrations in the same table. Use the `paymentMode` field to control required inputs.
+
+#### Required fields (both modes)
+
+- `name`, `email`, `course`, `branch`, `college`, `contact`, `event`
+- `paymentMode`: `online` or `cash`
+
+#### Online payment (`paymentMode=online`)
+
+- `transactionId` is **required**
+- `screenshot` (multipart file) is **required**
+
+#### Cash payment (`paymentMode=cash`)
+
+- `transactionId` **not required**
+- `screenshot` **not required**
+
+#### Example (online)
+
+```http
+POST /api/register
+Content-Type: multipart/form-data
+
+name=Jane Doe
+email=jane@example.com
+course=B.Tech
+branch=Computer Science
+college=XYZ College
+contact=9876543210
+event=Buildathon
+paymentMode=online
+transactionId=123456789012
+screenshot=@payment.png
+```
+
+#### Example (cash)
+
+```http
+POST /api/register
+Content-Type: multipart/form-data
+
+name=John Doe
+email=john@example.com
+course=B.Tech
+branch=Computer Science
+college=XYZ College
+contact=9876543210
+event=Buildathon
+paymentMode=cash
+```
+
+#### Response
+
+```json
+{
+  "success": true,
+  "message": "Registration successful! Please pay at the event venue to receive your pass.",
+  "status": "cash_payment_pending"
 }
 ```

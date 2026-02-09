@@ -154,7 +154,7 @@ The `/health` endpoint returns:
 ```json
 {
   "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z",
+  "timestamp": "2026-01-01T00:00:00.000Z",
   "version": "1.0.0"
 }
 ```
@@ -215,7 +215,7 @@ echo "Backup completed: xianze-$DATE.db"
 docker compose down
 
 # Replace the database file
-cp /backups/xianze-20240101.db /data/xianze.db
+cp /backups/xianze-20260101.db /data/xianze.db
 
 # Start the application
 docker compose up -d

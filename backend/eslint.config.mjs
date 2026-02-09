@@ -34,7 +34,7 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       ...prettierConfig.rules,
-      
+
       // TypeScript-specific rules
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -50,7 +50,7 @@ export default [
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
-      
+
       // Prettier
       'prettier/prettier': 'error',
     },

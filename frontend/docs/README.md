@@ -153,7 +153,7 @@ const events = await api.get<Event[]>('/events');
 // Create event
 const newEvent = await api.post<Event>('/events', {
   name: 'My Event',
-  date: '2024-01-01',
+  date: '2026-01-01',
 });
 ```
 

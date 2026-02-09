@@ -7,8 +7,13 @@ FROM oven/bun:1-alpine AS deps
 RUN apk add --no-cache python3 make g++ gcc
 
 WORKDIR /app
+
+# Copy package files - lockfile is optional
 COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+
+# Install dependencies - allow lockfile updates for compatibility
+# Uses existing lockfile if valid, regenerates if needed
+RUN bun install --no-save || bun install
 
 # Stage 2: Build
 FROM oven/bun:1-alpine AS builder
@@ -17,9 +22,17 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bun run build
 
+# Copy assets that nest build might miss (JSON data files, templates)
+# Ensure directories exist and copy files
+RUN mkdir -p dist/modules/events/buildathon/data && \
+    cp src/modules/events/buildathon/data/*.json dist/modules/events/buildathon/data/
+RUN mkdir -p dist/modules/mail/templates && \
+    cp -r src/modules/mail/templates/* dist/modules/mail/templates/ 2>/dev/null || true
+
 # Stage 3: Production
 FROM oven/bun:1-alpine AS runner
-RUN apk add --no-cache curl
+# Install curl for health checks and LibreOffice for PPT/PPTX conversion
+RUN apk add --no-cache curl libreoffice
 LABEL maintainer="XIANZE Team" description="XIANZE Backend API" runtime="bun"
 
 RUN addgroup --system --gid 1001 bunjs && \
@@ -33,12 +46,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
-RUN mkdir -p /data && chown nestjs:bunjs /data
+RUN mkdir -p /data/transactions /data/presentations /data/think-link /data/uploads/buildathon /data/certificates && chown -R nestjs:bunjs /data
 
-USER nestjs
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-CMD ["bun", "run", "dist/main.js"]
+ENTRYPOINT ["/entrypoint.sh"]

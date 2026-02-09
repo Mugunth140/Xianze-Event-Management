@@ -199,12 +199,12 @@ docker compose -f docker-compose.prod.yml --profile ssl run --rm certbot renew -
 
 ## Resource Requirements
 
-| Service  | CPU    | Memory |
-|----------|--------|--------|
-| Nginx    | 0.5    | 128MB  |
-| Backend  | 1.0    | 512MB  |
-| Frontend | 1.0    | 512MB  |
-| Redis    | 0.25   | 256MB  |
-| **Total**| **2.75**| **1.4GB** |
+| Service   | CPU      | Memory    |
+| --------- | -------- | --------- |
+| Nginx     | 0.5      | 128MB     |
+| Backend   | 1.0      | 512MB     |
+| Frontend  | 1.0      | 512MB     |
+| Redis     | 0.25     | 256MB     |
+| **Total** | **2.75** | **1.4GB** |
 
 Recommended: 4GB RAM, 4 CPU cores for comfortable operation.

@@ -1,147 +1,246 @@
-/**
- * API Client Configuration
- *
- * This module provides a configured API client for communicating with the backend.
- * It handles common patterns like error handling, authentication headers, and base URL configuration.
- *
- * Usage:
- * ```typescript
- * import { api } from '@/lib/api';
- *
- * // GET request
- * const events = await api.get<Event[]>('/events');
- *
- * // POST request
- * const newEvent = await api.post<Event>('/events', { name: 'My Event' });
- * ```
- */
+// API utility for making requests to backend
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+// Avoid double /api - if API_BASE already ends with /api, don't add it again
+const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
-/**
- * API Error class for handling HTTP errors
- */
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+const REQUEST_TIMEOUT = 30000; // 30 seconds
+
+// Error types for better handling
 export class ApiError extends Error {
   constructor(
-    public statusCode: number,
     message: string,
-    public errors?: Record<string, string[]>
+    public status: number,
+    public code?: string,
+    public retryable: boolean = false
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-/**
- * Configuration for API requests
- */
-interface RequestConfig extends RequestInit {
-  params?: Record<string, string>;
-}
-
-/**
- * Make an API request
- *
- * @param endpoint - API endpoint (e.g., '/events')
- * @param config - Request configuration
- * @returns Parsed JSON response
- */
-async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-  const { params, ...init } = config;
-
-  // Build URL with query parameters - using relative URL for Next.js rewrites
-  let url = `/api${endpoint}`;
-  if (params) {
-    const searchParams = new URLSearchParams(params);
-    url += `?${searchParams.toString()}`;
-  }
-
-  // Default headers
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...init.headers,
-  };
-
-  const response = await fetch(url, {
-    ...init,
-    headers,
-  });
-
-  // Handle non-2xx responses
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new ApiError(
-      response.status,
-      errorData.message || `HTTP error ${response.status}`,
-      errorData.errors
-    );
-  }
-
-  // Parse and return JSON response
-  return response.json();
-}
-
-/**
- * API client with convenience methods
- */
-export const api = {
-  /**
-   * GET request
-   */
-  get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-    return request<T>(endpoint, { method: 'GET', params });
-  },
-
-  /**
-   * POST request
-   */
-  post<T>(endpoint: string, data?: unknown): Promise<T> {
-    return request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  },
-
-  /**
-   * PATCH request
-   */
-  patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    return request<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  },
-
-  /**
-   * PUT request
-   */
-  put<T>(endpoint: string, data?: unknown): Promise<T> {
-    return request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
-  },
-
-  /**
-   * DELETE request
-   */
-  delete<T>(endpoint: string): Promise<T> {
-    return request<T>(endpoint, { method: 'DELETE' });
-  },
+// Rate limit tracker
+const rateLimitTracker = {
+  lastRequest: 0,
+  minInterval: 100, // Minimum 100ms between requests
 };
 
-/**
- * Health check function
- *
- * Use this to verify backend connectivity.
- * Note: Health check bypasses Next.js rewrites and goes directly to backend
- *
- * @returns Health status from the backend
- */
-export async function checkHealth(): Promise<{
-  status: string;
-  timestamp: string;
-  version: string;
-}> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-  const response = await fetch(`${apiUrl}/health`);
-  return response.json();
+// Check if error is retryable
+function isRetryableError(status: number): boolean {
+  return status === 429 || status === 503 || status === 502 || status === 504 || status === 0;
 }
+
+// Delay helper with exponential backoff
+function delay(attempt: number): Promise<void> {
+  const ms = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+  return new Promise((resolve) => setTimeout(resolve, Math.min(ms, 10000)));
+}
+
+// Create AbortController with timeout
+function createTimeoutController(timeout: number): AbortController {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeout);
+  return controller;
+}
+
+// Rate limit check
+async function waitForRateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - rateLimitTracker.lastRequest;
+  if (elapsed < rateLimitTracker.minInterval) {
+    await new Promise((resolve) => setTimeout(resolve, rateLimitTracker.minInterval - elapsed));
+  }
+  rateLimitTracker.lastRequest = Date.now();
+}
+
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  retries: number = MAX_RETRIES
+): Promise<T> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Ensure endpoint starts with / for consistency
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${normalizedEndpoint}`;
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Rate limit protection
+      await waitForRateLimit();
+
+      // Create timeout controller
+      const controller = createTimeoutController(REQUEST_TIMEOUT);
+
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        // Handle 401 globally
+        if (response.status === 401) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/admin/login';
+          }
+          throw new ApiError('Unauthorized', 401, 'UNAUTHORIZED', false);
+        }
+
+        // Check if retryable
+        if (isRetryableError(response.status) && attempt < retries) {
+          await delay(attempt);
+          continue;
+        }
+
+        const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+        throw new ApiError(
+          errorData.message || `HTTP ${response.status}`,
+          response.status,
+          errorData.code,
+          isRetryableError(response.status)
+        );
+      }
+
+      return response.json();
+    } catch (error) {
+      lastError = error as Error;
+
+      // Handle abort/timeout
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        if (attempt < retries) {
+          await delay(attempt);
+          continue;
+        }
+        throw new ApiError('Request timed out', 0, 'TIMEOUT', true);
+      }
+
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        if (attempt < retries) {
+          await delay(attempt);
+          continue;
+        }
+        throw new ApiError(
+          'Network error. Please check your connection.',
+          0,
+          'NETWORK_ERROR',
+          true
+        );
+      }
+
+      // Re-throw ApiErrors
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      // Unknown errors
+      if (attempt < retries) {
+        await delay(attempt);
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new ApiError('Request failed after retries', 0, 'MAX_RETRIES', false);
+}
+
+// Fetch with retry for FormData (no Content-Type header)
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await waitForRateLimit();
+
+      const controller = createTimeoutController(REQUEST_TIMEOUT);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      // Return response even if not ok - let caller handle status
+      if (response.ok || !isRetryableError(response.status)) {
+        return response;
+      }
+
+      // Retryable error
+      if (attempt < retries) {
+        await delay(attempt);
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        if (attempt < retries) {
+          await delay(attempt);
+          continue;
+        }
+        throw new ApiError('Request timed out. Please try again.', 0, 'TIMEOUT', true);
+      }
+
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        if (attempt < retries) {
+          await delay(attempt);
+          continue;
+        }
+        throw new ApiError(
+          'Network error. Please check your connection.',
+          0,
+          'NETWORK_ERROR',
+          true
+        );
+      }
+
+      if (attempt < retries) {
+        await delay(attempt);
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new ApiError('Request failed after retries', 0, 'MAX_RETRIES', false);
+}
+
+// Debounce helper for form submissions
+export function createSubmitDebounce(delayMs: number = 2000): () => boolean {
+  let lastSubmit = 0;
+  return () => {
+    const now = Date.now();
+    if (now - lastSubmit < delayMs) {
+      return false; // Too soon, reject
+    }
+    lastSubmit = now;
+    return true; // Allow submission
+  };
+}
+
+export function getApiUrl(endpoint: string): string {
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${API_URL}${normalizedEndpoint}`;
+}
+
+export { API_URL };

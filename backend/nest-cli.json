@@ -3,7 +3,21 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true,
-    "plugins": []
+    "deleteOutDir": false,
+    "plugins": [],
+    "assets": [
+      {
+        "include": "modules/mail/templates/**/*.hbs",
+        "watchAssets": true
+      },
+      {
+        "include": "modules/events/buildathon/data/*.json",
+        "watchAssets": true
+      },
+      {
+        "include": "public/**/*",
+        "watchAssets": true
+      }
+    ]
   }
 }

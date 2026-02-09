@@ -40,3 +40,6 @@ coverage/
 *.db
 *.sqlite
 *.sqlite3
+
+# temp files
+/uploads

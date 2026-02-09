@@ -1,22 +1,34 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
-import { throttlerConfig } from './config/security.config';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { BugSmashModule } from './modules/events/bug-smash/bug-smash.module';
+import { BuildathonModule } from './modules/events/buildathon/buildathon.module';
+import { CtrlQuizModule } from './modules/events/ctrl-quiz/ctrl-quiz.module';
+import { PaperPresentationModule } from './modules/events/paper-presentation/paper-presentation.module';
+import { BuzzerModule } from './modules/events/think-link/buzzer/buzzer.module';
+import { ThinkLinkModule } from './modules/events/think-link/think-link.module';
+import { ExportsModule } from './modules/exports/exports.module';
 import { RegistrationModule } from './modules/registration/registration.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { UsersModule } from './modules/users/users.module';
 
 /**
  * Root Application Module
  *
- * Production-ready module with security features:
+ * Production-ready module:
  * - ConfigModule: Environment variable management
  * - TypeOrmModule: Database connection (SQLite)
- * - ThrottlerModule: Rate limiting
+ * - ThrottlerModule: Rate limiting for load protection
  */
 @Module({
   imports: [
@@ -26,20 +38,55 @@ import { RegistrationModule } from './modules/registration/registration.module';
       envFilePath: ['.env', '.env.local'],
     }),
 
-    // Rate limiting
-    ThrottlerModule.forRootAsync(throttlerConfig),
+    // Rate limiting - protects against abuse and high load
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            // Default: 100 requests per minute per IP
+            ttl: (config.get<number>('RATE_LIMIT_TTL') || 60) * 1000,
+            limit: config.get<number>('RATE_LIMIT_MAX') || 100,
+          },
+        ],
+      }),
+    }),
+
+    // In-memory cache (NestJS built-in)
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        ttl: config.get<number>('CACHE_TTL_SECONDS') || 300,
+        max: config.get<number>('CACHE_MAX_ITEMS') || 500,
+      }),
+    }),
 
     // Database connection
     TypeOrmModule.forRootAsync(databaseConfig),
 
     // Feature modules
+    AuthModule,
+    UsersModule,
     ContactModule,
+    CertificatesModule,
     RegistrationModule,
+    AnalyticsModule,
+    SettingsModule,
+    ExportsModule,
+    PaperPresentationModule,
+    ThinkLinkModule,
+    BuzzerModule,
+    BugSmashModule,
+    CtrlQuizModule,
+    BuildathonModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    // Global rate limiting guard
+    // Apply rate limiting globally
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

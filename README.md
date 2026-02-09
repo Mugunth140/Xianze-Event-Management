@@ -78,7 +78,7 @@ The easiest way to run XIANZE is with Docker Compose:
 # Production
 ./deploy.sh prod
 
-# Development  
+# Development
 docker compose up -d        # Start backend + redis
 cd frontend && bun run dev  # Start frontend locally
 

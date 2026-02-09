@@ -2,8 +2,8 @@
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+import { FaDice, FaGamepad, FaGhost, FaTrophy } from 'react-icons/fa';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -12,27 +12,48 @@ if (typeof window !== 'undefined') {
 export default function FunGamesBanner() {
   const bannerRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const iconsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const banner = bannerRef.current;
     if (!banner || !contentRef.current) return;
 
-    gsap.fromTo(
+    // Main Card Animation - Cinematic Fast
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: banner,
+        start: 'top 85%',
+        once: true,
+      },
+    });
+
+    tl.fromTo(
       contentRef.current,
-      { opacity: 0, y: 40, scale: 0.98 },
+      { opacity: 0, y: 40, scale: 0.97 },
       {
         opacity: 1,
         y: 0,
         scale: 1,
-        duration: 0.8,
+        duration: 0.65,
         ease: 'power3.out',
-        scrollTrigger: {
-          trigger: banner,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse',
-        },
       }
     );
+
+    // Floating Icons Animation
+    if (iconsRef.current) {
+      const icons = iconsRef.current.children;
+      Array.from(icons).forEach((icon, index) => {
+        gsap.to(icon, {
+          y: -15,
+          rotation: index % 2 === 0 ? 10 : -10,
+          duration: 2 + index * 0.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: index * 0.2,
+        });
+      });
+    }
 
     return () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
@@ -40,69 +61,65 @@ export default function FunGamesBanner() {
   }, []);
 
   return (
-    <section
-      ref={bannerRef}
-      className="py-12 lg:py-16"
-      style={{
-        background: 'linear-gradient(180deg, #f5f0ff 0%, #ffffff 100%)',
-      }}
-    >
+    <section ref={bannerRef} className="py-8 lg:py-12 relative overflow-hidden bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={contentRef}
-          className="relative overflow-hidden rounded-3xl"
+          className="relative overflow-hidden rounded-[2.5rem] shadow-2xl shadow-primary-500/20 group opacity-0"
           style={{
-            background: 'linear-gradient(135deg, #6D40D4 0%, #8B5CF6 50%, #A855F7 100%)',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #8b5cf6 100%)',
           }}
         >
-          {/* Decorative elements */}
-          <div
-            className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)',
-              transform: 'translate(30%, -30%)',
-            }}
-          />
-          <div
-            className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-20"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
-              transform: 'translate(-30%, 30%)',
-            }}
-          />
+          {/* Animated Background Mesh */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+            <div className="absolute -bottom-32 left-20 w-[500px] h-[500px] bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
+          </div>
 
-          <div className="relative z-10 px-8 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-              {/* Content */}
-              <div className="max-w-xl">
-                {/* Event Badge */}
-                {/* <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 mb-4">
-                  <span className="text-xs font-semibold text-white/90 uppercase tracking-wider">
-                    8th Event
-                  </span>
-                </div> */}
+          {/* Noise Overlay */}
+          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" />
 
-                {/* Title */}
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-white mb-4">
-                  Fun Games 🎮
-                </h2>
+          <div className="relative z-10 px-8 py-16 sm:px-12 sm:py-20 lg:px-20 lg:py-24 text-center">
+            {/* Floating Icons Container */}
+            <div ref={iconsRef} className="absolute inset-0 pointer-events-none overflow-hidden">
+              {/* Top Left - Gamepad */}
+              <div className="absolute top-12 left-12 text-white/10 text-6xl transform -rotate-12">
+                <FaGamepad />
+              </div>
+              {/* Top Right - Ghost */}
+              <div className="absolute top-16 right-16 text-white/10 text-5xl transform rotate-12">
+                <FaGhost />
+              </div>
+              {/* Bottom Left - Dice */}
+              <div className="absolute bottom-16 left-20 text-white/10 text-7xl transform -rotate-6">
+                <FaDice />
+              </div>
+              {/* Bottom Right - Trophy */}
+              <div className="absolute bottom-12 right-24 text-white/10 text-6xl transform rotate-6">
+                <FaTrophy />
+              </div>
+            </div>
 
-                {/* Description */}
-                <p className="text-lg text-white/80 leading-relaxed">
-                  Take a break from the intense competitions and join our Fun Games session!
-                  Exciting mini-games, team challenges, and amazing prizes await you.
-                </p>
+            <div className="relative z-20 max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6 mx-auto">
+                <span className="text-2xl">🕹️</span>
+                <span className="text-sm font-bold text-white uppercase tracking-widest">
+                  Chill Zone
+                </span>
               </div>
 
-              {/* CTA */}
-              <div className="flex-shrink-0">
-                <Link
-                  href="/event/fun-games"
-                  className="inline-flex items-center px-8 py-4 bg-white text-primary-600 font-semibold rounded-full shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                >
-                  <span>Learn More</span>
-                </Link>
-              </div>
+              <h2 className="text-4xl sm:text-5xl lg:text-7xl font-display font-black text-white mb-6 tracking-tight drop-shadow-sm">
+                Fun Games{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
+                  Unleashed
+                </span>
+              </h2>
+
+              <p className="text-lg sm:text-2xl text-white/90 leading-relaxed font-medium max-w-2xl mx-auto drop-shadow-sm">
+                Take a break from the code and chaos! Dive into our exclusive mini-games arena. Win
+                exciting instant prizes, challenge your friends, and recharge your batteries.
+              </p>
             </div>
           </div>
         </div>

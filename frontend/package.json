@@ -2,7 +2,7 @@
   "name": "xianze-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "XIANZE Event Management System - Frontend",
+  "description": "Xianze is a Technical Symposium hosted by KG College of Arts and Science. Join us for a day of technical events, workshops, and innovation.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,14 +15,19 @@
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
-    "framer-motion": "^12.25.0",
+    "framer-motion": "^12.30.0",
     "gsap": "^3.14.2",
+    "html5-qrcode": "^2.3.8",
     "lottie-react": "^2.4.1",
     "next": "14.2.3",
+    "pdfjs-dist": "3.11.174",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
+    "recharts": "^3.7.0",
     "sharp": "^0.34.5",
+    "socket.io-client": "^4.8.3",
     "tailwind-scrollbar-hide": "^4.0.0"
   },
   "devDependencies": {

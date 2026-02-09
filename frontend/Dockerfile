@@ -5,13 +5,24 @@ FROM oven/bun:1-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy package files - lockfile is optional
 COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
+
+# Install dependencies - allow lockfile updates for compatibility
+# Uses existing lockfile if valid, regenerates if needed
+RUN bun install --no-save || bun install
 
 COPY . .
 
 ARG NEXT_PUBLIC_API_URL=/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+ARG NEXT_PUBLIC_SITE_URL=https://xianze.tech
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
+ARG NEXT_PUBLIC_WHATSAPP_URL
+ENV NEXT_PUBLIC_WHATSAPP_URL=$NEXT_PUBLIC_WHATSAPP_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN bun run build

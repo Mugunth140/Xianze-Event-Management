@@ -22,26 +22,25 @@ export default function AboutSection() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: 'top 80%',
-        end: 'bottom 20%',
-        toggleActions: 'play none none reverse',
+        start: 'top 85%',
+        once: true,
       },
     });
 
     if (headingRef.current) {
       tl.fromTo(
         headingRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
+        { opacity: 0, y: 40 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
 
     if (textRef.current) {
       tl.fromTo(
         textRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-        '-=0.3'
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+        '-=0.35'
       );
     }
 
@@ -49,9 +48,15 @@ export default function AboutSection() {
       const statItems = statsRef.current.querySelectorAll('.stat-item');
       tl.fromTo(
         statItems,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' },
-        '-=0.2'
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'power3.out',
+        },
+        '-=0.35'
       );
     }
 
@@ -61,7 +66,7 @@ export default function AboutSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="py-20 lg:py-28 bg-white">
+    <section ref={sectionRef} className="py-20 lg:py-28 ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Section Badge */}
@@ -72,39 +77,49 @@ export default function AboutSection() {
           {/* Heading */}
           <h2
             ref={headingRef}
-            className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6"
+            className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-gray-900 mb-6 opacity-0"
           >
             Where Innovation Meets <span className="text-primary-600">Competition</span>
           </h2>
 
           {/* Description */}
-          <p ref={textRef} className="text-lg text-gray-600 leading-relaxed mb-12">
-            XIANZE 2K26 is the premier inter-collegiate tech symposium bringing together the
+          <p ref={textRef} className="text-lg text-gray-600 leading-relaxed mb-12 opacity-0">
+            Xianze 2K26 is the premier inter-collegiate tech symposium bringing together the
             brightest minds from across campuses. Experience a day packed with coding challenges,
             design battles, innovative workshops, and exciting prizes.
           </p>
         </div>
 
         {/* Stats */}
-        <div ref={statsRef} className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto">
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+        <div
+          ref={statsRef}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto"
+        >
+          {' '}
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              300+
-            </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Participants</div>
-          </div>
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+              {' '}
+              300+{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Participants</div>{' '}
+          </div>{' '}
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              25+
-            </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Colleges</div>
-          </div>
-          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100">
+              {' '}
+              25+{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Colleges</div>{' '}
+          </div>{' '}
+          <div className="stat-item text-center p-6 rounded-2xl bg-gradient-to-b from-primary-50 to-white border border-primary-100 opacity-0">
+            {' '}
             <div className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary-600 mb-2">
-              ₹20K+
-            </div>
-            <div className="text-sm sm:text-base text-gray-500 font-medium">Prizes</div>
-          </div>
+              {' '}
+              10K +{' '}
+            </div>{' '}
+            <div className="text-sm sm:text-base text-gray-600 font-medium">Cash Prizes</div>{' '}
+          </div>{' '}
         </div>
       </div>
     </section>

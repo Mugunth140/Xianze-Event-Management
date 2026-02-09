@@ -8,11 +8,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=/api
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_WHATSAPP_URL=${NEXT_PUBLIC_WHATSAPP_URL}
     container_name: xianze-frontend-builder
     volumes:
-      - frontend-static:/app/out
-    command: ["echo", "Build complete"]
+      - frontend-static:/app/out-static
+    command:
+      ["/bin/sh", "-c", "rm -rf /app/out-static/* && cp -r /app/out/. /app/out-static/"]
 
   nginx:
     build:
@@ -21,8 +23,8 @@ services:
     container_name: xianze-nginx
     restart: unless-stopped
     ports:
-      - '80:80'
-      - '443:443'
+      - "80:80"
+      - "443:443"
     volumes:
       - frontend-static:/usr/share/nginx/html:ro
       - ./nginx/nginx.ssl.conf:/etc/nginx/nginx.conf:ro
@@ -38,29 +40,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 128M
-
-  redis:
-    image: redis:7-alpine
-    container_name: xianze-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis-data:/data
-    networks:
-      - xianze-network
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
+          cpus: "1"
+          memory: 512M
 
   backend:
     build:
@@ -69,27 +50,27 @@ services:
     container_name: xianze-backend
     restart: unless-stopped
     expose:
-      - '5000'
+      - "5000"
+      - "5001"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=5000
+      - WS_PORT=5001
       - DATABASE_PATH=/data/xianze.db
       - DATABASE_SYNCHRONIZE=false
       - DATABASE_LOGGING=false
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
       - CORS_ORIGIN=${CORS_ORIGIN:-https://xianze.tech}
-      - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+      # Mail configuration - MUST use Docker service name, not localhost
+      - MAIL_HOST=mailserver
+      - MAIL_PORT=587
     volumes:
       - sqlite-data:/data
     networks:
       - xianze-network
-    depends_on:
-      redis:
-        condition: service_healthy
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -97,8 +78,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 512M
+          cpus: "2"
+          memory: 2G
 
   # SSL Manager - handles certificate renewal AND nginx reload in one container
   ssl-manager:
@@ -126,6 +107,47 @@ services:
       '
     depends_on:
       - nginx
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    container_name: xianze-mailserver
+    hostname: mail
+    domainname: xianze.tech
+    ports:
+      - "25:25"
+      - "143:143"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - mail-data:/var/mail
+      - mail-state:/var/mail-state
+      - mail-logs:/var/log/mail
+      - mail-config:/tmp/docker-mailserver
+      - certbot-conf:/etc/letsencrypt:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - ENABLE_SPAMASSASSIN=0
+      - ENABLE_CLAMAV=0
+      - ENABLE_FAIL2BAN=1
+      - ENABLE_POSTGREY=0
+      - SSL_TYPE=letsencrypt
+      - SPOOF_PROTECTION=1
+      - PERMIT_DOCKER=network
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    networks:
+      - xianze-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
 
 networks:
   xianze-network:
@@ -137,9 +159,15 @@ volumes:
     name: xianze-frontend-static
   sqlite-data:
     name: xianze-prod-sqlite
-  redis-data:
-    name: xianze-prod-redis
   certbot-conf:
     name: xianze-certbot-conf
   certbot-www:
     name: xianze-certbot-www
+  mail-data:
+    name: xianze-mail-data
+  mail-state:
+    name: xianze-mail-state
+  mail-logs:
+    name: xianze-mail-logs
+  mail-config:
+    name: xianze-mail-config

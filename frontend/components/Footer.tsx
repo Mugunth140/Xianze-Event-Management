@@ -6,6 +6,10 @@ import Link from 'next/link';
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
+  // WhatsApp URL with fallback
+  const whatsappUrl =
+    process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp';
+
   const quickLinks = [
     { label: 'Home', href: '/' },
     { label: 'Events', href: '/events' },
@@ -83,7 +87,7 @@ const Footer = () => {
             <h4 className="font-display font-bold text-lg mb-6 text-white">Socials</h4>
             <div className="flex flex-col gap-4 text-left">
               <a
-                href="https://chat.whatsapp.com/your-link"
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-[#25D366]/20 hover:border-[#25D366]/50 transition-all duration-300"
@@ -102,13 +106,21 @@ const Footer = () => {
                   </div>
                 </div>
               </a>
-
               <a
-                href="mailto:support@xianze.tech"
-                className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-primary-600/20 hover:border-primary-500/50 transition-all duration-300"
+                href="mailto:contact@xianze.tech"
+                className="group flex items-center justify-between p-4 rounded-xl
+                            bg-white/5 border border-white/10
+                            hover:bg-primary-500/20 hover:border-primary-500/50
+                            transition-all duration-300"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform">
+                  <div
+                    className="w-10 h-10 rounded-full
+                                    bg-primary-500/20
+                                    flex items-center justify-center
+                                    text-primary-400
+                                    group-hover:scale-110 transition-transform"
+                  >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
@@ -118,11 +130,12 @@ const Footer = () => {
                       />
                     </svg>
                   </div>
+
                   <div>
                     <p className="font-semibold text-white group-hover:text-primary-400 transition-colors">
                       Email Us
                     </p>
-                    <p className="text-xs text-gray-400">support@xianze.tech</p>
+                    <p className="text-xs text-gray-400">contact@xianze.tech</p>
                   </div>
                 </div>
               </a>
@@ -133,10 +146,10 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="py-6">
           <div className="max-w-8xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-500 text-sm font-medium">
+            <p className="text-gray-600 text-sm font-medium">
               © XIANZE {currentYear} All rights reserved
             </p>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-600 text-sm">
               Credits: <span className="text-white font-medium">Sharan & Mugunth</span>
             </p>
           </div>

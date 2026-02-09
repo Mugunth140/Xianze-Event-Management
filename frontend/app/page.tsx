@@ -8,10 +8,12 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <AboutSection />
-      <FunGamesBanner />
-      <EventsSection />
-      <WhatsAppCTA />
+      <div className="bg-[#f8f5ff]">
+        <AboutSection />
+        <FunGamesBanner />
+        <EventsSection />
+        <WhatsAppCTA />
+      </div>
     </>
   );
 }

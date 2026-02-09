@@ -1,0 +1,98 @@
+[
+    {
+        "id": 1,
+        "name": "Men Kurta Set",
+        "price": 1800,
+        "stock": 12,
+        "sold": 28,
+        "image": "https://in.pintert.com/pin/1030198481086927/"
+    },
+    {
+        "id": 2,
+        "name": "Women Saree",
+        "price": 2500,
+        "stock": 8,
+        "sold": 35,
+        "image": "https://i.pinimg.com/736x/62/c9/90/62c990b044d077487b97221cf1a6afad.jpg"
+    },
+    {
+        "id": 3,
+        "name": "Casual T-shirt",
+        "price": 800,
+        "stock": 25,
+        "sold": 40,
+        "image": "https://i.pinimg.com/1200x/27/b5/a1/27b5a1602087a7113d58118e357bdc54.jpg"
+    },
+    {
+        "id": 4,
+        "name": "Kids Hoodie",
+        "price": 1200,
+        "stock": 15,
+        "sold": 18,
+        "image": "https://i.pinimg.com/1200x/4a/65/12/4a6512b6adb3f84bd09589f83e1e78f7.jpg"
+    },
+    {
+        "id": 5,
+        "name": "Women Dress",
+        "price": 1800,
+        "stock": 10,
+        "sold": 22,
+        "image": "https://i.pinimg.com/736x/70/9f/49/709f49e7717d8d8b770edf1fdffb0218.jpg"
+    },
+    {
+        "id": 6,
+        "name": "Boys Jacket",
+        "price": 1500,
+        "stock": 5,
+        "sold": 15,
+        "image": "https://i.pinimg.com/736x/11/ae/f0/11aef09475c0d929a4b6ed1070b5cb98.jpg"
+    },
+    {
+        "id": 7,
+        "name": "Men Formal Shirt",
+        "price": 1400,
+        "stock": 18,
+        "sold": 30,
+        "image": "https://i.pinimg.com/1200x/7f/95/6f/7f956f373a6f8f1f2dc73c61f89baa57.jpg"
+    },
+    {
+        "id": 8,
+        "name": "Women Top",
+        "price": 900,
+        "stock": 30,
+        "sold": 34,
+        "image": "https://i.pinimg.com/736x/7e/ff/fd/7efffde3cbdb1fe2e86037af27a40e0c.jpg"
+    },
+    {
+        "id": 9,
+        "name": "Girls Skirt",
+        "price": 1100,
+        "stock": 9,
+        "sold": 12,
+        "image": "https://i.pinimg.com/736x/7c/ae/a1/7caea15fb5110fdb9cbfe534d0b5ce9d.jpg"
+    },
+    {
+        "id": 10,
+        "name": "Winter Sweater",
+        "price": 2000,
+        "stock": 6,
+        "sold": 20,
+        "image": "https://i.pinimg.com/736x/d7/a1/29/d7a12960e3d0df8d1380e2d2a049fbd7.jpg"
+    },
+    {
+        "id": 11,
+        "name": "Ethnic Lehenga",
+        "price": 3500,
+        "stock": 4,
+        "sold": 10,
+        "image": "https://i.pinimg.com/736x/75/fe/d9/75fed935e56483f06f96af2b0da4f45f.jpg"
+    },
+    {
+        "id": 12,
+        "name": "Denim Jeans",
+        "price": 1600,
+        "stock": 22,
+        "sold": 38,
+        "image": "https://i.pinimg.com/1200x/ef/23/83/ef23838bf2e41a4bcffc3b1474bec4b2.jpg"
+    }
+]

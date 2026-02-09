@@ -1,5 +1,7 @@
 'use client';
 
+import { ApiError, createSubmitDebounce, fetchWithRetry, getApiUrl } from '@/lib/api';
+import { sanitizeInput, validateEmail, validateMessage, validateName } from '@/lib/validation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
@@ -17,69 +19,89 @@ interface Coordinator {
 }
 
 const coordinators: Coordinator[] = [
-  { name: 'Sharulatha', phone: '8148529920', role: 'Student Coordinator' },
-  { name: 'Rajakavika', phone: '8072390391', role: 'Student Coordinator' },
-  { name: 'Mugunth', phone: '6384761234', role: 'Student Coordinator' },
+  { name: 'Sri Rajakavika', phone: '8072390391', role: 'Student Coordinator' },
+  { name: 'Karthikraja S', phone: '9944910261', role: 'Student Coordinator' },
+  { name: 'Sowdhanya Laxna', phone: '9361077188', role: 'Student Coordinator' },
+  { name: 'Sharan M', phone: '9025744404', role: 'Student Coordinator' },
+  { name: 'Kaviyadharshini', phone: '8438437557', role: 'Student Coordinator' },
 ];
+
+// Debounce for preventing double submissions
+const submitDebounce = createSubmitDebounce(3000);
 
 const Contact = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusType, setStatusType] = useState<'success' | 'error' | ''>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    message?: string;
+  }>({});
 
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const coordinatorsRef = useRef<HTMLDivElement>(null); // New Ref for Coordinators
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Header animation
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 85%',
+        once: true,
+      },
+    });
+
+    // Header
     if (headerRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         headerRef.current,
         { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
       );
     }
 
-    // Cards stagger animation
-    if (cardsRef.current) {
-      const cards = cardsRef.current.querySelectorAll('.contact-card');
-      gsap.fromTo(
+    // Contact Cards
+    const cards = document.querySelectorAll('.contact-card-item'); // Changed class name targeting
+    if (cards.length > 0) {
+      tl.fromTo(
         cards,
-        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
-          duration: 0.5,
-          stagger: 0.1,
-          ease: 'back.out(1.2)',
-          scrollTrigger: {
-            trigger: cardsRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+          duration: 0.6,
+          stagger: 0.08,
+          ease: 'power3.out',
+        },
+        '-=0.35'
       );
     }
 
-    // Form animation
+    // Student Coordinators Section
+    if (coordinatorsRef.current) {
+      tl.fromTo(
+        coordinatorsRef.current,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: 'power3.out',
+        },
+        '-=0.35'
+      );
+    }
+
+    // Form
     if (formRef.current) {
-      gsap.fromTo(
+      tl.fromTo(
         formRef.current,
         { opacity: 0, y: 40 },
         {
@@ -87,12 +109,8 @@ const Contact = () => {
           y: 0,
           duration: 0.6,
           ease: 'power3.out',
-          scrollTrigger: {
-            trigger: formRef.current,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        }
+        },
+        '-=0.35'
       );
     }
 
@@ -102,34 +120,109 @@ const Contact = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof typeof fieldErrors]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submissions with debounce
+    if (!submitDebounce()) {
+      setStatusMessage('Please wait before submitting again.');
+      setStatusType('error');
+      return;
+    }
+
+    // Prevent submission while already loading
+    if (isLoading) return;
+
     setIsLoading(true);
+    setFieldErrors({});
+    setStatusMessage('');
+    setStatusType('');
+
+    // Validate fields
+    const errors: { name?: string; email?: string; message?: string } = {};
+
+    const nameResult = validateName(formData.name);
+    if (!nameResult.isValid) errors.name = nameResult.error!;
+
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.isValid) errors.email = emailResult.error!;
+
+    const messageResult = validateMessage(formData.message, 2000);
+    if (!messageResult.isValid) errors.message = messageResult.error!;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setStatusMessage('Please fix the errors below.');
+      setStatusType('error');
+      setIsLoading(false);
+      return;
+    }
+
+    // Sanitize before sending
+    const sanitizedData = {
+      name: sanitizeInput(formData.name),
+      email: formData.email.trim().toLowerCase(),
+      message: sanitizeInput(formData.message),
+    };
 
     try {
-      const response = await fetch('/api/contact', {
+      // Use fetchWithRetry for automatic retry on network/server errors
+      const response = await fetchWithRetry(getApiUrl('/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
 
       if (response.ok) {
-        setStatusMessage('Message sent successfully!');
+        setStatusMessage('Message sent! A confirmation email has been sent to your inbox.');
+        setStatusType('success');
         setFormData({ name: '', email: '', message: '' });
+      } else if (response.status === 429) {
+        setStatusMessage('Too many requests. Please wait a moment and try again.');
+        setStatusType('error');
+      } else if (response.status >= 500) {
+        setStatusMessage('Server is busy. Please try again in a few moments.');
+        setStatusType('error');
       } else {
         setStatusMessage('Failed to send message. Please try again.');
+        setStatusType('error');
       }
-    } catch {
-      setStatusMessage('An error occurred. Please try again later.');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'TIMEOUT') {
+          setStatusMessage('Request timed out. Please check your connection and try again.');
+        } else if (error.code === 'NETWORK_ERROR') {
+          setStatusMessage('Network error. Please check your internet connection.');
+        } else {
+          setStatusMessage(error.message);
+        }
+      } else {
+        setStatusMessage('An unexpected error occurred. Please try again later.');
+      }
+      setStatusType('error');
     } finally {
       setIsLoading(false);
     }
-
-    setTimeout(() => setStatusMessage(''), 5000);
   };
+
+  // Auto-clear success messages
+  useEffect(() => {
+    if (statusType === 'success' && statusMessage) {
+      const timer = setTimeout(() => {
+        setStatusMessage('');
+        setStatusType('');
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusType, statusMessage]);
 
   return (
     <section
@@ -144,20 +237,18 @@ const Contact = () => {
         className="fixed top-20 left-10 w-72 h-72 rounded-full opacity-40 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(109, 64, 212, 0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
         }}
       />
       <div
         className="fixed bottom-20 right-10 w-96 h-96 rounded-full opacity-30 pointer-events-none"
         style={{
           background: 'radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%)',
-          filter: 'blur(80px)',
         }}
       />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div ref={headerRef} className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16 opacity-0">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-100 to-purple-100 border border-primary-200 mb-6 shadow-sm">
             <span className="text-2xl">📬</span>
@@ -172,8 +263,8 @@ const Contact = () => {
             <span className="relative inline-block">
               <span className="relative z-10 text-primary-600">Connect</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary-200/60 -rotate-1 -z-0" />
-            </span>
-            ! 💬
+            </span>{' '}
+            !
           </h1>
 
           <p className="text-lg text-gray-600 max-w-lg mx-auto">
@@ -186,44 +277,44 @@ const Contact = () => {
         <div ref={cardsRef} className="grid sm:grid-cols-2 gap-4 mb-12">
           {/* WhatsApp Community Card */}
           <Link
-            href="https://chat.whatsapp.com/GObiBOjDxn5KTC2GVwCXXp"
+            href={process.env.NEXT_PUBLIC_WHATSAPP_URL || '#'}
             target="_blank"
-            className="contact-card group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300"
+            className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 opacity-0"
           >
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-green-100 group-hover:bg-green-500 group-hover:shadow-lg group-hover:shadow-green-500/30 flex items-center justify-center text-3xl transition-all duration-300">
                 <FaWhatsapp className="text-green-600 group-hover:text-white transition-colors" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
+                <h2 className="text-lg font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
                   WhatsApp Community
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">Join our community for updates</p>
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">Join our community for updates</p>
               </div>
             </div>
           </Link>
 
           {/* Email Card */}
           <a
-            href="mailto:support@xianze.tech"
-            className="contact-card group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300"
+            href="mailto:contact@xianze.tech"
+            className="contact-card-item group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border-2 border-gray-100 hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300 opacity-0"
           >
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary-100 group-hover:bg-primary-500 group-hover:shadow-lg group-hover:shadow-primary-500/30 flex items-center justify-center text-2xl transition-all duration-300">
                 <span className="group-hover:scale-110 transition-transform">✉️</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                <h2 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
                   Email Us
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">support@xianze.tech</p>
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">contact@xianze.tech</p>
               </div>
             </div>
           </a>
         </div>
 
         {/* Student Coordinators */}
-        <div className="mb-12">
+        <div ref={coordinatorsRef} className="mb-12 opacity-0">
           <h2 className="text-2xl font-display font-bold text-gray-900 mb-6 text-center">
             Student Coordinators 📞
           </h2>
@@ -252,7 +343,7 @@ const Contact = () => {
         {/* Contact Form Section */}
         <div
           ref={formRef}
-          className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden"
+          className="relative rounded-3xl bg-white border border-gray-100 p-8 sm:p-12 overflow-hidden opacity-0"
         >
           {/* Subtle background pattern */}
           <div
@@ -268,10 +359,10 @@ const Contact = () => {
               ✍️
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3 text-center">
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3 text-center">
               Send us a Message
-            </h3>
-            <p className="text-gray-500 text-center mb-8 max-w-md mx-auto">
+            </h2>
+            <p className="text-gray-600 text-center mb-8 max-w-md mx-auto">
               Have something specific to ask? Fill out the form below and we&apos;ll get back to you
               soon!
             </p>
@@ -280,12 +371,12 @@ const Contact = () => {
             {statusMessage && (
               <div
                 className={`text-center py-3 px-4 rounded-xl font-medium mb-6 transition-all ${
-                  statusMessage.includes('successfully')
+                  statusMessage.includes('sent')
                     ? 'bg-green-50 text-green-700 border border-green-200'
                     : 'bg-red-50 text-red-700 border border-red-200'
                 }`}
               >
-                {statusMessage.includes('successfully') ? '✅' : '❌'} {statusMessage}
+                {statusMessage.includes('sent') ? '✅' : '❌'} {statusMessage}
               </div>
             )}
 
