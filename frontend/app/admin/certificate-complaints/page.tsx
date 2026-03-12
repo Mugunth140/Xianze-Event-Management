@@ -60,7 +60,9 @@ export default function CertificateComplaintsPage() {
   const [exporting, setExporting] = useState(false);
   const [sending, setSending] = useState(false);
   const [batchResult, setBatchResult] = useState<BatchSendResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'requests' | 'email-logs' | 'email-sender'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'email-logs' | 'email-sender'>(
+    'requests'
+  );
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [senderEmail, setSenderEmail] = useState('');
   const [senderName, setSenderName] = useState('');
@@ -122,14 +124,14 @@ export default function CertificateComplaintsPage() {
       (item) =>
         item.name.toLowerCase().includes(query) ||
         item.email.toLowerCase().includes(query) ||
-        JSON.parse(item.events).join(', ').toLowerCase().includes(query),
+        JSON.parse(item.events).join(', ').toLowerCase().includes(query)
     );
   }, [complaints, searchQuery]);
 
   const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
   const paginatedComplaints = filteredComplaints.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleDelete = async () => {
@@ -231,7 +233,7 @@ export default function CertificateComplaintsPage() {
       const data = await res.json();
       if (data.success) {
         setEmailLogs((prev) =>
-          prev.map((log) => (log.id === logId ? { ...log, status: 'success', error: null } : log)),
+          prev.map((log) => (log.id === logId ? { ...log, status: 'success', error: null } : log))
         );
       } else {
         setError(data.data?.error || 'Resend failed');
@@ -427,8 +429,8 @@ export default function CertificateComplaintsPage() {
               </svg>
             )}
             Batch [{batchResult.batchId}]: {batchResult.sent} sent, {batchResult.failed} failed
-            {(batchResult.skipped || 0) > 0 ? `, ${batchResult.skipped} skipped` : ''}
-            {' '}(total: {batchResult.total})
+            {(batchResult.skipped || 0) > 0 ? `, ${batchResult.skipped} skipped` : ''} (total:{' '}
+            {batchResult.total})
           </div>
           {batchResult.total === 0 && (
             <p>No certificate PDFs found in the certificates directory.</p>
@@ -622,9 +624,7 @@ export default function CertificateComplaintsPage() {
               <Card key={batch.batchId}>
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Batch #{batch.batchId}
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-900">Batch #{batch.batchId}</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {new Date(batch.sentAt).toLocaleString('en-IN', {
                         day: '2-digit',
@@ -751,8 +751,18 @@ export default function CertificateComplaintsPage() {
 
             {senderResult === 'success' && (
               <div className="mb-4 px-4 py-3 rounded-xl text-sm bg-green-50 text-green-700 border border-green-100 flex items-center gap-2">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Certificate email sent successfully!
               </div>
@@ -760,8 +770,18 @@ export default function CertificateComplaintsPage() {
 
             {senderResult === 'failed' && (
               <div className="mb-4 px-4 py-3 rounded-xl text-sm bg-red-50 text-red-600 border border-red-100 flex items-center gap-2">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 Failed to send email. Please try again.
               </div>
@@ -807,8 +827,18 @@ export default function CertificateComplaintsPage() {
                 />
                 {senderFile && (
                   <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
                     {senderFile.name} ({(senderFile.size / 1024).toFixed(1)} KB)
                   </p>
@@ -823,15 +853,31 @@ export default function CertificateComplaintsPage() {
                 {senderSending ? (
                   <>
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     Sending...
                   </>
                 ) : (
                   <>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                     Send Certificate
                   </>
